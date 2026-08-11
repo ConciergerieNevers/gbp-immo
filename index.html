@@ -6,6 +6,11 @@
 <meta name="theme-color" content="#1B342D">
 <meta name="description" content="ESTIMAKE — pilotage d'activité et estimation immobilière terrain (Nevers).">
 <link rel="manifest" href="/manifest.webmanifest">
+<!-- Mode application (écran d'accueil iPhone/iPad) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ESTIMAKE">
 <title>ESTIMAKE</title>
 <style>
   /* ============ TOKENS ============ */
@@ -109,10 +114,12 @@
 
   .main{min-width:0;display:flex;flex-direction:column}
   .topbar{
-    display:flex;align-items:center;gap:16px;padding:18px 30px;position:sticky;top:0;z-index:20;
-    background:color-mix(in srgb,var(--ground) 86%,transparent);backdrop-filter:blur(12px);
+    display:flex;align-items:center;gap:12px;padding:18px 30px;position:sticky;top:0;z-index:20;
+    padding-top:calc(18px + env(safe-area-inset-top));
+    background:color-mix(in srgb,var(--ground) 88%,transparent);backdrop-filter:blur(12px);
     border-bottom:1px solid var(--line);
   }
+  .topbar h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .topbar h1{font-size:21px}
   .topbar .sub{color:var(--ink-2);font-size:13px;margin-top:1px}
   .topbar .grow{flex:1}
@@ -229,6 +236,18 @@
   .who b{font-weight:600;display:block} .who small{color:var(--ink-3);font-size:12px}
   .relance{color:var(--ink-2);font-size:13px}
   .next{font-size:13px;color:var(--brand);font-weight:560}
+  /* Liste contacts (responsive, remplace le tableau) */
+  .clist{display:flex;flex-direction:column}
+  .crow{display:flex;align-items:center;gap:12px;padding:13px 4px;border-top:1px solid var(--line)}
+  .crow:first-child{border-top:0}
+  .crow .av{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:640;font-size:13px}
+  .cmain{flex:1;min-width:0}
+  .cmain b{font-weight:600;font-size:14.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cmain small{color:var(--ink-3);font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cmeta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none;text-align:right;max-width:48%}
+  .cnext{color:var(--brand);font-weight:560;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinning{animation:spin .7s linear}
 
   /* ============ ESTIMATION ============ */
   .estwrap{display:grid;grid-template-columns:1fr 384px;gap:20px;align-items:start}
@@ -410,8 +429,8 @@
   @media (max-width:900px){
     .app{grid-template-columns:1fr}
     .rail{display:none}
-    .content{padding:18px 16px 96px}
-    .topbar{padding:14px 16px}
+    .content{padding:18px 16px calc(104px + env(safe-area-inset-bottom))}
+    .topbar{padding:14px 16px;padding-top:calc(12px + env(safe-area-inset-top))}
     .kpigrid{grid-template-columns:1fr 1fr}
     .funnel,.bienscol{grid-template-columns:1fr}
     .estwrap{grid-template-columns:1fr}
@@ -432,7 +451,14 @@
     .kpigrid{grid-template-columns:1fr 1fr}
     .fields{grid-template-columns:1fr}
     .bienscol{grid-template-columns:1fr}
+    .topbar{gap:8px}
     .topbar h1{font-size:18px}
+    .btntext{display:none}
+    #newEstBtn{padding:9px 11px}
+    .content{padding-left:14px;padding-right:14px}
+    .specrow{grid-template-columns:repeat(2,1fr)}
+    .risks{grid-template-columns:1fr}
+    .estcard{padding:16px}
   }
 </style>
 </head>
@@ -504,12 +530,18 @@
         <div class="sub" id="pgSub">Lundi 11 août 2026 · vue du mois</div>
       </div>
       <div class="grow"></div>
-      <button class="iconbtn" id="themeBtn" title="Thème">
+      <button class="iconbtn" id="refreshBtn" title="Rafraîchir l'application">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button class="iconbtn" id="themeBtn" title="Thème clair / sombre">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
-      <button class="btn pri" data-go="estimation">
+      <button class="iconbtn" id="logoutTop" title="Se déconnecter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+      <button class="btn pri" data-go="estimation" id="newEstBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-        Nouvelle estimation
+        <span class="btntext">Nouvelle estimation</span>
       </button>
     </div>
 
@@ -602,9 +634,7 @@
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input placeholder="Rechercher un contact…"></div>
           <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ajouter</button>
         </div>
-        <div class="card pad" style="padding:8px 8px 4px">
-          <table class="ctable"><thead id="crmHead"></thead><tbody id="crmBody"></tbody></table>
-        </div>
+        <div class="card" style="padding:6px 14px"><div class="clist" id="crmList"></div></div>
       </section>
 
       <!-- ============ ESTIMATION ============ -->
@@ -802,7 +832,9 @@
      ci-dessous ; dès qu'ils sont remplis et que les tables existent, elle passe en live. */
   var SB_URL = 'https://sayfapztuqbuanglskrr.supabase.co';
   var SB_KEY = 'sb_publishable_tMmN6RBQOBG9JuFwWExVaA_fpuldXj2';
-  var sb = (SB_URL && SB_KEY && window.supabase) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+  var sb = (SB_URL && SB_KEY && window.supabase) ? window.supabase.createClient(SB_URL, SB_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage, detectSessionInUrl: false }
+  }) : null;
 
   var houseSVG='<svg class="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>';
   var checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -814,6 +846,16 @@
     var cur=root.getAttribute('data-theme');
     if(!cur){cur=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
     root.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  });
+
+  /* ---------- rafraîchir / déconnexion (haut de page) ---------- */
+  document.getElementById('refreshBtn').addEventListener('click',function(){
+    var ic=this.querySelector('svg'); ic.classList.add('spinning');
+    setTimeout(function(){ window.location.reload(); }, 450);
+  });
+  document.getElementById('logoutTop').addEventListener('click',async function(){
+    if(sb){ try{ await sb.auth.signOut(); }catch(e){} }
+    window.location.reload();
   });
 
   /* ---------- navigation ---------- */
@@ -964,17 +1006,13 @@
   };
   function renderCrm(tab){
     var d=crm[tab];
-    document.getElementById('crmHead').innerHTML='<tr>'+d.head.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr>';
-    document.getElementById('crmBody').innerHTML=d.rows.map(function(r){
+    document.getElementById('crmList').innerHTML=d.rows.map(function(r){
       var initials=r[0].split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var cls={'Exclusif':'info','Chaud':'crit','Tiède':'warn'}[r[3]]||'';
-      var col3=(tab==='acquereurs')?('<b class="tnum">'+r[3]+'</b>'):('<span class="pill '+cls+'">'+r[3]+'</span>');
-      return '<tr><td><div class="who"><div class="av" style="background:'+r[1]+'">'+initials+'</div>'+
-        '<div><b>'+r[0]+'</b></div></div></td>'+
-        '<td>'+r[2]+'</td>'+
-        '<td>'+col3+'</td>'+
-        '<td class="relance">'+r[4]+'</td>'+
-        '<td class="next">'+r[5]+' →</td></tr>';
+      var tag=(tab==='acquereurs')?('<b class="tnum" style="font-size:14px">'+r[3]+'</b>'):('<span class="pill '+cls+'">'+r[3]+'</span>');
+      return '<div class="crow"><div class="av" style="background:'+r[1]+'">'+initials+'</div>'+
+        '<div class="cmain"><b>'+r[0]+'</b><small>'+r[2]+'</small></div>'+
+        '<div class="cmeta">'+tag+'<small class="cnext">'+r[5]+' →</small></div></div>';
     }).join('');
   }
   document.getElementById('crmTabs').addEventListener('click',function(e){
