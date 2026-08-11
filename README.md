@@ -1,11 +1,11 @@
-# GBP Immo
+# ESTIMAKE
 
-Application de pilotage d'activité + estimation immobilière terrain pour l'agence GBP (Nevers).
+Application de pilotage d'activité + estimation immobilière terrain (agence de démo : GBP, secteur Nevers).
 Front statique (`index.html`, sans build), base de données **Supabase**, hébergement **Vercel**.
 
 ## Écrans (MVP)
 1. **Cockpit** — CA réalisé / prévisionnel, commissions, mandats, tunnel de conversion, objectifs.
-2. **Biens** — portefeuille GBP, recherche, fiche complète (propriétaire, acquéreurs, historique).
+2. **Biens** — portefeuille, recherche, fiche complète (propriétaire, acquéreurs, historique).
 3. **Contacts** — vendeurs / acquéreurs / prospects, relances, prochaines actions.
 4. **Estimation** — adresse → caractéristiques → comparables DVF → ajustements d'expert (recalcul en direct) → fourchette + prix conseillé → dossier PDF.
 5. **Agence** — classement/challenge, CA équipe, mandats, exclusivités.
@@ -31,22 +31,22 @@ puis bascule en « live » dès que la base est branchée.
 ## Mise en ligne — checklist (≈ 5 min)
 
 ### 1) Base de données — Supabase
-1. Créer un **nouveau projet** Supabase (dédié à GBP, à ne pas mélanger avec Thermo Centre).
+1. Créer un **nouveau projet** Supabase dédié à ESTIMAKE (à ne pas mélanger avec Thermo Centre).
 2. SQL Editor → coller/exécuter **`schema.sql`**, puis **`seed.sql`** (facultatif).
 3. Settings → API → copier `Project URL` et la clé **anon public**.
 4. Dans `index.html`, bloc `CONFIG SUPABASE`, renseigner `SB_URL` et `SB_KEY`.
 
 ### 2) Dépôt — GitHub (org ConciergerieNevers)
-Repo cible : `git@github.com:ConciergerieNevers/gbp-immo.git`
+Repo cible : `git@github.com:ConciergerieNevers/estimake.git`
 Créer le dépôt **vide** (sans README) sur https://github.com/organizations/ConciergerieNevers/repositories/new,
 puis pousser (le remote est déjà configuré en local) :
 ```bash
-cd ~/Desktop/projet_gbp_immo
+cd ~/Desktop/projet_estimake
 git push -u origin main
 ```
 
 ### 3) Hébergement — Vercel
-1. vercel.com → New Project → importer `ConciergerieNevers/gbp-immo`.
+1. vercel.com → New Project → importer `ConciergerieNevers/estimake`.
 2. Framework preset : **Other** (site statique, aucun build).
 3. Deploy. Chaque `git push` redéploie automatiquement.
 

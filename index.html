@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1B342D">
-<meta name="description" content="GBP Immo — pilotage d'activité et estimation immobilière terrain (Nevers).">
+<meta name="description" content="ESTIMAKE — pilotage d'activité et estimation immobilière terrain (Nevers).">
 <link rel="manifest" href="/manifest.webmanifest">
-<title>GBP Immo</title>
+<title>ESTIMAKE</title>
 <style>
   /* ============ TOKENS ============ */
   :root{
@@ -417,7 +417,7 @@
       <div class="logo">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
       </div>
-      <div class="wm"><b>GBP Immo</b><span>Nevers · 58</span></div>
+      <div class="wm"><b>ESTIMAKE</b><span>Agence GBP · Nevers</span></div>
     </div>
     <button class="navitem active" data-go="cockpit">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
@@ -678,7 +678,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg>
                 Générer mon dossier d'estimation
               </button>
-              <small>PDF GBP · comparables, carte, analyse &amp; argumentaire</small>
+              <small>Dossier PDF · comparables, carte, analyse &amp; argumentaire</small>
             </div>
           </div>
         </div>
@@ -1048,7 +1048,7 @@
           surface:parseInt(document.getElementById('fSurf').value,10)||null,
           valeur_basse:num('rLow'), valeur_haute:num('rHigh'), prix_conseille:num('rReco')
         });
-      }catch(e){ console.warn('[GBP] enregistrement estimation impossible', e); }
+      }catch(e){ console.warn('[ESTIMAKE] enregistrement estimation impossible', e); }
     }
     b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> Dossier généré · PDF prêt';
     b.style.background='var(--good)';b.style.borderColor='var(--good)';b.style.color='#fff';
@@ -1071,7 +1071,7 @@
         var f=document.querySelector('#bienChips .chip.on');
         renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
       }
-    }catch(e){ console.warn('[GBP] Supabase indisponible → données de démonstration', e); }
+    }catch(e){ console.warn('[ESTIMAKE] Supabase indisponible → données de démonstration', e); }
   }
   syncBiens();
 })();

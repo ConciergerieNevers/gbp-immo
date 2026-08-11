@@ -1,7 +1,7 @@
 {
-  "name": "GBP Immo — Pilotage & Estimation",
-  "short_name": "GBP Immo",
-  "description": "Cockpit d'activité, portefeuille de biens, CRM et estimation terrain pour l'agence GBP (Nevers).",
+  "name": "ESTIMAKE — Pilotage & Estimation",
+  "short_name": "ESTIMAKE",
+  "description": "Cockpit d'activité, portefeuille de biens, CRM et estimation immobilière terrain.",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
