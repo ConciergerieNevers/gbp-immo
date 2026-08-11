@@ -335,6 +335,21 @@
     background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;cursor:pointer}
   .photo-remove[hidden]{display:none}
   .photo-remove svg{width:16px;height:16px}
+  .restyle{margin-top:14px}
+  .restyle[hidden]{display:none}
+  .restyle-lab{font-size:13px;color:var(--ink-2);font-weight:520;margin-bottom:9px}
+  .restyle-styles{display:flex;gap:6px;flex-wrap:wrap}
+  .rst{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:7px 13px;font-size:13px;
+    color:var(--ink-2);font-weight:540;cursor:pointer}
+  .rst.on{background:var(--accent);border-color:var(--accent);color:#1a1407}
+  .restyle-out[hidden]{display:none}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .ba-col small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);
+    margin-bottom:4px;font-weight:640}
+  .ba-col img{width:100%;height:150px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block;background:var(--surface-2)}
+  .restyle-out .link{display:inline-block;margin-top:11px}
+  .restyle-msg{margin-top:11px;font-size:13px;padding:9px 12px;border-radius:9px;background:var(--warn-bg);color:var(--warn)}
+  .restyle-msg[hidden]{display:none}
 
   .fields{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
   .field{display:flex;flex-direction:column;gap:5px}
@@ -811,6 +826,27 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
               </label>
+              <div class="restyle" id="restyleBox" hidden>
+                <div class="restyle-lab">✨ Restyler cette pièce avec l'IA — choisis une ambiance :</div>
+                <div class="restyle-styles" id="restyleStyles">
+                  <button type="button" class="rst on" data-s="Moderne">Moderne</button>
+                  <button type="button" class="rst" data-s="Scandinave">Scandinave</button>
+                  <button type="button" class="rst" data-s="Cosy">Cosy</button>
+                  <button type="button" class="rst" data-s="Luxe">Luxe</button>
+                  <button type="button" class="rst" data-s="Épuré">Épuré</button>
+                </div>
+                <button type="button" class="btn gold" id="restyleBtn" style="width:100%;justify-content:center;margin-top:11px">
+                  Générer la version restylée
+                </button>
+                <div class="restyle-out" id="restyleOut" hidden>
+                  <div class="ba">
+                    <div class="ba-col"><small>Avant</small><img id="restyleBefore" alt="Avant"></div>
+                    <div class="ba-col"><small>Après (IA)</small><img id="restyleAfter" alt="Après"></div>
+                  </div>
+                  <a class="link" id="restyleDl" download="piece-restylee.jpg">Télécharger l'image restylée</a>
+                </div>
+                <div class="restyle-msg" id="restyleMsg" hidden></div>
+              </div>
             </div>
 
             <div class="card estcard">
@@ -1361,14 +1397,48 @@
     var input=document.getElementById('estPhotoInput'), img=document.getElementById('estPhotoImg'),
         empty=document.getElementById('estPhotoEmpty'), rm=document.getElementById('estPhotoRemove');
     if(!input) return;
+    var rbox=document.getElementById('restyleBox');
     input.addEventListener('change',function(){
       var f=this.files&&this.files[0]; if(!f) return;
       var reader=new FileReader();
-      reader.onload=function(e){ estPhoto=e.target.result; img.src=estPhoto; img.hidden=false; empty.hidden=true; rm.hidden=false; };
+      reader.onload=function(e){ estPhoto=e.target.result; img.src=estPhoto; img.hidden=false; empty.hidden=true; rm.hidden=false; if(rbox) rbox.hidden=false; };
       reader.readAsDataURL(f);
     });
     rm.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation();
-      estPhoto=null; input.value=''; img.hidden=true; img.removeAttribute('src'); empty.hidden=false; rm.hidden=true; });
+      estPhoto=null; input.value=''; img.hidden=true; img.removeAttribute('src'); empty.hidden=false; rm.hidden=true;
+      if(rbox){ rbox.hidden=true; document.getElementById('restyleOut').hidden=true; document.getElementById('restyleMsg').hidden=true; } });
+  })();
+
+  /* ---------- restyling IA (Claude rédige le prompt + modèle d'image via /api/restyle) ---------- */
+  (function(){
+    var box=document.getElementById('restyleBox'); if(!box) return;
+    var styles=document.getElementById('restyleStyles'), btn=document.getElementById('restyleBtn'),
+        out=document.getElementById('restyleOut'), before=document.getElementById('restyleBefore'),
+        after=document.getElementById('restyleAfter'), dl=document.getElementById('restyleDl'),
+        msg=document.getElementById('restyleMsg');
+    styles.addEventListener('click',function(e){ var b=e.target.closest('.rst'); if(!b) return;
+      styles.querySelectorAll('.rst').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); });
+    function scale(dataURL){ return new Promise(function(res){
+      var im=new Image();
+      im.onload=function(){ var max=1024, w=im.width, h=im.height;
+        if(w>h && w>max){ h=Math.round(h*max/w); w=max; } else if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
+        var c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(im,0,0,w,h);
+        try{ res(c.toDataURL('image/jpeg',0.85)); }catch(e){ res(dataURL); } };
+      im.onerror=function(){ res(dataURL); }; im.src=dataURL; }); }
+    btn.addEventListener('click',async function(){
+      if(!estPhoto) return;
+      var sel=styles.querySelector('.rst.on'); var style=sel?sel.dataset.s:'Moderne';
+      msg.hidden=true; out.hidden=true; var old=btn.textContent; btn.disabled=true; btn.textContent='Génération en cours… (30–60 s)';
+      try{
+        var small=await scale(estPhoto);
+        var r=await fetch('/api/restyle',{ method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ image:small, style:style }) });
+        var j=await r.json().catch(function(){ return { error:'Réponse invalide du serveur.' }; });
+        if(!r.ok || !j.image){ throw new Error(j.error || ('Erreur '+r.status)); }
+        before.src=small; after.src=j.image; dl.href=j.image; out.hidden=false;
+      }catch(e){
+        msg.textContent='⚠️ '+(e.message||e)+' — le restyling IA fonctionne une fois le site déployé sur Vercel avec les clés API configurées.'; msg.hidden=false;
+      }finally{ btn.disabled=false; btn.textContent=old; }
+    });
   })();
 
   /* ---------- recherche d'adresse réelle (Base Adresse Nationale) ---------- */

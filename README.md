@@ -53,6 +53,20 @@ git push -u origin main
 > ⚠️ Rappel Vercel Pro : les commits doivent être signés avec
 > `primoconciergerie58@gmail.com`, sinon le déploiement passe en « Blocked ».
 
+## Restyling IA d'une pièce (photo → home-staging virtuel)
+
+`api/restyle.js` (fonction serverless Vercel) : Claude analyse la photo et rédige
+un prompt de style, puis Stability AI produit l'image restylée en conservant
+l'architecture de la pièce. Pour l'activer, ajoute 2 variables d'environnement
+dans **Vercel → Settings → Environment Variables**, puis redéploie :
+
+- `STABILITY_API_KEY` — **obligatoire**, clé sur https://platform.stability.ai/ (facturé à l'image, ~quelques centimes)
+- `ANTHROPIC_API_KEY` — *optionnel*, clé sur https://console.anthropic.com/ (améliore le prompt via Claude)
+
+Tant que `STABILITY_API_KEY` n'est pas configurée, le bouton « Générer la version
+restylée » affiche un message d'aide au lieu de planter. ⚠️ Les clés ne vont
+**jamais** dans le code front — uniquement dans les variables d'environnement Vercel.
+
 ## Prochaines étapes (V2)
 - Connexion par compte (Supabase Auth) + espace par négociateur, vue directeur consolidée.
 - Comparables DVF récupérés en direct (API DVF / cadastre / Géorisques).
