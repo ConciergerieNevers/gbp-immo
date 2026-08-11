@@ -1,0 +1,12 @@
+{
+  "name": "GBP Immo — Pilotage & Estimation",
+  "short_name": "GBP Immo",
+  "description": "Cockpit d'activité, portefeuille de biens, CRM et estimation terrain pour l'agence GBP (Nevers).",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0F1512",
+  "theme_color": "#1B342D"
+}

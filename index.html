@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B342D">
+<meta name="description" content="GBP Immo — pilotage d'activité et estimation immobilière terrain (Nevers).">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>GBP Immo</title>
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --ground:#F1F2EF; --surface:#FBFBF9; --surface-2:#E9EBE4; --surface-3:#E1E4DC;
+    --ink:#17201C; --ink-2:#55605A; --ink-3:#8A938C;
+    --brand:#23433B; --brand-2:#2E594E; --brand-soft:#DCE6E1;
+    --accent:#A9741F; --accent-soft:#F1E4CC;
+    --line:#DBDED6; --line-2:#CBCFC5;
+    --good:#2F7D5B; --good-bg:#E0EFE7;
+    --warn:#B07C1E; --warn-bg:#F3E7CE;
+    --crit:#B4462F; --crit-bg:#F3DED8;
+    --info:#3C6E8F; --info-bg:#DDE8EF;
+    --rail:#1B342D; --rail-ink:#C9D6CF; --rail-ink-2:#7C978C; --rail-active:#2E574B;
+    --shadow:0 1px 2px rgba(20,32,26,.05), 0 8px 24px -12px rgba(20,32,26,.18);
+    --shadow-lg:0 24px 60px -20px rgba(20,32,26,.35);
+    --sans:-apple-system,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif;
+    --serif:"New York","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --r:14px; --r-sm:10px; --r-lg:20px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#0F1512; --surface:#171E1A; --surface-2:#1E271F; --surface-3:#26312A;
+      --ink:#ECEFE9; --ink-2:#A4AEA6; --ink-3:#6C766E;
+      --brand:#6BA08E; --brand-2:#7FB4A1; --brand-soft:#1E2F29;
+      --accent:#D6A652; --accent-soft:#2E2716;
+      --line:#2A332C; --line-2:#374139;
+      --good:#54B183; --good-bg:#16271F; --warn:#D6A652; --warn-bg:#2A2413;
+      --crit:#D97759; --crit-bg:#2C1913; --info:#6FA6C6; --info-bg:#132430;
+      --rail:#0C120F; --rail-ink:#B7C6BD; --rail-ink-2:#6A8478; --rail-active:#1B302A;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6);
+      --shadow-lg:0 30px 70px -24px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#F1F2EF; --surface:#FBFBF9; --surface-2:#E9EBE4; --surface-3:#E1E4DC;
+    --ink:#17201C; --ink-2:#55605A; --ink-3:#8A938C;
+    --brand:#23433B; --brand-2:#2E594E; --brand-soft:#DCE6E1;
+    --accent:#A9741F; --accent-soft:#F1E4CC;
+    --line:#DBDED6; --line-2:#CBCFC5;
+    --good:#2F7D5B; --good-bg:#E0EFE7; --warn:#B07C1E; --warn-bg:#F3E7CE;
+    --crit:#B4462F; --crit-bg:#F3DED8; --info:#3C6E8F; --info-bg:#DDE8EF;
+    --rail:#1B342D; --rail-ink:#C9D6CF; --rail-ink-2:#7C978C; --rail-active:#2E574B;
+  }
+  :root[data-theme="dark"]{
+    --ground:#0F1512; --surface:#171E1A; --surface-2:#1E271F; --surface-3:#26312A;
+    --ink:#ECEFE9; --ink-2:#A4AEA6; --ink-3:#6C766E;
+    --brand:#6BA08E; --brand-2:#7FB4A1; --brand-soft:#1E2F29;
+    --accent:#D6A652; --accent-soft:#2E2716;
+    --line:#2A332C; --line-2:#374139;
+    --good:#54B183; --good-bg:#16271F; --warn:#D6A652; --warn-bg:#2A2413;
+    --crit:#D97759; --crit-bg:#2C1913; --info:#6FA6C6; --info-bg:#132430;
+    --rail:#0C120F; --rail-ink:#B7C6BD; --rail-ink-2:#6A8478; --rail-active:#1B302A;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--ground); color:var(--ink); font-family:var(--sans);
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+    letter-spacing:-.01em;
+  }
+  h1,h2,h3,h4{margin:0; font-weight:640; letter-spacing:-.02em; text-wrap:balance}
+  button{font-family:inherit; cursor:pointer}
+  .tnum{font-variant-numeric:tabular-nums}
+  .serif{font-family:var(--serif); letter-spacing:0}
+  ::selection{background:var(--brand); color:#fff}
+
+  /* ============ SHELL ============ */
+  .app{display:grid; grid-template-columns:236px 1fr; min-height:100vh}
+  .rail{
+    background:var(--rail); color:var(--rail-ink); display:flex; flex-direction:column;
+    padding:22px 16px; position:sticky; top:0; height:100vh; gap:4px;
+  }
+  .brandmark{display:flex; align-items:center; gap:11px; padding:6px 8px 20px}
+  .brandmark .logo{
+    width:38px;height:38px;border-radius:11px;flex:none;
+    background:linear-gradient(145deg,#3E6E5E,#213f37);
+    display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .brandmark .wm{line-height:1.05}
+  .brandmark .wm b{color:#fff;font-size:16px;font-weight:680;letter-spacing:-.02em;display:block}
+  .brandmark .wm span{color:var(--rail-ink-2);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .navitem{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:11px;
+    color:var(--rail-ink);background:none;border:0;width:100%;text-align:left;font-size:14.5px;
+    font-weight:520;transition:background .15s,color .15s;
+  }
+  .navitem svg{width:19px;height:19px;flex:none;opacity:.85}
+  .navitem:hover{background:rgba(255,255,255,.05);color:#fff}
+  .navitem.active{background:var(--rail-active);color:#fff}
+  .navitem.active svg{opacity:1}
+  .navitem .badge{margin-left:auto;background:var(--accent);color:#12100a;font-size:11px;font-weight:700;
+    padding:1px 7px;border-radius:20px}
+  .rail .spacer{flex:1}
+  .railuser{display:flex;align-items:center;gap:11px;padding:10px 8px;border-top:1px solid rgba(255,255,255,.08);margin-top:8px}
+  .railuser .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#C79A4E,#9c6f22);
+    color:#1b1608;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+  .railuser small{color:var(--rail-ink-2);display:block;font-size:11.5px}
+  .railuser b{color:#fff;font-size:13.5px;font-weight:580}
+
+  .main{min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    display:flex;align-items:center;gap:16px;padding:18px 30px;position:sticky;top:0;z-index:20;
+    background:color-mix(in srgb,var(--ground) 86%,transparent);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar h1{font-size:21px}
+  .topbar .sub{color:var(--ink-2);font-size:13px;margin-top:1px}
+  .topbar .grow{flex:1}
+  .iconbtn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--surface);
+    color:var(--ink-2);display:grid;place-items:center}
+  .iconbtn:hover{color:var(--ink);border-color:var(--line-2)}
+  .iconbtn svg{width:18px;height:18px}
+  .content{padding:26px 30px 60px;max-width:1180px;width:100%}
+  .screen{display:none;animation:fade .3s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  /* ============ PRIMITIVES ============ */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  .eyebrow{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);font-weight:640}
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:11px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink);padding:10px 16px;font-weight:560;font-size:14px}
+  .btn:hover{border-color:var(--line-2)}
+  .btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.pri:hover{background:var(--brand-2);border-color:var(--brand-2)}
+  .btn.gold{background:var(--accent);border-color:var(--accent);color:#1a1407}
+  .btn.gold:hover{filter:brightness(1.06)}
+  .btn svg{width:16px;height:16px}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
+    background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+  .pill.good{background:var(--good-bg);color:var(--good)} .pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.crit{background:var(--crit-bg);color:var(--crit)} .pill.info{background:var(--info-bg);color:var(--info)}
+  .pill.dot::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .dpe{font-weight:750;color:#fff;padding:2px 8px;border-radius:6px;font-size:12px;letter-spacing:.02em}
+
+  .grid{display:grid;gap:16px}
+  .sectitle{display:flex;align-items:center;gap:10px;margin:26px 0 13px}
+  .sectitle h2{font-size:16px} .sectitle .grow{flex:1}
+  .link{color:var(--brand);font-weight:560;font-size:13px;background:none;border:0}
+  .link:hover{text-decoration:underline}
+
+  /* ============ COCKPIT ============ */
+  .kpigrid{grid-template-columns:repeat(4,1fr)}
+  .kpi{padding:16px 17px}
+  .kpi .lab{font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:7px;font-weight:520}
+  .kpi .lab svg{width:15px;height:15px;color:var(--ink-3)}
+  .kpi .val{font-size:27px;font-weight:680;letter-spacing:-.03em;margin-top:9px}
+  .kpi .val .unit{font-size:16px;color:var(--ink-3);font-weight:560}
+  .kpi .meta{font-size:12px;color:var(--ink-3);margin-top:5px;display:flex;align-items:center;gap:6px}
+  .trend{font-weight:640} .trend.up{color:var(--good)} .trend.down{color:var(--crit)}
+  .spark{margin-top:12px;display:block;width:100%;height:34px}
+
+  .funnel{grid-template-columns:1fr 1fr}
+  .stage{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .stage:last-child{border-bottom:0}
+  .stage .bar{flex:1;height:9px;border-radius:20px;background:var(--surface-2);overflow:hidden}
+  .stage .bar i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--brand-2),var(--brand))}
+  .stage .n{width:40px;font-weight:680;text-align:right}
+  .stage .nm{width:118px;font-size:13.5px;color:var(--ink-2)}
+  .stage .rate{width:58px;text-align:right;font-size:12.5px;color:var(--accent);font-weight:640}
+
+  .goalrow{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}
+  .goalrow b{font-size:15px} .goalrow span{color:var(--ink-2);font-size:13px}
+  .prog{height:11px;border-radius:20px;background:var(--surface-2);overflow:hidden;position:relative}
+  .prog i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),#c79138)}
+  .prog.g i{background:linear-gradient(90deg,var(--brand-2),var(--brand))}
+
+  .feed{list-style:none;margin:0;padding:0}
+  .feed li{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .feed li:last-child{border-bottom:0}
+  .feed .ic{width:32px;height:32px;border-radius:9px;background:var(--brand-soft);color:var(--brand);
+    display:grid;place-items:center;flex:none}
+  .feed .ic svg{width:16px;height:16px}
+  .feed .tx{flex:1;font-size:13.5px} .feed .tx b{font-weight:600}
+  .feed .tx small{color:var(--ink-3);display:block;margin-top:1px;font-size:12px}
+
+  /* ============ BIENS ============ */
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+  .search{flex:1;min-width:220px;display:flex;align-items:center;gap:9px;background:var(--surface);
+    border:1px solid var(--line);border-radius:11px;padding:9px 13px}
+  .search:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .search svg{width:17px;height:17px;color:var(--ink-3);flex:none}
+  .search input{border:0;background:none;outline:none;flex:1;color:var(--ink);font-size:14.5px;font-family:inherit}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:7px 13px;
+    border-radius:20px;font-size:13px;font-weight:540}
+  .chip.on{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+  .chip .c{font-variant-numeric:tabular-nums;opacity:.6;margin-left:4px}
+
+  .bienscol{grid-template-columns:repeat(3,1fr)}
+  .bien{overflow:hidden;cursor:pointer;transition:transform .18s,box-shadow .18s;display:flex;flex-direction:column}
+  .bien:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+  .bien .ph{height:148px;position:relative;display:grid;place-items:center;overflow:hidden}
+  .bien .ph svg.house{width:60px;height:60px;opacity:.5;color:#fff}
+  .bien .ph .top{position:absolute;top:11px;left:11px;right:11px;display:flex;justify-content:space-between;align-items:flex-start}
+  .bien .ph .price{position:absolute;bottom:11px;left:13px;color:#fff;font-weight:720;font-size:19px;
+    letter-spacing:-.02em;text-shadow:0 1px 8px rgba(0,0,0,.4)}
+  .bien .body{padding:13px 15px 15px;display:flex;flex-direction:column;gap:7px;flex:1}
+  .bien .addr{font-weight:600;font-size:14.5px;line-height:1.25}
+  .bien .town{color:var(--ink-3);font-size:12.5px;margin-top:-3px}
+  .bien .specs{display:flex;gap:12px;color:var(--ink-2);font-size:12.5px;margin-top:auto;padding-top:4px}
+  .bien .specs span{display:inline-flex;align-items:center;gap:4px}
+  .bien .specs svg{width:14px;height:14px;opacity:.7}
+
+  /* ============ CRM ============ */
+  .subtabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:12px;width:max-content;margin-bottom:18px}
+  .subtab{border:0;background:none;padding:8px 16px;border-radius:9px;font-weight:560;font-size:13.5px;color:var(--ink-2)}
+  .subtab.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+  .ctable{width:100%;border-collapse:collapse}
+  .ctable th{text-align:left;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+    font-weight:640;padding:0 14px 11px}
+  .ctable td{padding:13px 14px;border-top:1px solid var(--line);font-size:14px;vertical-align:middle}
+  .ctable tr:hover td{background:var(--surface-2)}
+  .who{display:flex;align-items:center;gap:11px}
+  .who .av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:640;
+    font-size:13px;color:#fff}
+  .who b{font-weight:600;display:block} .who small{color:var(--ink-3);font-size:12px}
+  .relance{color:var(--ink-2);font-size:13px}
+  .next{font-size:13px;color:var(--brand);font-weight:560}
+
+  /* ============ ESTIMATION ============ */
+  .estwrap{display:grid;grid-template-columns:1fr 384px;gap:20px;align-items:start}
+  .steps{display:flex;flex-direction:column;gap:18px}
+  .estcard{padding:20px}
+  .estcard h3{font-size:15px;display:flex;align-items:center;gap:10px;margin-bottom:15px}
+  .stepnum{width:24px;height:24px;border-radius:7px;background:var(--brand);color:#fff;display:grid;place-items:center;
+    font-size:13px;font-weight:700;flex:none}
+  .addrbox{display:flex;align-items:center;gap:11px;background:var(--surface-2);border-radius:11px;padding:13px 15px}
+  .addrbox svg{width:20px;height:20px;color:var(--brand);flex:none}
+  .addrbox .a{font-weight:640;font-size:15px} .addrbox small{color:var(--ink-3);font-size:12.5px}
+  .addrbox .edit{margin-left:auto;color:var(--brand);font-size:13px;font-weight:560;background:none;border:0}
+
+  .fields{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12px;color:var(--ink-2);font-weight:560}
+  .field .inp,.field select{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;
+    font-size:14px;color:var(--ink);font-family:inherit;font-variant-numeric:tabular-nums;width:100%}
+  .field .inp:focus,.field select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .segrow{display:flex;gap:6px;flex-wrap:wrap}
+  .seg{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 11px;font-size:12.5px;
+    color:var(--ink-2);font-weight:540}
+  .seg.on{background:var(--brand);border-color:var(--brand);color:#fff}
+
+  .radiobar{display:flex;gap:6px;margin-bottom:15px}
+  .radiobar button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px;
+    font-size:13px;font-weight:560;color:var(--ink-2)}
+  .radiobar button.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+  .comptable{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  .comptable th{text-align:right;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
+    font-weight:640;padding:0 8px 9px} .comptable th:first-child{text-align:left}
+  .comptable td{padding:9px 8px;border-top:1px solid var(--line);font-size:13px;text-align:right}
+  .comptable td:first-child{text-align:left}
+  .comptable .out{opacity:.4;text-decoration:line-through}
+  .comptable tr.out:hover td{background:none}
+  .compnote{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--ink-2);
+    background:var(--info-bg);color:var(--info);padding:9px 12px;border-radius:9px}
+  .compnote svg{width:15px;height:15px;flex:none}
+
+  .adj{display:flex;flex-direction:column;gap:16px}
+  .adjrow label{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:7px;font-weight:520}
+  .adjrow label b{font-weight:680;font-variant-numeric:tabular-nums}
+  .adjrow label b.pos{color:var(--good)} .adjrow label b.neg{color:var(--crit)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:20px;
+    background:var(--surface-3);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:19px;height:19px;border-radius:50%;
+    background:var(--brand);border:3px solid var(--surface);box-shadow:var(--shadow);cursor:grab}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--brand);
+    border:3px solid var(--surface);cursor:grab}
+  .toggles{display:flex;flex-wrap:wrap;gap:8px}
+  .tgl{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+    font-size:13px;font-weight:520;color:var(--ink-2);user-select:none}
+  .tgl.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+  .tgl .bx{width:17px;height:17px;border-radius:5px;border:1.5px solid var(--line-2);display:grid;place-items:center;flex:none}
+  .tgl.on .bx{background:var(--brand);border-color:var(--brand)}
+  .tgl .bx svg{width:12px;height:12px;color:#fff;opacity:0} .tgl.on .bx svg{opacity:1}
+
+  /* Result panel */
+  .result{position:sticky;top:92px;padding:0;overflow:hidden}
+  .result .hd{background:linear-gradient(160deg,var(--brand-2),var(--brand));color:#fff;padding:19px 20px 17px}
+  .result .hd .eyebrow{color:rgba(255,255,255,.7)}
+  .result .hd .fourchette{font-family:var(--serif);font-size:19px;margin-top:9px;letter-spacing:0}
+  .result .hd .fourchette b{font-weight:640}
+  .result .reco{padding:20px;text-align:center;border-bottom:1px solid var(--line)}
+  .result .reco .eyebrow{color:var(--accent)}
+  .result .reco .big{font-family:var(--serif);font-size:42px;font-weight:640;letter-spacing:-.01em;margin:6px 0 2px;
+    font-variant-numeric:tabular-nums}
+  .result .reco .pm2{color:var(--ink-2);font-size:13px}
+  .gauge{padding:16px 20px;border-bottom:1px solid var(--line)}
+  .gauge .track{height:8px;border-radius:20px;position:relative;
+    background:linear-gradient(90deg,var(--info),var(--good),var(--accent))}
+  .gauge .mk{position:absolute;top:-4px;width:3px;height:16px;border-radius:2px;background:var(--ink);
+    box-shadow:0 0 0 3px var(--surface);transition:left .35s cubic-bezier(.4,0,.2,1)}
+  .gauge .lbls{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-top:9px;
+    font-variant-numeric:tabular-nums}
+  .rbreak{padding:8px 20px 4px}
+  .rbreak .li{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid var(--line)}
+  .rbreak .li:last-child{border-bottom:0}
+  .rbreak .li span{color:var(--ink-2)} .rbreak .li b{font-variant-numeric:tabular-nums;font-weight:600}
+  .rbreak .li b.pos{color:var(--good)} .rbreak .li b.neg{color:var(--crit)}
+  .result .foot{padding:16px 20px 20px}
+  .result .foot .btn{width:100%;justify-content:center;margin-bottom:9px}
+  .result .foot small{display:block;text-align:center;color:var(--ink-3);font-size:11.5px}
+
+  .risks{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:14px}
+  .risk{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px}
+  .risk .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none}
+  .risk .ic svg{width:15px;height:15px}
+  .risk b{display:block;font-weight:600;font-size:13px} .risk small{color:var(--ink-3);font-size:11.5px}
+
+  /* ============ AGENCE ============ */
+  .podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px;align-items:end;margin-bottom:22px}
+  .pod{border-radius:var(--r);padding:18px 14px;text-align:center;border:1px solid var(--line);background:var(--surface)}
+  .pod.p1{background:linear-gradient(165deg,#fbf3df,#f3e6c4);border-color:#e8d39a}
+  :root[data-theme="dark"] .pod.p1,@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pod.p1{background:linear-gradient(165deg,#2b2513,#211d10);border-color:#4a3f1d}}
+  .pod .medal{font-size:22px;margin-bottom:6px}
+  .pod .av{width:52px;height:52px;border-radius:50%;margin:0 auto 9px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px}
+  .pod .nm{font-weight:640;font-size:14.5px} .pod .role{color:var(--ink-3);font-size:12px}
+  .pod .pts{font-weight:760;font-size:22px;margin-top:8px;font-variant-numeric:tabular-nums}
+  .pod .pts small{font-size:12px;color:var(--ink-3);font-weight:500}
+  .pod.p1 .pts{color:var(--accent)}
+  .lb{width:100%;border-collapse:collapse}
+  .lb td{padding:12px 14px;border-top:1px solid var(--line);font-size:14px;vertical-align:middle}
+  .lb .rk{width:34px;color:var(--ink-3);font-weight:700;font-variant-numeric:tabular-nums}
+  .lb .barcell{width:34%}
+  .lb .bar{height:8px;border-radius:20px;background:var(--surface-2);overflow:hidden}
+  .lb .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand-2),var(--brand))}
+  .lb .ptcell{text-align:right;font-weight:680;font-variant-numeric:tabular-nums}
+  .ptsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+  .ptcard{border:1px solid var(--line);border-radius:11px;padding:13px;text-align:center}
+  .ptcard .p{font-weight:760;font-size:20px;color:var(--accent)} .ptcard small{color:var(--ink-2);font-size:12px}
+
+  /* ============ DRAWER ============ */
+  .scrim{position:fixed;inset:0;background:rgba(15,22,18,.5);backdrop-filter:blur(3px);z-index:60;opacity:0;
+    pointer-events:none;transition:opacity .25s}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100vh;width:min(460px,94vw);background:var(--ground);z-index:70;
+    transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;box-shadow:var(--shadow-lg)}
+  .drawer.open{transform:none}
+  .dhead{position:relative;height:180px;display:grid;place-items:center}
+  .dhead svg.house{width:74px;height:74px;color:#fff;opacity:.55}
+  .dclose{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:0;
+    background:rgba(255,255,255,.9);color:#222;display:grid;place-items:center}
+  .dclose svg{width:18px;height:18px}
+  .dhead .price{position:absolute;bottom:14px;left:18px;color:#fff;font-weight:740;font-size:26px;
+    text-shadow:0 1px 10px rgba(0,0,0,.4)}
+  .dhead .status{position:absolute;top:14px;left:14px}
+  .dbody{padding:20px}
+  .dbody h2{font-size:20px} .dbody .town{color:var(--ink-2);margin:2px 0 14px}
+  .specrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:18px}
+  .specbox{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 8px;text-align:center}
+  .specbox b{font-size:16px;display:block;font-variant-numeric:tabular-nums} .specbox small{color:var(--ink-3);font-size:11px}
+  .dsec{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:13px}
+  .dsec .eyebrow{margin-bottom:11px}
+  .kv{display:flex;justify-content:space-between;padding:7px 0;font-size:13.5px;border-bottom:1px solid var(--line)}
+  .kv:last-child{border-bottom:0} .kv span{color:var(--ink-2)} .kv b{font-weight:580}
+  .acq{display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .acq:last-child{border-bottom:0}
+  .acq .av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:640;font-size:12px;flex:none}
+  .acq .g{flex:1} .acq b{font-size:13.5px;font-weight:580;display:block} .acq small{color:var(--ink-3);font-size:12px}
+  .tl{list-style:none;margin:0;padding:0}
+  .tl li{display:flex;gap:11px;padding-bottom:14px;position:relative}
+  .tl li::before{content:"";position:absolute;left:5px;top:16px;bottom:0;width:1.5px;background:var(--line)}
+  .tl li:last-child::before{display:none}
+  .tl .dot{width:11px;height:11px;border-radius:50%;background:var(--brand);flex:none;margin-top:3px;z-index:1;
+    box-shadow:0 0 0 3px var(--surface)}
+  .tl .tx{font-size:13px} .tl .tx b{font-weight:580} .tl .tx small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:1px}
+
+  /* ============ RESPONSIVE ============ */
+  .mobnav{display:none}
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}
+    .rail{display:none}
+    .content{padding:18px 16px 96px}
+    .topbar{padding:14px 16px}
+    .kpigrid{grid-template-columns:1fr 1fr}
+    .funnel,.bienscol{grid-template-columns:1fr}
+    .estwrap{grid-template-columns:1fr}
+    .result{position:static}
+    .fields{grid-template-columns:1fr 1fr}
+    .risks{grid-template-columns:1fr}
+    .mobnav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--rail);
+      padding:8px 6px calc(8px + env(safe-area-inset-bottom));justify-content:space-around;
+      border-top:1px solid rgba(255,255,255,.06)}
+    .mobnav button{background:none;border:0;color:var(--rail-ink-2);display:flex;flex-direction:column;
+      align-items:center;gap:3px;font-size:10.5px;font-weight:560;padding:4px 8px;flex:1}
+    .mobnav button svg{width:21px;height:21px}
+    .mobnav button.active{color:#fff}
+    .podium{grid-template-columns:1fr 1fr 1fr}
+    .specrow{grid-template-columns:repeat(4,1fr)}
+  }
+  @media (max-width:520px){
+    .kpigrid{grid-template-columns:1fr 1fr}
+    .fields{grid-template-columns:1fr}
+    .bienscol{grid-template-columns:1fr}
+    .topbar h1{font-size:18px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ======== NAV RAIL ======== -->
+  <nav class="rail">
+    <div class="brandmark">
+      <div class="logo">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+      </div>
+      <div class="wm"><b>GBP Immo</b><span>Nevers · 58</span></div>
+    </div>
+    <button class="navitem active" data-go="cockpit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Cockpit
+    </button>
+    <button class="navitem" data-go="biens">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M9.5 20v-5h5v5"/></svg>
+      Biens <span class="badge">18</span>
+    </button>
+    <button class="navitem" data-go="crm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.6c2 .7 3.5 2.6 3.5 5.4"/></svg>
+      Contacts
+    </button>
+    <button class="navitem" data-go="estimation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-4 6 4v11"/><path d="M9.5 13h5M9.5 16.5h5"/></svg>
+      Estimation
+    </button>
+    <button class="navitem" data-go="agence">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+      Agence
+    </button>
+    <div class="spacer"></div>
+    <div class="railuser">
+      <div class="av">JM</div>
+      <div><b>Jimmy Marchand</b><small>Négociateur · GBP</small></div>
+    </div>
+  </nav>
+
+  <!-- ======== MAIN ======== -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pgTitle">Cockpit</h1>
+        <div class="sub" id="pgSub">Lundi 11 août 2026 · vue du mois</div>
+      </div>
+      <div class="grow"></div>
+      <button class="iconbtn" id="themeBtn" title="Thème">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button class="btn pri" data-go="estimation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Nouvelle estimation
+      </button>
+    </div>
+
+    <div class="content">
+
+      <!-- ============ COCKPIT ============ -->
+      <section class="screen active" id="cockpit">
+        <div class="grid kpigrid">
+          <div class="card kpi">
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 2.5L21 6"/></svg> CA réalisé · 2026</div>
+            <div class="val tnum">218 400 <span class="unit">€</span></div>
+            <div class="meta"><span class="trend up">▲ 14 %</span> vs 2025</div>
+            <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 28 20 26 40 24 60 22 80 18 100 20 120 14 140 12 160 9 180 6 200 4" fill="none" stroke="var(--brand)" stroke-width="2"/><path d="M0 28 20 26 40 24 60 22 80 18 100 20 120 14 140 12 160 9 180 6 200 4 200 34 0 34Z" fill="var(--brand-soft)" opacity=".5"/></svg>
+          </div>
+          <div class="card kpi">
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> CA prévisionnel</div>
+            <div class="val tnum">96 800 <span class="unit">€</span></div>
+            <div class="meta">7 compromis en cours · signés d'ici déc.</div>
+            <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 24 25 25 50 20 75 22 100 16 125 18 150 11 175 13 200 7" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/></svg>
+          </div>
+          <div class="card kpi">
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg> Commissions</div>
+            <div class="val tnum">21 840 <span class="unit">€</span></div>
+            <div class="meta"><span class="pill good dot">encaissées</span> <span style="color:var(--ink-3)">+ 9 680 € à venir</span></div>
+          </div>
+          <div class="card kpi">
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16v4H4zM4 12h10M4 17h7"/></svg> Mandats actifs</div>
+            <div class="val tnum">18</div>
+            <div class="meta"><span class="pill info">11 exclusifs</span> <span class="pill">7 simples</span></div>
+          </div>
+        </div>
+
+        <div class="sectitle"><h2>Tunnel de conversion</h2><div class="grow"></div><span class="eyebrow">12 derniers mois</span></div>
+        <div class="grid funnel">
+          <div class="card pad">
+            <div class="stage"><span class="nm">Estimations</span><div class="bar"><i style="width:100%"></i></div><span class="n tnum">64</span><span class="rate"></span></div>
+            <div class="stage"><span class="nm">→ Mandats</span><div class="bar"><i style="width:56%"></i></div><span class="n tnum">36</span><span class="rate">56 %</span></div>
+            <div class="stage"><span class="nm">→ Compromis</span><div class="bar"><i style="width:33%"></i></div><span class="n tnum">21</span><span class="rate">58 %</span></div>
+            <div class="stage"><span class="nm">→ Ventes actées</span><div class="bar"><i style="width:22%"></i></div><span class="n tnum">14</span><span class="rate">67 %</span></div>
+          </div>
+          <div class="card pad">
+            <div class="eyebrow">Objectifs</div>
+            <div style="margin:15px 0 20px">
+              <div class="goalrow"><b>Annuel · CA</b><span class="tnum">218 k€ <span style="color:var(--ink-3)">/ 300 k€</span></span></div>
+              <div class="prog"><i style="width:73%"></i></div>
+              <div style="font-size:12px;color:var(--ink-3);margin-top:6px">73 % atteint · il reste 4,5 mois</div>
+            </div>
+            <div>
+              <div class="goalrow"><b>Mensuel · mandats</b><span class="tnum">3 <span style="color:var(--ink-3)">/ 4</span></span></div>
+              <div class="prog g"><i style="width:75%"></i></div>
+              <div style="font-size:12px;color:var(--ink-3);margin-top:6px">1 mandat pour tenir l'objectif d'août</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sectitle"><h2>Activité récente</h2></div>
+        <div class="card pad">
+          <ul class="feed">
+            <li><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="tx"><b>Compromis signé</b> — Maison, 34 rue de Charleville, Nevers · 189 000 €<small>Il y a 2 h · commission 6 615 €</small></div><span class="pill good">+1 vente</span></li>
+            <li><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 20h16M6 20V9l6-4 6 4v11"/></svg></div><div class="tx"><b>Nouveau mandat exclusif</b> — Appartement T3, quai de Médine<small>Hier · 149 000 € · M. et Mme Ferrand</small></div><span class="pill info">Exclusif</span></li>
+            <li><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 9V5l6-3 6 3v4M6 9v11h12V9M9 20v-5h6v5"/></svg></div><div class="tx"><b>Estimation réalisée</b> — Maison 127 m², 12 rue des Récollets<small>Hier · fourchette 185–200 k€ · RDV signature jeudi</small></div><span class="pill">À suivre</span></li>
+            <li><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/></svg></div><div class="tx"><b>3 acquéreurs relancés</b> — biens T3/T4 secteur centre<small>Il y a 2 j · 1 visite calée samedi</small></div><span class="pill">CRM</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ BIENS ============ -->
+      <section class="screen" id="biens">
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="bienSearch" placeholder="Rechercher une adresse, une réf., un propriétaire…"></div>
+          <div class="chips" id="bienChips">
+            <button class="chip on" data-f="all">Tous <span class="c">18</span></button>
+            <button class="chip" data-f="Exclusif">Exclusifs <span class="c">11</span></button>
+            <button class="chip" data-f="Simple">Simples <span class="c">7</span></button>
+            <button class="chip" data-f="Compromis">Sous compromis <span class="c">4</span></button>
+            <button class="chip" data-f="Vendu">Vendus <span class="c">3</span></button>
+          </div>
+        </div>
+        <div class="grid bienscol" id="bienGrid"></div>
+      </section>
+
+      <!-- ============ CRM ============ -->
+      <section class="screen" id="crm">
+        <div class="subtabs" id="crmTabs">
+          <button class="subtab on" data-t="vendeurs">Vendeurs</button>
+          <button class="subtab" data-t="acquereurs">Acquéreurs</button>
+          <button class="subtab" data-t="prospects">Prospects</button>
+        </div>
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input placeholder="Rechercher un contact…"></div>
+          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ajouter</button>
+        </div>
+        <div class="card pad" style="padding:8px 8px 4px">
+          <table class="ctable"><thead id="crmHead"></thead><tbody id="crmBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- ============ ESTIMATION ============ -->
+      <section class="screen" id="estimation">
+        <div class="estwrap">
+          <div class="steps">
+            <div class="card estcard">
+              <h3><span class="stepnum">1</span> Adresse du bien</h3>
+              <div class="addrbox">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+                <div><div class="a">12 rue des Récollets</div><small>58000 Nevers · parcelle AB-0214 · section AB</small></div>
+                <button class="edit">Modifier</button>
+              </div>
+              <div class="compnote" style="background:var(--good-bg);color:var(--good);margin-top:12px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                Cadastre &amp; DVF chargés automatiquement pour cette adresse
+              </div>
+            </div>
+
+            <div class="card estcard">
+              <h3><span class="stepnum">2</span> Caractéristiques</h3>
+              <div class="fields">
+                <div class="field"><label>Type de bien</label>
+                  <select id="fType"><option>Maison</option><option>Appartement</option></select></div>
+                <div class="field"><label>Surface habitable (m²)</label>
+                  <input class="inp" id="fSurf" type="number" value="127"></div>
+                <div class="field"><label>Terrain (m²)</label>
+                  <input class="inp" id="fTerr" type="number" value="680"></div>
+                <div class="field"><label>Pièces</label>
+                  <input class="inp" type="number" value="5"></div>
+                <div class="field"><label>Chambres</label>
+                  <input class="inp" type="number" value="4"></div>
+                <div class="field"><label>Année (approx.)</label>
+                  <input class="inp" type="number" value="1972"></div>
+              </div>
+              <div style="margin-top:15px">
+                <label style="font-size:12px;color:var(--ink-2);font-weight:560;display:block;margin-bottom:7px">Emplacement</label>
+                <div class="segrow" id="segLoc" data-key="loc">
+                  <button class="seg" data-v="-1">Quartier moyen</button>
+                  <button class="seg on" data-v="0">Bon secteur</button>
+                  <button class="seg" data-v="1">Emplacement recherché</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card estcard">
+              <h3><span class="stepnum">3</span> Ventes comparables · DVF</h3>
+              <div class="radiobar" id="rayonBar">
+                <button data-r="300">Rayon 300 m</button>
+                <button class="on" data-r="500">500 m</button>
+                <button data-r="1000">1 km</button>
+              </div>
+              <div style="overflow-x:auto">
+                <table class="comptable"><thead>
+                  <tr><th>Adresse · date</th><th>Surface</th><th>Prix vendu</th><th>€/m²</th></tr>
+                </thead><tbody id="compBody"></tbody></table>
+              </div>
+              <div class="compnote">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+                <span id="compSummary">Médiane retenue : <b>1 780 €/m²</b> sur 6 ventes comparables (2 biens atypiques écartés).</span>
+              </div>
+            </div>
+
+            <div class="card estcard">
+              <h3><span class="stepnum">4</span> Ajustements d'expert</h3>
+              <div class="adj">
+                <div class="adjrow">
+                  <label>État intérieur <b id="lbEtat" class="pos">+3 %</b></label>
+                  <input type="range" id="rEtat" min="-12" max="12" value="3">
+                </div>
+                <div class="adjrow">
+                  <label>Qualité du DPE <b id="lbDpe" class="pos">+2 %</b></label>
+                  <input type="range" id="rDpe" min="-8" max="8" value="2">
+                </div>
+                <div class="adjrow">
+                  <label>Terrain / exposition <b id="lbTerr" class="pos">+2 %</b></label>
+                  <input type="range" id="rTerrAdj" min="-6" max="10" value="2">
+                </div>
+                <div class="adjrow">
+                  <label>Travaux à prévoir <b id="lbTrav" class="neg">0 €</b></label>
+                  <input type="range" id="rTrav" min="-40000" max="0" step="2000" value="0">
+                </div>
+                <div class="toggles" id="tgls">
+                  <div class="tgl on" data-eur="8000"><span class="bx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span>Garage · +8 000 €</div>
+                  <div class="tgl" data-eur="12000"><span class="bx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span>Dépendances · +12 000 €</div>
+                  <div class="tgl" data-eur="16000"><span class="bx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span>Piscine · +16 000 €</div>
+                  <div class="tgl" data-pct="-5"><span class="bx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span>Rue passante · −5 %</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card estcard">
+              <h3><span class="stepnum">5</span> Environnement &amp; risques · Géorisques</h3>
+              <div class="risks">
+                <div class="risk"><div class="ic" style="background:var(--warn-bg);color:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 2 20h20L12 3ZM12 10v4M12 17h.01"/></svg></div><div><b>Retrait-gonflement argiles</b><small>Aléa moyen</small></div></div>
+                <div class="risk"><div class="ic" style="background:var(--good-bg);color:var(--good)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><b>Inondation</b><small>Hors zone repérée</small></div></div>
+                <div class="risk"><div class="ic" style="background:var(--info-bg);color:var(--info)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/></svg></div><div><b>Sismicité</b><small>Zone 1 · très faible</small></div></div>
+                <div class="risk"><div class="ic" style="background:var(--good-bg);color:var(--good)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><b>Radon</b><small>Potentiel faible · cat. 1</small></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RESULT PANEL -->
+          <div class="card result">
+            <div class="hd">
+              <div class="eyebrow">Valeur de marché estimée</div>
+              <div class="fourchette"><b id="rLow">185 000 €</b> — <b id="rHigh">200 000 €</b></div>
+            </div>
+            <div class="reco">
+              <div class="eyebrow">Prix de mise en vente conseillé</div>
+              <div class="big tnum" id="rReco">199 000 €</div>
+              <div class="pm2 tnum" id="rPm2">soit 1 567 €/m² · marché stable</div>
+            </div>
+            <div class="gauge">
+              <div class="track"><div class="mk" id="gaugeMk" style="left:66%"></div></div>
+              <div class="lbls"><span>Vendre vite</span><span>Marché</span><span>Optimiser</span></div>
+            </div>
+            <div class="rbreak" id="rBreak"></div>
+            <div class="foot">
+              <button class="btn gold" id="genBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg>
+                Générer mon dossier d'estimation
+              </button>
+              <small>PDF GBP · comparables, carte, analyse &amp; argumentaire</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ AGENCE ============ -->
+      <section class="screen" id="agence">
+        <div class="sectitle" style="margin-top:4px"><h2>Challenge du trimestre</h2><div class="grow"></div><span class="pill info dot">T3 · en cours</span></div>
+        <div class="podium">
+          <div class="pod p2"><div class="medal">🥈</div><div class="av" style="background:linear-gradient(135deg,#7aa,#488)">SL</div><div class="nm">Sophie Lemaire</div><div class="role">Négociatrice</div><div class="pts tnum">1 240<small> pts</small></div></div>
+          <div class="pod p1"><div class="medal">🥇</div><div class="av" style="background:linear-gradient(135deg,#C79A4E,#9c6f22)">JM</div><div class="nm">Jimmy Marchand</div><div class="role">Négociateur</div><div class="pts tnum">1 610<small> pts</small></div></div>
+          <div class="pod p3"><div class="medal">🥉</div><div class="av" style="background:linear-gradient(135deg,#b78,#946)">KR</div><div class="nm">Karim Rousseau</div><div class="role">Négociateur</div><div class="pts tnum">980<small> pts</small></div></div>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1.4fr 1fr;gap:16px">
+          <div class="card pad">
+            <div class="eyebrow" style="margin-bottom:6px">Classement complet</div>
+            <table class="lb"><tbody>
+              <tr><td class="rk">1</td><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#C79A4E,#9c6f22)">JM</div><b>Jimmy Marchand</b></div></td><td class="barcell"><div class="bar"><i style="width:100%"></i></div></td><td class="ptcell tnum">1 610</td></tr>
+              <tr><td class="rk">2</td><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#7aa,#488)">SL</div><b>Sophie Lemaire</b></div></td><td class="barcell"><div class="bar"><i style="width:77%"></i></div></td><td class="ptcell tnum">1 240</td></tr>
+              <tr><td class="rk">3</td><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#b78,#946)">KR</div><b>Karim Rousseau</b></div></td><td class="barcell"><div class="bar"><i style="width:61%"></i></div></td><td class="ptcell tnum">980</td></tr>
+              <tr><td class="rk">4</td><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#6a9,#385)">EM</div><b>Élodie Mercier</b></div></td><td class="barcell"><div class="bar"><i style="width:48%"></i></div></td><td class="ptcell tnum">760</td></tr>
+            </tbody></table>
+          </div>
+          <div class="card pad">
+            <div class="eyebrow" style="margin-bottom:12px">Barème · points par action</div>
+            <div class="ptsgrid">
+              <div class="ptcard"><div class="p">+20</div><small>Estimation</small></div>
+              <div class="ptcard"><div class="p">+60</div><small>Mandat exclusif</small></div>
+              <div class="ptcard"><div class="p">+30</div><small>Mandat simple</small></div>
+              <div class="ptcard"><div class="p">+40</div><small>Visite</small></div>
+              <div class="ptcard"><div class="p">+80</div><small>Compromis</small></div>
+              <div class="ptcard"><div class="p">+150</div><small>Vente actée</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sectitle"><h2>Performance de l'agence · 2026</h2></div>
+        <div class="grid kpigrid">
+          <div class="card kpi"><div class="lab">CA équipe</div><div class="val tnum">642 k<span class="unit">€</span></div><div class="meta"><span class="trend up">▲ 18 %</span> vs 2025</div></div>
+          <div class="card kpi"><div class="lab">Mandats en portefeuille</div><div class="val tnum">54</div><div class="meta">31 exclusifs · 57 %</div></div>
+          <div class="card kpi"><div class="lab">Ventes actées</div><div class="val tnum">41</div><div class="meta">délai moyen 78 j</div></div>
+          <div class="card kpi"><div class="lab">Taux exclusivité</div><div class="val tnum">57 <span class="unit">%</span></div><div class="meta"><span class="trend up">▲ 6 pts</span> objectif 60 %</div></div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- MOBILE NAV -->
+    <nav class="mobnav" id="mobnav">
+      <button class="active" data-go="cockpit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Cockpit</button>
+      <button data-go="biens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Biens</button>
+      <button data-go="estimation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V9l6-4 6 4v11M9.5 13h5"/></svg>Estimer</button>
+      <button data-go="crm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/></svg>Contacts</button>
+      <button data-go="agence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg>Agence</button>
+    </nav>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  "use strict";
+  /* =================== CONFIG SUPABASE ===================
+     Colle l'URL du projet et la clé « anon » (publique — aucun risque à l'exposer).
+     Tant que ces deux champs sont vides, l'app tourne sur les données de démonstration
+     ci-dessous ; dès qu'ils sont remplis et que les tables existent, elle passe en live. */
+  var SB_URL = '';
+  var SB_KEY = '';
+  var sb = (SB_URL && SB_KEY && window.supabase) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+
+  var houseSVG='<svg class="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>';
+  var checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  var euro=function(n){return Math.round(n).toLocaleString('fr-FR')+' €';};
+
+  /* ---------- theme ---------- */
+  var root=document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    if(!cur){cur=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
+    root.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  });
+
+  /* ---------- navigation ---------- */
+  var titles={cockpit:['Cockpit','Lundi 11 août 2026 · vue du mois'],
+    biens:['Portefeuille de biens','18 biens · Nevers et agglomération'],
+    crm:['Contacts','Vendeurs, acquéreurs & prospects'],
+    estimation:['Estimation','12 rue des Récollets, Nevers · en cours'],
+    agence:['Agence','Vue consolidée · 4 négociateurs']};
+  function go(id){
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('active',s.id===id);});
+    document.querySelectorAll('.rail .navitem').forEach(function(b){b.classList.toggle('active',b.dataset.go===id);});
+    document.querySelectorAll('.mobnav button').forEach(function(b){b.classList.toggle('active',b.dataset.go===id);});
+    document.getElementById('pgTitle').textContent=titles[id][0];
+    document.getElementById('pgSub').textContent=titles[id][1];
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
+
+  /* ---------- biens data ---------- */
+  var dpeColors={A:'#2C9F5B',B:'#5AB84F',C:'#A9C93E',D:'#F1C40F',E:'#E88A2E',F:'#E15A2B',G:'#D33A2C'};
+  var facades=['linear-gradient(160deg,#5b7b8c,#39525f)','linear-gradient(160deg,#8a7a68,#5c4f42)',
+    'linear-gradient(160deg,#6e8b7a,#42594c)','linear-gradient(160deg,#8c7f9b,#544a63)',
+    'linear-gradient(160deg,#a08258,#6b543a)','linear-gradient(160deg,#5f7a97,#3a4d63)'];
+  var biens=[
+    {ad:'12 rue des Récollets',tw:'Nevers · centre',px:199000,m2:127,ch:4,ty:'Maison',st:'Exclusif',dpe:'D',ref:'GBP-2041',
+     owner:'M. et Mme Delaunay',terr:680,an:1972,gar:true,acq:3,
+     hist:[['Mandat exclusif signé','2 août 2026'],['Reportage photo réalisé','4 août 2026'],['Diffusion Leboncoin + SeLoger','5 août 2026'],['1re visite programmée','samedi 15 août']]},
+    {ad:'34 rue de Charleville',tw:'Nevers · Banlay',px:189000,m2:104,ch:3,ty:'Maison',st:'Compromis',dpe:'C',ref:'GBP-2033',
+     owner:'Succession Morel',terr:410,an:1985,gar:true,acq:0,
+     hist:[['Mandat exclusif','12 mai 2026'],['Offre acceptée · 189 000 €','28 juil. 2026'],['Compromis signé','10 août 2026']]},
+    {ad:'Quai de Médine, T3',tw:'Nevers · bords de Loire',px:149000,m2:68,ch:2,ty:'Appartement',st:'Exclusif',dpe:'C',ref:'GBP-2048',
+     owner:'M. et Mme Ferrand',terr:0,an:2004,gar:true,acq:5,
+     hist:[['Estimation réalisée','8 août 2026'],['Mandat exclusif signé','10 août 2026']]},
+    {ad:'7 rue du Commerce, T2',tw:'Nevers · centre',px:96000,m2:44,ch:1,ty:'Appartement',st:'Simple',dpe:'E',ref:'GBP-2019',
+     owner:'Mme Aubry',terr:0,an:1968,gar:false,acq:2,
+     hist:[['Mandat simple','20 juin 2026'],['Baisse de prix -4 000 €','1 août 2026']]},
+    {ad:'2 impasse des Vignes',tw:'Coulanges-lès-Nevers',px:264000,m2:151,ch:5,ty:'Maison',st:'Exclusif',dpe:'B',ref:'GBP-2044',
+     owner:'M. Ollivier',terr:920,an:2011,gar:true,acq:4,
+     hist:[['Estimation','15 juil. 2026'],['Mandat exclusif','22 juil. 2026'],['3 visites réalisées','août 2026']]},
+    {ad:'18 avenue Colbert',tw:'Nevers · Saint-Genest',px:172000,m2:96,ch:3,ty:'Maison',st:'Simple',dpe:'D',ref:'GBP-2027',
+     owner:'M. et Mme Renard',terr:520,an:1979,gar:true,acq:1,
+     hist:[['Mandat simple','3 juil. 2026'],['1re visite','19 juil. 2026']]},
+    {ad:'5 place Carnot, T4',tw:'Nevers · centre',px:158000,m2:88,ch:3,ty:'Appartement',st:'Compromis',dpe:'C',ref:'GBP-2015',
+     owner:'M. Barbier',terr:0,an:1930,gar:false,acq:0,
+     hist:[['Mandat exclusif','2 juin 2026'],['Compromis signé','5 août 2026']]},
+    {ad:'9 chemin de Marzy',tw:'Marzy',px:229000,m2:134,ch:4,ty:'Maison',st:'Exclusif',dpe:'C',ref:'GBP-2039',
+     owner:'Mme Dupuis',terr:750,an:1998,gar:true,acq:2,
+     hist:[['Estimation','28 juin 2026'],['Mandat exclusif','5 juil. 2026']]},
+    {ad:'22 rue Bovet',tw:'Nevers · Mouësse',px:118000,m2:72,ch:2,ty:'Maison',st:'Vendu',dpe:'E',ref:'GBP-1998',
+     owner:'M. Girard',terr:300,an:1962,gar:false,acq:0,
+     hist:[['Mandat simple','avr. 2026'],['Vente actée · 118 000 €','24 juil. 2026']]}
+  ];
+  function statusPill(s){var c={Exclusif:'info',Simple:'',Compromis:'warn',Vendu:'good'}[s]||'';
+    return '<span class="pill '+c+'">'+s+'</span>';}
+  function renderBiens(filter,q){
+    var grid=document.getElementById('bienGrid');grid.innerHTML='';
+    var list=biens.filter(function(b){
+      var okF=filter==='all'||b.st===filter;
+      var okQ=!q||(b.ad+' '+b.tw+' '+b.owner+' '+b.ref).toLowerCase().indexOf(q.toLowerCase())>-1;
+      return okF&&okQ;});
+    if(!list.length){grid.innerHTML='<div style="color:var(--ink-3);padding:30px 4px">Aucun bien ne correspond.</div>';return;}
+    list.forEach(function(b,i){
+      var idx=biens.indexOf(b);
+      var el=document.createElement('div');el.className='card bien';el.dataset.i=idx;
+      el.innerHTML=
+        '<div class="ph" style="background:'+facades[idx%facades.length]+'">'+houseSVG+
+          '<div class="top">'+statusPill(b.st)+'<span class="dpe" style="background:'+dpeColors[b.dpe]+'">DPE '+b.dpe+'</span></div>'+
+          '<div class="price tnum">'+euro(b.px)+'</div></div>'+
+        '<div class="body"><div><div class="addr">'+b.ad+'</div><div class="town">'+b.tw+'</div></div>'+
+          '<div class="specs"><span>'+b.ty+'</span>'+
+          '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 21V8l9-5 9 5v13"/></svg>'+b.m2+' m²</span>'+
+          '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 18v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5M3 15h18M6 11V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/></svg>'+b.ch+' ch.</span></div></div>';
+      el.addEventListener('click',function(){openDrawer(idx);});
+      grid.appendChild(el);
+    });
+  }
+  document.getElementById('bienChips').addEventListener('click',function(e){
+    var c=e.target.closest('.chip');if(!c)return;
+    this.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');
+    renderBiens(c.dataset.f,document.getElementById('bienSearch').value);
+  });
+  document.getElementById('bienSearch').addEventListener('input',function(){
+    var f=document.querySelector('#bienChips .chip.on').dataset.f;renderBiens(f,this.value);
+  });
+  renderBiens('all','');
+
+  /* ---------- drawer ---------- */
+  var scrim=document.getElementById('scrim'),drawer=document.getElementById('drawer');
+  function openDrawer(i){
+    var b=biens[i];
+    drawer.innerHTML=
+      '<div class="dhead" style="background:'+facades[i%facades.length]+'">'+houseSVG+
+        '<button class="dclose" id="dclose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>'+
+        '<div class="status">'+statusPill(b.st)+'</div>'+
+        '<div class="price tnum">'+euro(b.px)+'</div></div>'+
+      '<div class="dbody">'+
+        '<div style="display:flex;align-items:center;gap:8px"><span class="pill">Réf. '+b.ref+'</span><span class="dpe" style="background:'+dpeColors[b.dpe]+'">DPE '+b.dpe+'</span></div>'+
+        '<h2 style="margin-top:10px">'+b.ad+'</h2><div class="town">'+b.tw+' · '+b.ty+'</div>'+
+        '<div class="specrow">'+
+          '<div class="specbox"><b class="tnum">'+b.m2+'</b><small>m² habitables</small></div>'+
+          '<div class="specbox"><b class="tnum">'+(b.terr||'—')+'</b><small>m² terrain</small></div>'+
+          '<div class="specbox"><b class="tnum">'+b.ch+'</b><small>chambres</small></div>'+
+          '<div class="specbox"><b class="tnum">'+b.an+'</b><small>année</small></div></div>'+
+        '<div class="dsec"><div class="eyebrow">Propriétaire &amp; mandat</div>'+
+          '<div class="kv"><span>Vendeur</span><b>'+b.owner+'</b></div>'+
+          '<div class="kv"><span>Type de mandat</span><b>'+b.st+'</b></div>'+
+          '<div class="kv"><span>Prix / m²</span><b class="tnum">'+euro(b.px/b.m2)+'/m²</b></div>'+
+          '<div class="kv"><span>Garage</span><b>'+(b.gar?'Oui':'Non')+'</b></div></div>'+
+        '<div class="dsec"><div class="eyebrow">Acquéreurs intéressés · '+b.acq+'</div>'+
+          (b.acq?acquerersHtml(b.acq):'<div style="color:var(--ink-3);font-size:13px">Aucun acquéreur positionné pour l\'instant.</div>')+'</div>'+
+        '<div class="dsec"><div class="eyebrow">Historique</div><ul class="tl">'+
+          b.hist.map(function(h){return '<li><span class="dot"></span><div class="tx"><b>'+h[0]+'</b><small>'+h[1]+'</small></div></li>';}).join('')+
+          '</ul></div>'+
+        '<button class="btn pri" style="width:100%;justify-content:center">Ouvrir la fiche complète</button>'+
+      '</div>';
+    document.getElementById('dclose').addEventListener('click',closeDrawer);
+    scrim.classList.add('open');drawer.classList.add('open');
+  }
+  var acqNames=[['Camille Petit','T3/T4 · budget 160 k€','#6a9'],['Thomas Girard','Maison ≤ 200 k€','#7aa'],['Léa Fontaine','Investissement locatif','#b78'],['Hugo Blanc','Primo-accédant','#a86'],['Nadia Simon','Maison avec jardin','#699']];
+  function acquerersHtml(n){var out='';for(var k=0;k<Math.min(n,4);k++){var a=acqNames[k%acqNames.length];
+    out+='<div class="acq"><div class="av" style="background:'+a[2]+'">'+a[0].split(' ').map(function(w){return w[0];}).join('')+'</div><div class="g"><b>'+a[0]+'</b><small>'+a[1]+'</small></div><span class="pill info">Match</span></div>';}
+    return out;}
+  function closeDrawer(){scrim.classList.remove('open');drawer.classList.remove('open');}
+  scrim.addEventListener('click',closeDrawer);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
+
+  /* ---------- CRM ---------- */
+  var crm={
+    vendeurs:{head:['Vendeur','Bien','Mandat','Dernière relance','Prochaine action'],rows:[
+      ['Delaunay','#6a9','12 rue des Récollets','Exclusif','il y a 3 j','Signature RDV jeudi'],
+      ['Ferrand','#7aa','Quai de Médine T3','Exclusif','hier','Valider les photos'],
+      ['Ollivier','#b78','2 impasse des Vignes','Exclusif','il y a 5 j','Faire un retour visites'],
+      ['Renard','#a86','18 avenue Colbert','Simple','il y a 8 j','Proposer l\'exclusivité'],
+      ['Aubry','#699','7 rue du Commerce','Simple','il y a 12 j','Point sur baisse de prix']
+    ]},
+    acquereurs:{head:['Acquéreur','Recherche','Budget','Dernier contact','Prochaine action'],rows:[
+      ['Camille Petit','#6a9','T3/T4 centre','160 000 €','hier','Envoyer 2 biens correspondants'],
+      ['Thomas Girard','#7aa','Maison ≤ 200 k€','200 000 €','il y a 2 j','Visite samedi 15/08'],
+      ['Léa Fontaine','#b78','Locatif rentable','120 000 €','il y a 4 j','Relancer T2 rue Bovet'],
+      ['Hugo Blanc','#a86','Primo-accédant','140 000 €','il y a 6 j','Appeler courtier']
+    ]},
+    prospects:{head:['Prospect','Origine','Statut','Dernier contact','Prochaine action'],rows:[
+      ['Famille Lambert','#6a9','Estimation en ligne','Chaud','il y a 1 j','Caler RDV estimation'],
+      ['M. Chevalier','#7aa','Recommandation','Tiède','il y a 3 j','Rappeler mardi'],
+      ['Mme Roy','#b78','Porte-à-porte','À qualifier','il y a 7 j','Envoyer plaquette GBP'],
+      ['SCI Vauban','#a86','Réseau','Chaud','il y a 2 j','Proposer estimation loc.']
+    ]}
+  };
+  function renderCrm(tab){
+    var d=crm[tab];
+    document.getElementById('crmHead').innerHTML='<tr>'+d.head.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr>';
+    document.getElementById('crmBody').innerHTML=d.rows.map(function(r){
+      var initials=r[0].split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var cls={'Exclusif':'info','Chaud':'crit','Tiède':'warn'}[r[3]]||'';
+      var col3=(tab==='acquereurs')?('<b class="tnum">'+r[3]+'</b>'):('<span class="pill '+cls+'">'+r[3]+'</span>');
+      return '<tr><td><div class="who"><div class="av" style="background:'+r[1]+'">'+initials+'</div>'+
+        '<div><b>'+r[0]+'</b></div></div></td>'+
+        '<td>'+r[2]+'</td>'+
+        '<td>'+col3+'</td>'+
+        '<td class="relance">'+r[4]+'</td>'+
+        '<td class="next">'+r[5]+' →</td></tr>';
+    }).join('');
+  }
+  document.getElementById('crmTabs').addEventListener('click',function(e){
+    var t=e.target.closest('.subtab');if(!t)return;
+    this.querySelectorAll('.subtab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
+    renderCrm(t.dataset.t);
+  });
+  renderCrm('vendeurs');
+
+  /* ---------- ESTIMATION engine ---------- */
+  var comps={
+    300:[['8 rue des Récollets','fév. 2026',118,208000,false],['3 rue Mirabeau','nov. 2025',132,224000,false],
+      ['21 rue des Récollets','sep. 2025',96,181000,false],['loft atelier, r. Bovet','jan. 2026',210,196000,true]],
+    500:[['8 rue des Récollets','fév. 2026',118,208000,false],['3 rue Mirabeau','nov. 2025',132,224000,false],
+      ['21 rue des Récollets','sep. 2025',96,181000,false],['14 av. Colbert','mars 2026',140,246000,false],
+      ['6 rue Mouësse','déc. 2025',110,199000,false],['2 place Carnot','oct. 2025',88,168000,false],
+      ['loft atelier, r. Bovet','jan. 2026',210,196000,true],['bien à rénover, r. Bovet','août 2025',124,132000,true]],
+    1000:[['8 rue des Récollets','fév. 2026',118,208000,false],['3 rue Mirabeau','nov. 2025',132,224000,false],
+      ['21 rue des Récollets','sep. 2025',96,181000,false],['14 av. Colbert','mars 2026',140,246000,false],
+      ['6 rue Mouësse','déc. 2025',110,199000,false],['2 place Carnot','oct. 2025',88,168000,false],
+      ['9 rue de Charleville','avr. 2026',150,255000,false],['4 quai de Médine','fév. 2026',72,158000,false],
+      ['loft atelier, r. Bovet','jan. 2026',210,196000,true],['grange, Coulanges','juil. 2025',300,145000,true]]
+  };
+  var state={loc:0,rayon:500,etat:3,dpe:2,terr:2,trav:0,tgls:{}};
+  function median(arr){arr=arr.slice().sort(function(a,b){return a-b;});var m=Math.floor(arr.length/2);
+    return arr.length%2?arr[m]:(arr[m-1]+arr[m])/2;}
+  function renderComps(){
+    var rows=comps[state.rayon];var body=document.getElementById('compBody');
+    var kept=[];
+    body.innerHTML=rows.map(function(r){
+      var pm2=r[3]/r[2];if(!r[4])kept.push(pm2);
+      return '<tr class="'+(r[4]?'out':'')+'"><td>'+r[0]+' · '+r[1]+'</td><td>'+r[2]+' m²</td><td>'+euro(r[3])+'</td><td>'+Math.round(pm2).toLocaleString('fr-FR')+'</td></tr>';
+    }).join('');
+    var med=median(kept);
+    document.getElementById('compSummary').innerHTML='Médiane retenue : <b>'+Math.round(med).toLocaleString('fr-FR')+' €/m²</b> sur '+kept.length+' ventes comparables ('+(rows.length-kept.length)+' biens atypiques écartés).';
+    state.baseM2=med;
+    compute();
+  }
+  function compute(){
+    var surf=parseFloat(document.getElementById('fSurf').value)||127;
+    var base=state.baseM2*surf;
+    var pctLoc=state.loc*4;            // -4 / 0 / +4 %
+    var pct=state.etat+state.dpe+state.terr+pctLoc;
+    var toggPct=0,toggEur=0;
+    for(var k in state.tgls){if(state.tgls[k]){var el=state.tgls[k];
+      if(el.pct)toggPct+=parseFloat(el.pct);if(el.eur)toggEur+=parseFloat(el.eur);}}
+    pct+=toggPct;
+    var adjusted=base*(1+pct/100)+toggEur+parseFloat(state.trav);
+    var low=adjusted*0.955, high=adjusted*1.045;
+    var reco=Math.round(adjusted*1.02/1000)*1000;
+    document.getElementById('rLow').textContent=euro(Math.round(low/1000)*1000);
+    document.getElementById('rHigh').textContent=euro(Math.round(high/1000)*1000);
+    document.getElementById('rReco').textContent=euro(reco);
+    document.getElementById('rPm2').textContent='soit '+Math.round(reco/surf).toLocaleString('fr-FR')+' €/m² · marché stable';
+    // gauge position: reco within [low,high]
+    var pos=Math.max(6,Math.min(94,(reco-low)/(high-low)*100));
+    document.getElementById('gaugeMk').style.left=pos+'%';
+    // breakdown
+    var bd=[['Base marché ('+Math.round(state.baseM2).toLocaleString('fr-FR')+' €/m² × '+surf+' m²)',base,false],
+      ['Emplacement',base*pctLoc/100,pctLoc>=0],
+      ['État · DPE · terrain',base*(state.etat+state.dpe+state.terr)/100,(state.etat+state.dpe+state.terr)>=0]];
+    if(toggEur||toggPct)bd.push(['Équipements & environnement',base*toggPct/100+toggEur,(base*toggPct/100+toggEur)>=0]);
+    if(parseFloat(state.trav))bd.push(['Travaux à prévoir',parseFloat(state.trav),false]);
+    document.getElementById('rBreak').innerHTML=bd.map(function(x,i){
+      var v=Math.round(x[1]);var sign=i===0?'':(v>0?'+':'');
+      var cls=i===0?'':(v>=0?'pos':'neg');
+      return '<div class="li"><span>'+x[0]+'</span><b class="'+cls+' tnum">'+sign+v.toLocaleString('fr-FR')+' €</b></div>';
+    }).join('');
+  }
+  // rayon
+  document.getElementById('rayonBar').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    state.rayon=parseInt(b.dataset.r,10);renderComps();
+  });
+  // location seg
+  document.getElementById('segLoc').addEventListener('click',function(e){
+    var b=e.target.closest('.seg');if(!b)return;
+    this.querySelectorAll('.seg').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    state.loc=parseInt(b.dataset.v,10);compute();
+  });
+  // sliders
+  function bindSlider(id,key,fmt,lbl){
+    var el=document.getElementById(id);
+    el.addEventListener('input',function(){
+      state[key]=parseFloat(el.value);
+      var lb=document.getElementById(lbl);var v=parseFloat(el.value);
+      lb.textContent=fmt(v);lb.className=v>0?'pos':(v<0?'neg':'');
+      compute();
+    });
+  }
+  bindSlider('rEtat','etat',function(v){return (v>0?'+':'')+v+' %';},'lbEtat');
+  bindSlider('rDpe','dpe',function(v){return (v>0?'+':'')+v+' %';},'lbDpe');
+  bindSlider('rTerrAdj','terr',function(v){return (v>0?'+':'')+v+' %';},'lbTerr');
+  bindSlider('rTrav','trav',function(v){return v.toLocaleString('fr-FR')+' €';},'lbTrav');
+  // toggles
+  document.getElementById('tgls').addEventListener('click',function(e){
+    var t=e.target.closest('.tgl');if(!t)return;
+    t.classList.toggle('on');
+    var key=t.dataset.eur?('e'+t.dataset.eur):('p'+t.dataset.pct);
+    state.tgls[key]=t.classList.contains('on')?{eur:t.dataset.eur,pct:t.dataset.pct}:false;
+    compute();
+  });
+  document.getElementById('fSurf').addEventListener('input',compute);
+  // init toggles state (garage on by default)
+  document.querySelectorAll('#tgls .tgl.on').forEach(function(t){
+    var key=t.dataset.eur?('e'+t.dataset.eur):('p'+t.dataset.pct);
+    state.tgls[key]={eur:t.dataset.eur,pct:t.dataset.pct};
+  });
+  renderComps();
+
+  // generate dossier feedback (+ enregistrement en base si configurée)
+  document.getElementById('genBtn').addEventListener('click',function(){
+    var b=this;var old=b.innerHTML;
+    if(sb){
+      try{
+        var num=function(id){return parseInt(document.getElementById(id).textContent.replace(/[^0-9]/g,''),10)||null;};
+        sb.from('estimations').insert({
+          adresse:'12 rue des Récollets, 58000 Nevers',
+          type:document.getElementById('fType').value,
+          surface:parseInt(document.getElementById('fSurf').value,10)||null,
+          valeur_basse:num('rLow'), valeur_haute:num('rHigh'), prix_conseille:num('rReco')
+        });
+      }catch(e){ console.warn('[GBP] enregistrement estimation impossible', e); }
+    }
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> Dossier généré · PDF prêt';
+    b.style.background='var(--good)';b.style.borderColor='var(--good)';b.style.color='#fff';
+    setTimeout(function(){b.innerHTML=old;b.style.background='';b.style.borderColor='';b.style.color='';},2600);
+  });
+
+  /* =================== SYNC SUPABASE (repli démo automatique) =================== */
+  function mapBien(r){
+    return {ad:r.adresse, tw:r.secteur, px:r.prix, m2:r.surface, ch:r.chambres, ty:r.type,
+      st:r.statut, dpe:r.dpe, ref:r.reference, owner:r.proprietaire, terr:r.terrain,
+      an:r.annee, gar:!!r.garage, acq:r.nb_acquereurs||0, hist:r.historique||[]};
+  }
+  async function syncBiens(){
+    if(!sb) return;                       // pas de config → on reste sur la démo
+    try{
+      var res=await sb.from('biens').select('*').order('prix',{ascending:false});
+      if(res.error) throw res.error;
+      if(res.data && res.data.length){
+        biens=res.data.map(mapBien);
+        var f=document.querySelector('#bienChips .chip.on');
+        renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
+      }
+    }catch(e){ console.warn('[GBP] Supabase indisponible → données de démonstration', e); }
+  }
+  syncBiens();
+})();
+</script>
+</body>
+</html>
