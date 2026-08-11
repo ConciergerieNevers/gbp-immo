@@ -235,6 +235,11 @@
   .bien{overflow:hidden;cursor:pointer;transition:transform .18s,box-shadow .18s;display:flex;flex-direction:column}
   .bien:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
   .bien .ph{height:148px;position:relative;display:grid;place-items:center;overflow:hidden}
+  .ph-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .ph-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.42),transparent 42%)}
+  .dphoto-btn{position:absolute;top:14px;right:58px;width:36px;height:36px;border-radius:50%;border:0;
+    background:rgba(255,255,255,.92);color:#222;display:grid;place-items:center;cursor:pointer;z-index:2}
+  .dphoto-btn svg{width:17px;height:17px}
   .bien .ph svg.house{width:60px;height:60px;opacity:.5;color:#fff}
   .bien .ph .top{position:absolute;top:11px;left:11px;right:11px;display:flex;justify-content:space-between;align-items:flex-start}
   .bien .ph .price{position:absolute;bottom:11px;left:13px;color:#fff;font-weight:720;font-size:19px;
@@ -285,6 +290,19 @@
   .addrbox svg{width:20px;height:20px;color:var(--brand);flex:none}
   .addrbox .a{font-weight:640;font-size:15px} .addrbox small{color:var(--ink-3);font-size:12.5px}
   .addrbox .edit{margin-left:auto;color:var(--brand);font-size:13px;font-weight:560;background:none;border:0}
+  .photobox{display:block;position:relative;margin-top:12px;border:1.5px dashed var(--line-2);border-radius:12px;
+    overflow:hidden;cursor:pointer;background:var(--surface-2)}
+  .photobox:hover{border-color:var(--brand)}
+  .photo-empty{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;padding:22px 16px;color:var(--ink-2)}
+  .photo-empty svg{width:30px;height:30px;color:var(--brand);margin-bottom:4px}
+  .photo-empty b{font-size:14px;color:var(--ink);font-weight:600}
+  .photo-empty small{font-size:12px;color:var(--ink-3)}
+  .photobox img{display:block;width:100%;height:190px;object-fit:cover}
+  .photobox img[hidden]{display:none}
+  .photo-remove{position:absolute;top:9px;right:9px;width:32px;height:32px;border-radius:50%;border:0;
+    background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;cursor:pointer}
+  .photo-remove[hidden]{display:none}
+  .photo-remove svg{width:16px;height:16px}
 
   .fields{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
   .field{display:flex;flex-direction:column;gap:5px}
@@ -518,7 +536,8 @@
   .dhd .dmeta{text-align:right;font-size:12px;color:#23433B;font-weight:640;text-transform:uppercase;letter-spacing:.08em}
   .dhd .dmeta small{display:block;color:#8a938c;font-weight:500;text-transform:none;letter-spacing:0;margin-top:3px;font-size:12px}
   .dtitle{font-size:24px;letter-spacing:-.02em;margin:0 0 2px;color:#16211d}
-  .dsub{color:#56605a;font-size:13.5px;margin-bottom:18px}
+  .dsub{color:#56605a;font-size:13.5px;margin-bottom:14px}
+  .dcover{width:100%;height:62mm;object-fit:cover;border-radius:12px;margin:2px 0 18px;border:1px solid #dbded6;display:block}
   .dspecs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
   .dspec{border:1px solid #dbded6;border-radius:9px;padding:10px 6px;text-align:center}
   .dspec b{display:block;font-size:16px;color:#16211d;font-variant-numeric:tabular-nums}
@@ -743,6 +762,18 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
                 Cadastre &amp; DVF chargés automatiquement pour cette adresse
               </div>
+              <label class="photobox" id="estPhotoBox">
+                <input type="file" accept="image/*" capture="environment" id="estPhotoInput" hidden>
+                <div class="photo-empty" id="estPhotoEmpty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg>
+                  <b>Prendre une photo du bien</b>
+                  <small>Appareil photo ou galerie · apparaîtra sur le dossier PDF</small>
+                </div>
+                <img id="estPhotoImg" alt="Photo du bien" hidden>
+                <button type="button" class="photo-remove" id="estPhotoRemove" title="Retirer la photo" hidden>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </label>
             </div>
 
             <div class="card estcard">
@@ -1035,8 +1066,11 @@
     list.forEach(function(b,i){
       var idx=biens.indexOf(b);
       var el=document.createElement('div');el.className='card bien';el.dataset.i=idx;
+      var phOpen=b.photo
+        ? '<div class="ph"><img class="ph-img" src="'+b.photo+'" alt=""><div class="ph-scrim"></div>'
+        : '<div class="ph" style="background:'+facades[idx%facades.length]+'">'+houseSVG;
       el.innerHTML=
-        '<div class="ph" style="background:'+facades[idx%facades.length]+'">'+houseSVG+
+        phOpen+
           '<div class="top">'+statusPill(b.st)+'<span class="dpe" style="background:'+dpeColors[b.dpe]+'">DPE '+b.dpe+'</span></div>'+
           '<div class="price tnum">'+euro(b.px)+'</div></div>'+
         '<div class="body"><div><div class="addr">'+b.ad+'</div><div class="town">'+b.tw+'</div></div>'+
@@ -1061,9 +1095,14 @@
   var scrim=document.getElementById('scrim'),drawer=document.getElementById('drawer');
   function openDrawer(i){
     var b=biens[i];
+    var dheadOpen=b.photo
+      ? '<div class="dhead"><img class="ph-img" src="'+b.photo+'" alt=""><div class="ph-scrim"></div>'
+      : '<div class="dhead" style="background:'+facades[i%facades.length]+'">'+houseSVG;
     drawer.innerHTML=
-      '<div class="dhead" style="background:'+facades[i%facades.length]+'">'+houseSVG+
+      dheadOpen+
         '<button class="dclose" id="dclose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>'+
+        '<label class="dphoto-btn" title="'+(b.photo?'Changer':'Ajouter')+' la photo"><input type="file" accept="image/*" capture="environment" id="dPhotoInput" hidden>'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg></label>'+
         '<div class="status">'+statusPill(b.st)+'</div>'+
         '<div class="price tnum">'+euro(b.px)+'</div></div>'+
       '<div class="dbody">'+
@@ -1087,6 +1126,11 @@
         '<button class="btn pri" style="width:100%;justify-content:center">Ouvrir la fiche complète</button>'+
       '</div>';
     document.getElementById('dclose').addEventListener('click',closeDrawer);
+    var dphoto=document.getElementById('dPhotoInput');
+    if(dphoto) dphoto.addEventListener('change',function(){
+      var f=this.files&&this.files[0]; if(!f) return;
+      uploadBienPhoto(b,f);
+    });
     scrim.classList.add('open');drawer.classList.add('open');
   }
   var acqNames=[['Camille Petit','T3/T4 · budget 160 k€','#6a9'],['Thomas Girard','Maison ≤ 200 k€','#7aa'],['Léa Fontaine','Investissement locatif','#b78'],['Hugo Blanc','Primo-accédant','#a86'],['Nadia Simon','Maison avec jardin','#699']];
@@ -1094,6 +1138,27 @@
     out+='<div class="acq"><div class="av" style="background:'+a[2]+'">'+a[0].split(' ').map(function(w){return w[0];}).join('')+'</div><div class="g"><b>'+a[0]+'</b><small>'+a[1]+'</small></div><span class="pill info">Match</span></div>';}
     return out;}
   function closeDrawer(){scrim.classList.remove('open');drawer.classList.remove('open');}
+  async function uploadBienPhoto(b, file){
+    toast('Ajout de la photo…');
+    var reader=new FileReader();          // aperçu local immédiat
+    reader.onload=function(e){ b.photo=e.target.result;
+      var f=document.querySelector('#bienChips .chip.on');
+      renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
+      openDrawer(biens.indexOf(b));
+    };
+    reader.readAsDataURL(file);
+    if(!sb || !b.id){ toast('Photo ajoutée (aperçu). Active le Storage pour la conserver.'); return; }
+    try{
+      var ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+      var path=b.id+'.'+ext;
+      var up=await sb.storage.from('biens').upload(path, file, {upsert:true, contentType:file.type});
+      if(up.error) throw up.error;
+      var url=sb.storage.from('biens').getPublicUrl(path).data.publicUrl+'?t='+Date.now();
+      var upd=await sb.from('biens').update({photo_url:url}).eq('id', b.id);
+      if(upd.error) throw upd.error;
+      b.photo=url; toast('Photo enregistrée ✓');
+    }catch(e){ console.warn('[ESTIMAKE] upload photo', e); toast('Storage non configuré — photo en aperçu seulement.'); }
+  }
   scrim.addEventListener('click',closeDrawer);
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
 
@@ -1240,6 +1305,22 @@
   renderComps();
 
   // generate dossier feedback (+ enregistrement en base si configurée)
+  /* ---------- photo du bien (estimation) ---------- */
+  var estPhoto=null;
+  (function(){
+    var input=document.getElementById('estPhotoInput'), img=document.getElementById('estPhotoImg'),
+        empty=document.getElementById('estPhotoEmpty'), rm=document.getElementById('estPhotoRemove');
+    if(!input) return;
+    input.addEventListener('change',function(){
+      var f=this.files&&this.files[0]; if(!f) return;
+      var reader=new FileReader();
+      reader.onload=function(e){ estPhoto=e.target.result; img.src=estPhoto; img.hidden=false; empty.hidden=true; rm.hidden=false; };
+      reader.readAsDataURL(f);
+    });
+    rm.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation();
+      estPhoto=null; input.value=''; img.hidden=true; img.removeAttribute('src'); empty.hidden=false; rm.hidden=true; });
+  })();
+
   /* ---------- construction du dossier PDF ---------- */
   var dLogoSVG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>';
   function buildDossier(){
@@ -1270,6 +1351,7 @@
         '<header class="dhd"><div class="dbrand"><div class="dlogo">'+dLogoSVG+'</div><div><b>ESTIMAKE</b><span>Agence GBP · Nevers</span></div></div>'+
           '<div class="dmeta">Dossier d\'estimation<small>'+dateStr+'</small></div></header>'+
         '<h1 class="dtitle">'+adresse+'</h1><div class="dsub">'+ville+' · '+type+'</div>'+
+        (estPhoto?'<img class="dcover" src="'+estPhoto+'" alt="Photo du bien">':'')+
         '<div class="dspecs">'+spec(g('fSurf').value,'m² habitables')+spec(g('fTerr').value,'m² terrain')+spec(g('fPieces').value,'pièces')+spec(g('fChambres').value,'chambres')+spec(g('fAnnee').value,'année')+'</div>'+
         '<div class="dprice"><div class="dprice-l"><span>Valeur de marché estimée</span><b>'+low+' – '+high+'</b></div>'+
           '<div class="dprice-r"><span>Prix de mise en vente conseillé</span><span class="big">'+reco+'</span><small>'+pm2+'</small></div></div>'+
@@ -1306,7 +1388,7 @@
   function mapBien(r){
     return {ad:r.adresse, tw:r.secteur, px:r.prix, m2:r.surface, ch:r.chambres, ty:r.type,
       st:r.statut, dpe:r.dpe, ref:r.reference, owner:r.proprietaire, terr:r.terrain,
-      an:r.annee, gar:!!r.garage, acq:r.nb_acquereurs||0, hist:r.historique||[]};
+      an:r.annee, gar:!!r.garage, acq:r.nb_acquereurs||0, hist:r.historique||[], photo:r.photo_url||'', id:r.id};
   }
   async function syncBiens(){
     if(!sb) return;                       // pas de config → on reste sur la démo
