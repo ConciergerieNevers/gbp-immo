@@ -289,7 +289,15 @@
   .addrbox{display:flex;align-items:center;gap:11px;background:var(--surface-2);border-radius:11px;padding:13px 15px}
   .addrbox svg{width:20px;height:20px;color:var(--brand);flex:none}
   .addrbox .a{font-weight:640;font-size:15px} .addrbox small{color:var(--ink-3);font-size:12.5px}
-  .addrbox .edit{margin-left:auto;color:var(--brand);font-size:13px;font-weight:560;background:none;border:0}
+  .addrbox .edit{margin-left:auto;color:var(--brand);font-size:13px;font-weight:560;background:none;border:0;cursor:pointer;flex:none}
+  .addrsearch[hidden]{display:none}
+  .addrsug{margin-top:6px;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}
+  .addrsug:empty{display:none}
+  .addrsug button{display:block;width:100%;text-align:left;background:none;border:0;padding:11px 14px;font-size:14px;
+    color:var(--ink);border-top:1px solid var(--line);font-family:inherit;cursor:pointer}
+  .addrsug button:first-child{border-top:0}
+  .addrsug button:hover{background:var(--surface-2)}
+  .addrsug button small{display:block;color:var(--ink-3);font-size:12px;margin-top:1px}
   .photobox{display:block;position:relative;margin-top:12px;border:1.5px dashed var(--line-2);border-radius:12px;
     overflow:hidden;cursor:pointer;background:var(--surface-2)}
   .photobox:hover{border-color:var(--brand)}
@@ -753,10 +761,15 @@
           <div class="steps">
             <div class="card estcard">
               <h3><span class="stepnum">1</span> Adresse du bien</h3>
-              <div class="addrbox">
+              <div class="addrbox" id="addrDisplay">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
-                <div><div class="a">12 rue des Récollets</div><small>58000 Nevers · parcelle AB-0214 · section AB</small></div>
-                <button class="edit">Modifier</button>
+                <div style="min-width:0"><div class="a" id="addrA">12 rue des Récollets</div><small id="addrS">58000 Nevers · sélectionne une adresse réelle</small></div>
+                <button class="edit" id="addrEdit" type="button">Modifier</button>
+              </div>
+              <div class="addrsearch" id="addrSearch" hidden>
+                <div class="search" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>
+                  <input id="addrInput" placeholder="Tape une adresse réelle (n°, rue, ville)…" autocomplete="off"></div>
+                <div class="addrsug" id="addrSug"></div>
               </div>
               <div class="compnote" style="background:var(--good-bg);color:var(--good);margin-top:12px">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -1319,6 +1332,40 @@
     });
     rm.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation();
       estPhoto=null; input.value=''; img.hidden=true; img.removeAttribute('src'); empty.hidden=false; rm.hidden=true; });
+  })();
+
+  /* ---------- recherche d'adresse réelle (Base Adresse Nationale) ---------- */
+  var estCoord=null;
+  (function(){
+    var edit=document.getElementById('addrEdit'), disp=document.getElementById('addrDisplay'),
+        search=document.getElementById('addrSearch'), input=document.getElementById('addrInput'),
+        sug=document.getElementById('addrSug');
+    if(!edit) return;
+    edit.addEventListener('click',function(){ search.hidden=false; disp.hidden=true; input.value=''; sug.innerHTML=''; input.focus(); });
+    var tmr;
+    input.addEventListener('input',function(){
+      clearTimeout(tmr); var q=this.value.trim();
+      if(q.length<3){ sug.innerHTML=''; return; }
+      tmr=setTimeout(function(){ doSearch(q); }, 250);
+    });
+    async function doSearch(q){
+      try{
+        var r=await fetch('https://api-adresse.data.gouv.fr/search/?limit=5&q='+encodeURIComponent(q));
+        var j=await r.json();
+        sug.innerHTML=(j.features||[]).map(function(f){
+          var p=f.properties, c=f.geometry.coordinates, esc=function(s){return (s||'').replace(/"/g,'&quot;');};
+          return '<button type="button" data-lon="'+c[0]+'" data-lat="'+c[1]+'" data-name="'+esc(p.name)+'" data-ctx="'+esc((p.postcode||'')+' '+(p.city||''))+'" data-label="'+esc(p.label)+'">'+(p.name||p.label)+'<small>'+(p.postcode||'')+' '+(p.city||'')+'</small></button>';
+        }).join('') || '<button type="button" disabled style="color:var(--ink-3);cursor:default">Aucune adresse trouvée</button>';
+      }catch(e){ sug.innerHTML='<button type="button" disabled style="color:var(--ink-3);cursor:default">Recherche indisponible</button>'; }
+    }
+    sug.addEventListener('click',function(e){
+      var b=e.target.closest('button'); if(!b||!b.dataset.lat) return;
+      document.getElementById('addrA').textContent=b.dataset.name||b.dataset.label;
+      document.getElementById('addrS').textContent=b.dataset.ctx+' · géolocalisé ✓';
+      estCoord={lat:+b.dataset.lat, lon:+b.dataset.lon, label:b.dataset.label};
+      search.hidden=true; disp.hidden=false; sug.innerHTML='';
+      document.getElementById('pgSub').textContent=b.dataset.label+' · en cours';
+    });
   })();
 
   /* ---------- construction du dossier PDF ---------- */
