@@ -377,6 +377,34 @@
     box-shadow:0 0 0 3px var(--surface)}
   .tl .tx{font-size:13px} .tl .tx b{font-weight:580} .tl .tx small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:1px}
 
+  /* ============ AUTH ============ */
+  .authgate{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(1100px 620px at 50% -12%, var(--brand-soft), var(--ground))}
+  .authgate.show{display:flex}
+  .authcard{width:min(404px,100%);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+    box-shadow:var(--shadow-lg);padding:30px 28px}
+  .authlogo{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .authlogo .logo{width:44px;height:44px;border-radius:12px;flex:none;background:linear-gradient(145deg,#3E6E5E,#213f37);
+    display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  .authlogo b{font-size:19px;letter-spacing:-.02em;display:block;line-height:1.1}
+  .authlogo span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+  .authcard h2{font-size:19px;margin-bottom:4px}
+  .authcard .sub{color:var(--ink-2);font-size:13.5px;margin-bottom:22px}
+  .authfield{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .authfield label{font-size:12.5px;color:var(--ink-2);font-weight:560}
+  .authfield input{border:1px solid var(--line);background:var(--ground);border-radius:10px;padding:11px 13px;
+    font-size:15px;color:var(--ink);font-family:inherit}
+  .authfield input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .autherr{background:var(--crit-bg);color:var(--crit);font-size:13px;padding:9px 12px;border-radius:9px;
+    margin-bottom:14px;display:none}
+  .autherr.show{display:block}
+  .authbtn{width:100%;justify-content:center;margin-top:6px}
+  .authcard .foot{margin-top:18px;font-size:12px;color:var(--ink-3);text-align:center}
+  .logoutbtn{margin-left:auto;background:none;border:0;color:var(--rail-ink-2);display:grid;place-items:center;
+    width:30px;height:30px;border-radius:8px;flex:none}
+  .logoutbtn:hover{color:#fff;background:rgba(255,255,255,.07)}
+  .logoutbtn svg{width:17px;height:17px}
+
   /* ============ RESPONSIVE ============ */
   .mobnav{display:none}
   @media (max-width:900px){
@@ -410,6 +438,25 @@
 </head>
 <body>
 
+<!-- ======== ÉCRAN DE CONNEXION ======== -->
+<div class="authgate show" id="authgate">
+  <form class="authcard" id="authform">
+    <div class="authlogo">
+      <div class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
+      <div><b>ESTIMAKE</b><span>Agence GBP · Nevers</span></div>
+    </div>
+    <h2>Connexion</h2>
+    <div class="sub">Accède à ton cockpit, ton portefeuille et tes estimations.</div>
+    <div class="autherr" id="autherr"></div>
+    <div class="authfield"><label for="authemail">Adresse e-mail</label>
+      <input type="email" id="authemail" autocomplete="username" placeholder="vous@agence.fr" required></div>
+    <div class="authfield"><label for="authpass">Mot de passe</label>
+      <input type="password" id="authpass" autocomplete="current-password" placeholder="••••••••••" required></div>
+    <button class="btn pri authbtn" type="submit" id="authsubmit">Se connecter</button>
+    <div class="foot">Accès réservé à l'agence · ESTIMAKE</div>
+  </form>
+</div>
+
 <div class="app">
   <!-- ======== NAV RAIL ======== -->
   <nav class="rail">
@@ -440,9 +487,12 @@
       Agence
     </button>
     <div class="spacer"></div>
-    <div class="railuser">
-      <div class="av">JM</div>
-      <div><b>Jimmy Marchand</b><small>Négociateur · GBP</small></div>
+    <div class="railuser" id="railuser">
+      <div class="av" id="ruav">JM</div>
+      <div style="min-width:0;overflow:hidden"><b id="runame">Jimmy Marchand</b><small id="rurole">Négociateur · GBP</small></div>
+      <button class="logoutbtn" id="logoutbtn" type="button" title="Se déconnecter" aria-label="Se déconnecter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
     </div>
   </nav>
 
@@ -1073,7 +1123,47 @@
       }
     }catch(e){ console.warn('[ESTIMAKE] Supabase indisponible → données de démonstration', e); }
   }
-  syncBiens();
+  /* =================== AUTHENTIFICATION (Supabase Auth) =================== */
+  var authgate=document.getElementById('authgate');
+  function showApp(session){
+    authgate.classList.remove('show');
+    if(session && session.user){
+      var email=session.user.email||'';
+      document.getElementById('ruav').textContent=(email.slice(0,2)||'?').toUpperCase();
+      document.getElementById('runame').textContent=email.split('@')[0]||'Utilisateur';
+      document.getElementById('rurole').textContent=email;
+    }
+    syncBiens();  // recharge les données une fois connecté
+  }
+  async function initAuth(){
+    if(!sb){ authgate.classList.remove('show'); syncBiens(); return; }
+    try{
+      var s=await sb.auth.getSession();
+      if(s.data && s.data.session){ showApp(s.data.session); }
+      else { authgate.classList.add('show'); }
+      sb.auth.onAuthStateChange(function(_e,session){ if(session){ showApp(session); } });
+    }catch(e){ console.warn('[ESTIMAKE] Auth indisponible', e); authgate.classList.remove('show'); syncBiens(); }
+  }
+  document.getElementById('authform').addEventListener('submit',async function(e){
+    e.preventDefault();
+    if(!sb) return;
+    var btn=document.getElementById('authsubmit'), err=document.getElementById('autherr');
+    var email=document.getElementById('authemail').value.trim();
+    var pass=document.getElementById('authpass').value;
+    err.classList.remove('show'); btn.disabled=true; var old=btn.textContent; btn.textContent='Connexion…';
+    var r=await sb.auth.signInWithPassword({ email:email, password:pass });
+    btn.disabled=false; btn.textContent=old;
+    if(r.error){
+      err.textContent='E-mail ou mot de passe incorrect.'; err.classList.add('show');
+      document.getElementById('authpass').value='';
+    }
+    // succès géré par onAuthStateChange → showApp
+  });
+  document.getElementById('logoutbtn').addEventListener('click',async function(){
+    if(sb){ try{ await sb.auth.signOut(); }catch(e){} }
+    authgate.classList.add('show');
+  });
+  initAuth();
 })();
 </script>
 </body>
