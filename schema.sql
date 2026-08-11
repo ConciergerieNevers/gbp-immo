@@ -1,5 +1,5 @@
 -- ============================================================
---  GBP Immo — schéma Supabase
+--  ESTIMAKE — schéma Supabase
 --  À lancer dans Supabase → SQL Editor (une seule fois).
 --  RÈGLE DE SÉCURITÉ : la clé « service_role » ne doit JAMAIS
 --  apparaître dans index.html ni dans le repo. Le front n'utilise
