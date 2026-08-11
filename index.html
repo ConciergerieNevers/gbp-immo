@@ -891,6 +891,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
                 <span id="compSummary">Médiane retenue : <b>1 780 €/m²</b> sur 6 ventes comparables (2 biens atypiques écartés).</span>
               </div>
+              <button type="button" class="btn" id="dvfBtn" style="width:100%;justify-content:center;margin-top:11px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 2.5L21 6"/></svg>
+                Charger les ventes réelles (DVF)
+              </button>
+              <div class="restyle-msg" id="dvfMsg" hidden></div>
             </div>
 
             <div class="card estcard">
@@ -924,10 +929,10 @@
             <div class="card estcard">
               <h3><span class="stepnum">5</span> Environnement &amp; risques · Géorisques</h3>
               <div class="risks">
-                <div class="risk"><div class="ic" style="background:var(--warn-bg);color:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 2 20h20L12 3ZM12 10v4M12 17h.01"/></svg></div><div><b>Retrait-gonflement argiles</b><small>Aléa moyen</small></div></div>
+                <div class="risk"><div class="ic" style="background:var(--warn-bg);color:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 2 20h20L12 3ZM12 10v4M12 17h.01"/></svg></div><div><b>Retrait-gonflement argiles</b><small id="rkArgiles">Aléa moyen</small></div></div>
                 <div class="risk"><div class="ic" style="background:var(--good-bg);color:var(--good)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><b>Inondation</b><small>Hors zone repérée</small></div></div>
-                <div class="risk"><div class="ic" style="background:var(--info-bg);color:var(--info)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/></svg></div><div><b>Sismicité</b><small>Zone 1 · très faible</small></div></div>
-                <div class="risk"><div class="ic" style="background:var(--good-bg);color:var(--good)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><b>Radon</b><small>Potentiel faible · cat. 1</small></div></div>
+                <div class="risk"><div class="ic" style="background:var(--info-bg);color:var(--info)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/></svg></div><div><b>Sismicité</b><small id="rkSismic">Zone 1 · très faible</small></div></div>
+                <div class="risk"><div class="ic" style="background:var(--good-bg);color:var(--good)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><b>Radon</b><small id="rkRadon">Potentiel faible · cat. 1</small></div></div>
               </div>
             </div>
           </div>
@@ -1352,8 +1357,45 @@
   document.getElementById('rayonBar').addEventListener('click',function(e){
     var b=e.target.closest('button');if(!b)return;
     this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
-    state.rayon=parseInt(b.dataset.r,10);renderComps();
+    state.rayon=parseInt(b.dataset.r,10);
+    if(dvfActive && estCoord && estCoord.insee){ loadDVF(); } else { renderComps(); }
   });
+
+  /* ---------- ventes réelles DVF (via /api/dvf) + risques réels (Géorisques) ---------- */
+  var dvfActive=false;
+  function dvfMsg(m){ var el=document.getElementById('dvfMsg'); el.textContent='⚠️ '+m; el.hidden=false; }
+  function resetDVF(){ dvfActive=false; var b=document.getElementById('dvfBtn'); if(b){ b.disabled=false;
+    b.querySelector('svg')||0; b.lastChild.textContent=' Charger les ventes réelles (DVF)'; } document.getElementById('dvfMsg').hidden=true; renderComps(); }
+  function fmtDate(d){ if(!d) return ''; var p=String(d).split('-'); return p.length===3 ? (p[2]+'/'+p[1]+'/'+p[0]) : d; }
+  async function loadDVF(){
+    if(!estCoord || !estCoord.insee){ dvfMsg('Sélectionne d\'abord une adresse réelle (étape 1 → Modifier).'); return; }
+    var btn=document.getElementById('dvfBtn'); btn.disabled=true; btn.lastChild.textContent=' Chargement des ventes…';
+    try{
+      var t=document.getElementById('fType').value;
+      var url='/api/dvf?insee='+encodeURIComponent(estCoord.insee)+'&lat='+estCoord.lat+'&lon='+estCoord.lon+'&type='+encodeURIComponent(t)+'&rayon='+state.rayon;
+      var r=await fetch(url); var j=await r.json().catch(function(){ return { error:'Réponse invalide du serveur.' }; });
+      if(!r.ok) throw new Error(j.error||('Erreur '+r.status));
+      if(!j.comparables || !j.comparables.length){ dvfMsg(j.note||'Aucune vente réelle trouvée à proximité.'); btn.lastChild.textContent=' Charger les ventes réelles (DVF)'; return; }
+      document.getElementById('compBody').innerHTML=j.comparables.map(function(c){
+        return '<tr><td>'+(c.adresse||'—')+' · '+fmtDate(c.date)+'</td><td>'+c.surface+' m²</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
+      }).join('');
+      document.getElementById('compSummary').innerHTML='Médiane <b>réelle</b> : <b>'+j.median.toLocaleString('fr-FR')+' €/m²</b> sur '+j.count+' ventes DVF enregistrées (données DGFiP).';
+      state.baseM2=j.median; dvfActive=true; compute();
+      document.getElementById('dvfMsg').hidden=true; btn.lastChild.textContent=' Ventes réelles chargées ✓';
+    }catch(e){ dvfMsg((e.message||e)+' — le DVF réel fonctionne une fois le site déployé sur Vercel.'); btn.lastChild.textContent=' Réessayer'; }
+    finally{ btn.disabled=false; }
+  }
+  document.getElementById('dvfBtn').addEventListener('click',loadDVF);
+  async function updateRisks(lat, lon, insee){
+    try{ var a=await (await fetch('https://georisques.gouv.fr/api/v1/rga?latlon='+lon+','+lat)).json();
+      if(a && a.exposition) document.getElementById('rkArgiles').textContent=a.exposition; }catch(e){}
+    if(insee){
+      try{ var rd=await (await fetch('https://georisques.gouv.fr/api/v1/radon?code_insee='+insee)).json();
+        var c=rd&&rd.data&&rd.data[0]&&rd.data[0].classe_potentiel; if(c) document.getElementById('rkRadon').textContent='Potentiel catégorie '+c; }catch(e){}
+      try{ var s=await (await fetch('https://georisques.gouv.fr/api/v1/zonage_sismique?code_insee='+insee)).json();
+        var z=s&&s.data&&s.data[0]&&s.data[0].zone_sismicite; if(z) document.getElementById('rkSismic').textContent='Zone '+z; }catch(e){}
+    }
+  }
   // location seg
   document.getElementById('segLoc').addEventListener('click',function(e){
     var b=e.target.closest('.seg');if(!b)return;
@@ -1461,7 +1503,7 @@
         var j=await r.json();
         sug.innerHTML=(j.features||[]).map(function(f){
           var p=f.properties, c=f.geometry.coordinates, esc=function(s){return (s||'').replace(/"/g,'&quot;');};
-          return '<button type="button" data-lon="'+c[0]+'" data-lat="'+c[1]+'" data-name="'+esc(p.name)+'" data-ctx="'+esc((p.postcode||'')+' '+(p.city||''))+'" data-label="'+esc(p.label)+'">'+(p.name||p.label)+'<small>'+(p.postcode||'')+' '+(p.city||'')+'</small></button>';
+          return '<button type="button" data-lon="'+c[0]+'" data-lat="'+c[1]+'" data-insee="'+esc(p.citycode)+'" data-name="'+esc(p.name)+'" data-ctx="'+esc((p.postcode||'')+' '+(p.city||''))+'" data-label="'+esc(p.label)+'">'+(p.name||p.label)+'<small>'+(p.postcode||'')+' '+(p.city||'')+'</small></button>';
         }).join('') || '<button type="button" disabled style="color:var(--ink-3);cursor:default">Aucune adresse trouvée</button>';
       }catch(e){ sug.innerHTML='<button type="button" disabled style="color:var(--ink-3);cursor:default">Recherche indisponible</button>'; }
     }
@@ -1469,9 +1511,12 @@
       var b=e.target.closest('button'); if(!b||!b.dataset.lat) return;
       document.getElementById('addrA').textContent=b.dataset.name||b.dataset.label;
       document.getElementById('addrS').textContent=b.dataset.ctx+' · géolocalisé ✓';
-      estCoord={lat:+b.dataset.lat, lon:+b.dataset.lon, label:b.dataset.label};
+      estCoord={lat:+b.dataset.lat, lon:+b.dataset.lon, insee:b.dataset.insee, label:b.dataset.label};
       search.hidden=true; disp.hidden=false; sug.innerHTML='';
       document.getElementById('pgSub').textContent=b.dataset.label+' · en cours';
+      // nouvelle adresse → risques réels + reset DVF
+      if(typeof updateRisks==='function') updateRisks(estCoord.lat, estCoord.lon, estCoord.insee);
+      if(typeof resetDVF==='function') resetDVF();
     });
   })();
 
