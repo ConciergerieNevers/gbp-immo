@@ -152,6 +152,31 @@
     max-width:90vw;text-align:center}
   #toast.show{opacity:1;transform:translate(-50%,0)}
   @media print{#toast{display:none!important}}
+  /* formulaire bien (modal) */
+  .modal{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:18px;
+    background:rgba(15,22,18,.5);backdrop-filter:blur(3px)}
+  .modal[hidden]{display:none}
+  .modal-card{width:min(560px,100%);max-height:92vh;overflow-y:auto;background:var(--ground);border:1px solid var(--line);
+    border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
+  .modal-hd{display:flex;align-items:center;justify-content:space-between;padding:17px 20px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--ground);z-index:1}
+  .modal-hd b{font-size:16px}
+  .modal-x{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+    display:grid;place-items:center;cursor:pointer}
+  .modal-x svg{width:17px;height:17px}
+  .modal-body{padding:18px 20px}
+  .mfields{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .mf{display:flex;flex-direction:column;gap:5px}
+  .mf.mf-wide{grid-column:1 / -1}
+  .mf>span{font-size:12px;color:var(--ink-2);font-weight:560}
+  .mf input,.mf select{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 12px;
+    font-size:14.5px;color:var(--ink);font-family:inherit;width:100%}
+  .mf input:focus,.mf select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .mf-check{flex-direction:row;align-items:center;gap:9px}
+  .mf-check input{width:18px;height:18px}
+  .modal-ft{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+  #bienErr{margin-top:12px}
+  @media (max-width:520px){ .mfields{grid-template-columns:1fr} }
   /* calculette flottante */
   .fab{position:fixed;right:22px;bottom:26px;width:56px;height:56px;border-radius:18px;border:0;z-index:55;
     background:var(--brand);color:#fff;box-shadow:var(--shadow-lg);display:grid;place-items:center;cursor:pointer}
@@ -769,6 +794,7 @@
       <section class="screen" id="biens">
         <div class="toolbar">
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="bienSearch" placeholder="Rechercher une adresse, une réf., un propriétaire…"></div>
+          <button class="btn pri" id="addBienBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Ajouter un bien</span></button>
           <div class="chips" id="bienChips">
             <button class="chip on" data-f="all">Tous <span class="c">18</span></button>
             <button class="chip" data-f="Exclusif">Exclusifs <span class="c">11</span></button>
@@ -1022,6 +1048,36 @@
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer"></aside>
 
+<!-- ======== FORMULAIRE BIEN (ajout / édition) ======== -->
+<div class="modal" id="bienModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b id="bienModalTitle">Nouveau bien</b>
+      <button class="modal-x" id="bienModalX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form class="modal-body" id="bienForm">
+      <div class="mfields">
+        <label class="mf mf-wide"><span>Adresse</span><input name="adresse" required placeholder="12 rue des Récollets"></label>
+        <label class="mf mf-wide"><span>Secteur</span><input name="secteur" placeholder="Nevers · centre"></label>
+        <label class="mf"><span>Type</span><select name="type"><option>Maison</option><option>Appartement</option></select></label>
+        <label class="mf"><span>Statut</span><select name="statut"><option>Exclusif</option><option>Simple</option><option>Compromis</option><option>Vendu</option></select></label>
+        <label class="mf"><span>Prix (€)</span><input name="prix" type="number" inputmode="numeric" placeholder="199000"></label>
+        <label class="mf"><span>Surface (m²)</span><input name="surface" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>Terrain (m²)</span><input name="terrain" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>Pièces</span><input name="pieces" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>Chambres</span><input name="chambres" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>Année</span><input name="annee" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>DPE</span><select name="dpe"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></label>
+        <label class="mf mf-wide"><span>Propriétaire</span><input name="proprietaire" placeholder="M. et Mme Delaunay"></label>
+        <label class="mf mf-check"><input type="checkbox" name="garage"><span>Garage</span></label>
+      </div>
+      <div class="autherr" id="bienErr"></div>
+      <div class="modal-ft">
+        <button type="button" class="btn" id="bienCancel">Annuler</button>
+        <button type="submit" class="btn pri" id="bienSave">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ======== DOSSIER D'ESTIMATION (rendu à l'impression → PDF) ======== -->
 <div id="dossier"></div>
 <div id="toast"></div>
@@ -1214,7 +1270,7 @@
         '<div class="dsec"><div class="eyebrow">Historique</div><ul class="tl">'+
           b.hist.map(function(h){return '<li><span class="dot"></span><div class="tx"><b>'+h[0]+'</b><small>'+h[1]+'</small></div></li>';}).join('')+
           '</ul></div>'+
-        '<button class="btn pri" style="width:100%;justify-content:center">Ouvrir la fiche complète</button>'+
+        '<button class="btn pri" id="drawerEdit" style="width:100%;justify-content:center">Modifier ce bien</button>'+
       '</div>';
     document.getElementById('dclose').addEventListener('click',closeDrawer);
     var dphoto=document.getElementById('dPhotoInput');
@@ -1222,6 +1278,8 @@
       var f=this.files&&this.files[0]; if(!f) return;
       uploadBienPhoto(b,f);
     });
+    var de=document.getElementById('drawerEdit');
+    if(de) de.addEventListener('click',function(){ closeDrawer(); openBienForm(b); });
     scrim.classList.add('open');drawer.classList.add('open');
   }
   var acqNames=[['Camille Petit','T3/T4 · budget 160 k€','#6a9'],['Thomas Girard','Maison ≤ 200 k€','#7aa'],['Léa Fontaine','Investissement locatif','#b78'],['Hugo Blanc','Primo-accédant','#a86'],['Nadia Simon','Maison avec jardin','#699']];
@@ -1229,6 +1287,56 @@
     out+='<div class="acq"><div class="av" style="background:'+a[2]+'">'+a[0].split(' ').map(function(w){return w[0];}).join('')+'</div><div class="g"><b>'+a[0]+'</b><small>'+a[1]+'</small></div><span class="pill info">Match</span></div>';}
     return out;}
   function closeDrawer(){scrim.classList.remove('open');drawer.classList.remove('open');}
+
+  /* ---------- formulaire bien : ajout / édition ---------- */
+  var bienModal=document.getElementById('bienModal'), bienForm=document.getElementById('bienForm'),
+      bienErr=document.getElementById('bienErr'), editingBienId=null;
+  function openBienForm(b){
+    editingBienId = (b && b.id) ? b.id : null;
+    document.getElementById('bienModalTitle').textContent = b ? 'Modifier le bien' : 'Nouveau bien';
+    var e=bienForm.elements;
+    e.adresse.value=b?(b.ad||''):''; e.secteur.value=b?(b.tw||''):''; e.type.value=b?(b.ty||'Maison'):'Maison';
+    e.statut.value=b?(b.st||'Simple'):'Simple'; e.prix.value=(b&&b.px)?b.px:''; e.surface.value=(b&&b.m2)?b.m2:'';
+    e.terrain.value=(b&&b.terr)?b.terr:''; e.pieces.value=''; e.chambres.value=(b&&b.ch)?b.ch:''; e.annee.value=(b&&b.an)?b.an:'';
+    e.dpe.value=b?(b.dpe||'D'):'D'; e.proprietaire.value=b?(b.owner||''):''; e.garage.checked=b?!!b.gar:false;
+    bienErr.classList.remove('show'); bienErr.textContent=''; bienModal.hidden=false;
+  }
+  function closeBienForm(){ bienModal.hidden=true; }
+  document.getElementById('addBienBtn').addEventListener('click',function(){ openBienForm(null); });
+  document.getElementById('bienModalX').addEventListener('click',closeBienForm);
+  document.getElementById('bienCancel').addEventListener('click',closeBienForm);
+  bienModal.addEventListener('click',function(e){ if(e.target===bienModal) closeBienForm(); });
+  bienForm.addEventListener('submit',async function(ev){
+    ev.preventDefault();
+    var e=bienForm.elements, num=function(v){ v=parseInt(v,10); return isNaN(v)?null:v; };
+    var row={ type:e.type.value, adresse:e.adresse.value.trim(), secteur:e.secteur.value.trim(),
+      prix:num(e.prix.value), surface:num(e.surface.value), terrain:num(e.terrain.value),
+      pieces:num(e.pieces.value), chambres:num(e.chambres.value), annee:num(e.annee.value),
+      dpe:e.dpe.value, garage:e.garage.checked, statut:e.statut.value, proprietaire:e.proprietaire.value.trim() };
+    if(!row.adresse){ bienErr.textContent='L\'adresse est obligatoire.'; bienErr.classList.add('show'); return; }
+    var save=document.getElementById('bienSave'); save.disabled=true; var old=save.textContent; save.textContent='Enregistrement…';
+    try{
+      if(sb){
+        var res;
+        if(editingBienId){ res=await sb.from('biens').update(row).eq('id',editingBienId); }
+        else { row.reference='EST-'+String(Date.now()).slice(-4); res=await sb.from('biens').insert(row); }
+        if(res.error) throw res.error;
+        await syncBiens();
+        toast(editingBienId?'Bien modifié ✓':'Bien ajouté ✓');
+      } else {
+        var demo={ ad:row.adresse, tw:row.secteur, px:row.prix, m2:row.surface, ch:row.chambres, ty:row.type,
+          st:row.statut, dpe:row.dpe, ref:editingBienId||('EST-'+String(Date.now()).slice(-4)), owner:row.proprietaire,
+          terr:row.terrain, an:row.annee, gar:row.garage, acq:0, hist:[], photo:'', id:editingBienId };
+        if(editingBienId){ var i=biens.findIndex(function(x){return x.id===editingBienId;});
+          if(i>-1){ demo.acq=biens[i].acq; demo.hist=biens[i].hist; demo.photo=biens[i].photo; biens[i]=demo; } }
+        else { biens.unshift(demo); }
+        var f=document.querySelector('#bienChips .chip.on'); renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
+        toast(editingBienId?'Bien modifié (démo local)':'Bien ajouté (démo local)');
+      }
+      closeBienForm();
+    }catch(err){ bienErr.textContent='Erreur : '+((err&&err.message)||err); bienErr.classList.add('show'); }
+    finally{ save.disabled=false; save.textContent=old; }
+  });
   async function uploadBienPhoto(b, file){
     toast('Ajout de la photo…');
     var reader=new FileReader();          // aperçu local immédiat
