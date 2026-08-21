@@ -1,0 +1,186 @@
+// ============================================================
+//  ESTIMAKE — Synchro Google Agenda "à vie", aller-retour (serverless Vercel)
+//
+//  Utilise un COMPTE DE SERVICE Google (jeton permanent, aucune reconnexion,
+//  aucun popup). Aucune dépendance npm : le JWT du compte de service est signé
+//  avec node:crypto, la base est écrite via l'API REST Supabase (service_role).
+//
+//  Sens de synchro :
+//   - app → Google : action "push" (création/màj) et "delete" (appelées par l'app)
+//   - Google → app : action "pull" (cron Vercel toutes les 5 min + bouton Synchro)
+//
+//  VARIABLES D'ENVIRONNEMENT VERCEL (jamais dans le repo) :
+//   - GOOGLE_SA_KEY_JSON : contenu COMPLET du fichier .json du compte de service
+//   - GCAL_ID            : identifiant du calendrier cible (souvent l'e-mail du compte)
+//   - SB_URL             : URL du projet Supabase (https://xxxx.supabase.co)
+//   - SB_SERVICE_KEY     : clé service_role Supabase (côté serveur uniquement)
+// ============================================================
+
+import crypto from 'node:crypto';
+
+export const config = { maxDuration: 30 };
+
+function pad2(n){ return (n<10?'0':'')+n; }
+function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_'); }
+
+function saCreds(){
+  var raw = process.env.GOOGLE_SA_KEY_JSON;
+  if(!raw) return null;
+  var j;
+  try{ j = JSON.parse(raw); }catch(e){ return null; }
+  var key = j.private_key || '';
+  if(key.indexOf('\\n') !== -1) key = key.replace(/\\n/g,'\n');   // au cas où les \n sont échappés
+  if(!j.client_email || !key) return null;
+  return { email: j.client_email, key: key };
+}
+
+async function getToken(){
+  var c = saCreds();
+  if(!c) throw new Error('Compte de service manquant (GOOGLE_SA_KEY_JSON).');
+  var now = Math.floor(Date.now()/1000);
+  var header = { alg:'RS256', typ:'JWT' };
+  var claim = { iss:c.email, scope:'https://www.googleapis.com/auth/calendar',
+                aud:'https://oauth2.googleapis.com/token', iat:now, exp:now+3600 };
+  var unsigned = b64url(JSON.stringify(header))+'.'+b64url(JSON.stringify(claim));
+  var sig = crypto.createSign('RSA-SHA256').update(unsigned).sign(c.key);
+  var jwt = unsigned+'.'+b64url(sig);
+  var r = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion='+jwt
+  });
+  var j = await r.json();
+  if(!j.access_token) throw new Error('Jeton Google refusé : '+JSON.stringify(j).slice(0,200));
+  return j.access_token;
+}
+
+var SB = process.env.SB_URL, SK = process.env.SB_SERVICE_KEY;
+function sbFetch(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({ apikey:SK, Authorization:'Bearer '+SK, 'Content-Type':'application/json' }, opts.headers||{});
+  return fetch(SB.replace(/\/$/,'')+'/rest/v1/'+path, opts);
+}
+function calBase(){ return 'https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(process.env.GCAL_ID||'primary')+'/events'; }
+
+// Construit l'événement Google à partir d'une ligne rdv
+function gBody(r){
+  var body = { summary:r.titre||'RDV',
+    description:(r.type?('['+r.type+'] '):'')+(r.note||'')+(r.lien?(' — '+r.lien):'') };
+  if(r.heure && /^\d{2}:\d{2}/.test(r.heure)){
+    var sh=parseInt(r.heure.slice(0,2),10), mm=r.heure.slice(3,5);
+    body.start={ dateTime:r.date+'T'+r.heure.slice(0,5)+':00', timeZone:'Europe/Paris' };
+    body.end={ dateTime:r.date+'T'+pad2((sh+1)%24)+':'+mm+':00', timeZone:'Europe/Paris' };
+  } else {
+    var nd=new Date(r.date+'T00:00:00'); nd.setDate(nd.getDate()+1);
+    body.start={ date:r.date };
+    body.end={ date:nd.getFullYear()+'-'+pad2(nd.getMonth()+1)+'-'+pad2(nd.getDate()) };
+  }
+  return body;
+}
+
+// app → Google (création / mise à jour)
+async function pushOne(id){
+  var rr = await sbFetch('rdv?id=eq.'+id+'&select=*'); var rows = await rr.json();
+  var r = rows && rows[0]; if(!r) return { skip:'row introuvable' };
+  var tok = await getToken(); var base = calBase();
+  if(r.deleted){
+    if(r.gcal_id){ await fetch(base+'/'+r.gcal_id, { method:'DELETE', headers:{Authorization:'Bearer '+tok} }); }
+    return { deleted:true };
+  }
+  if(r.gcal_id){
+    var pr = await fetch(base+'/'+r.gcal_id, { method:'PATCH', headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'}, body:JSON.stringify(gBody(r)) });
+    if(pr.status !== 404){ return { updated:r.gcal_id, status:pr.status }; }   // 404 => recréé ci-dessous
+  }
+  var cr = await fetch(base, { method:'POST', headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'}, body:JSON.stringify(gBody(r)) });
+  var cj = await cr.json();
+  if(cj && cj.id){ await sbFetch('rdv?id=eq.'+id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ gcal_id:cj.id }) }); }
+  return { created:(cj && cj.id) || null };
+}
+
+// app → Google (suppression) : supprime l'événement Google, garde la ligne (deleted=true)
+async function deleteOne(id){
+  var rr = await sbFetch('rdv?id=eq.'+id+'&select=gcal_id'); var r = (await rr.json())[0];
+  if(r && r.gcal_id){
+    var tok = await getToken();
+    await fetch(calBase()+'/'+r.gcal_id, { method:'DELETE', headers:{Authorization:'Bearer '+tok} });
+  }
+  await sbFetch('rdv?id=eq.'+id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ deleted:true }) });
+  return { ok:true };
+}
+
+// Convertit une date ISO en date/heure locales (Europe/Paris)
+function inParis(iso){
+  var d = new Date(iso);
+  var parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Europe/Paris', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).formatToParts(d);
+  var o={}; parts.forEach(function(p){ o[p.type]=p.value; });
+  return { date:o.year+'-'+o.month+'-'+o.day, heure:(o.hour==='24'?'00':o.hour)+':'+o.minute };
+}
+
+// Applique un événement Google dans la base (Google → app)
+async function applyEvent(ev){
+  var q = await sbFetch('rdv?gcal_id=eq.'+encodeURIComponent(ev.id)+'&select=id,deleted'); var ex = (await q.json())[0];
+  if(ev.status === 'cancelled'){
+    if(ex){ await sbFetch('rdv?id=eq.'+ex.id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ deleted:true }) }); return 1; }
+    return 0;
+  }
+  var s = ev.start||{}; var date=null, heure=null;
+  if(s.dateTime){ var p=inParis(s.dateTime); date=p.date; heure=p.heure; }
+  else if(s.date){ date=s.date; }
+  if(!date) return 0;
+  var row = { titre:ev.summary||'(sans titre)', date:date, heure:heure, note:(ev.description||''), gcal_id:ev.id, deleted:false };
+  if(ex){ await sbFetch('rdv?id=eq.'+ex.id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify(row) }); }
+  else { row.type='Autre'; await sbFetch('rdv', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify(row) }); }
+  return 1;
+}
+
+// Google → app (synchro incrémentale via syncToken)
+async function pull(){
+  var tok = await getToken(); var base = calBase();
+  var sr = await sbFetch('gcal_sync?id=eq.1&select=sync_token'); var srows = await sr.json();
+  var syncToken = srows && srows[0] && srows[0].sync_token;
+  var url = base+'?singleEvents=true&showDeleted=true&maxResults=250';
+  if(syncToken){ url += '&syncToken='+encodeURIComponent(syncToken); }
+  else { var min=new Date(); min.setMonth(min.getMonth()-2); url += '&timeMin='+min.toISOString(); }
+  var changed=0, pageToken=null, next=null, guard=0;
+  while(guard++ < 40){
+    var u = url + (pageToken ? ('&pageToken='+pageToken) : '');
+    var r = await fetch(u, { headers:{Authorization:'Bearer '+tok} });
+    if(r.status === 410){ // syncToken invalide → on repart de zéro au prochain appel
+      await sbFetch('gcal_sync?id=eq.1', { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ sync_token:null }) });
+      return { reset:true };
+    }
+    var j = await r.json();
+    if(j.error){ throw new Error('Calendar: '+JSON.stringify(j.error).slice(0,200)); }
+    var items = j.items||[];
+    for(var i=0;i<items.length;i++){ changed += await applyEvent(items[i]); }
+    if(j.nextPageToken){ pageToken=j.nextPageToken; continue; }
+    next = j.nextSyncToken || null; break;
+  }
+  if(next){ await sbFetch('gcal_sync?id=eq.1', { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ sync_token:next, updated_at:new Date().toISOString() }) }); }
+  return { changed:changed };
+}
+
+function readBody(req){
+  var b = req.body;
+  if(typeof b === 'string'){ try{ b = JSON.parse(b); }catch(e){ b = {}; } }
+  return b || {};
+}
+
+export default async function handler(req, res){
+  try{
+    if(!saCreds()){ res.status(503).json({ error:'Synchro Google non configurée (GOOGLE_SA_KEY_JSON).' }); return; }
+    if(!SB || !SK){ res.status(503).json({ error:'Base non configurée (SB_URL / SB_SERVICE_KEY).' }); return; }
+    var body = readBody(req);
+    var action = body.action || (req.query && req.query.action) || 'pull';
+    if(action === 'push'){
+      if(!body.id){ res.status(400).json({ error:'id manquant' }); return; }
+      res.status(200).json(await pushOne(body.id)); return;
+    }
+    if(action === 'delete'){
+      if(!body.id){ res.status(400).json({ error:'id manquant' }); return; }
+      res.status(200).json(await deleteOne(body.id)); return;
+    }
+    res.status(200).json(await pull());
+  }catch(e){
+    res.status(500).json({ error:String((e && e.message) || e) });
+  }
+}

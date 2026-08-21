@@ -1177,15 +1177,11 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
   "use strict";
-  /* =================== CONFIG GOOGLE AGENDA (auto-sync) ===================
-     Colle ici ton "OAuth Client ID" Google (public, sans risque).
-     Tant que c'est vide, le bouton Google reste inactif (le lien 1-clic
-     par RDV fonctionne toujours). Voir le README pour créer l'identifiant. */
-  var GOOGLE_CLIENT_ID = '471704522581-2nfbo80659h6gvhb6lcct6hful4g0rp9.apps.googleusercontent.com';
+  /* La synchro Google Agenda se fait côté serveur (api/gcal.js, compte de service).
+     Aucune clé Google côté navigateur — voir README « Agenda à vie ». */
   /* =================== CONFIG SUPABASE ===================
      Colle l'URL du projet et la clé « anon » (publique — aucun risque à l'exposer).
      Tant que ces deux champs sont vides, l'app tourne sur les données de démonstration
@@ -1647,87 +1643,44 @@
   });
   renderAgenda();
 
-  /* ---------- Google Agenda : connexion + auto-sync (côté navigateur) ---------- */
-  var G={ token:null, exp:0, calId:localStorage.getItem('estimake_gcal_cal')||'primary', client:null, map:{} };
-  try{ G.map=JSON.parse(localStorage.getItem('estimake_gcal_map')||'{}'); }catch(e){}
-  function gSaveMap(){ localStorage.setItem('estimake_gcal_map', JSON.stringify(G.map)); }
-  function gReady(){ return !!(window.google && google.accounts && google.accounts.oauth2 && GOOGLE_CLIENT_ID); }
-  function gConnectedUI(){ var b=document.getElementById('gBtn'); b.textContent='Google connecté ✓'; document.getElementById('gCal').style.display=''; gLoadCals(); }
-  function gStandalone(){ return (window.navigator.standalone===true) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches); }
-  function gClient(cb){
-    if(!G.client){ G.client=google.accounts.oauth2.initTokenClient({
-      client_id:GOOGLE_CLIENT_ID,
-      scope:'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
-      callback:function(resp){ if(resp&&resp.access_token){ G.token=resp.access_token; G.exp=Date.now()+((resp.expires_in||3600)*1000);
-        localStorage.setItem('estimake_gtok',G.token); localStorage.setItem('estimake_gexp',G.exp); gConnectedUI(); if(cb)cb(); }
-        else { toast('Connexion Google non aboutie — réessaie.'); } },
-      error_callback:function(err){
-        var ty=(err&&err.type)||'';
-        if(ty==='popup_failed_to_open'){ toast('Fenêtre Google bloquée. Ouvre l\'app dans Safari/Chrome (pas depuis l\'icône) et autorise les pop-ups.'); }
-        else if(ty==='popup_closed'){ toast('Fenêtre Google fermée avant la fin — reclique « Connecter Google ».'); }
-        else { toast('Google : '+(ty||'connexion impossible')); }
-      } }); }
-    return G.client;
-  }
-  function gInit(){
-    var b=document.getElementById('gBtn');
-    if(!GOOGLE_CLIENT_ID){ b.textContent='Google (à configurer)'; b.disabled=true; b.title='Ajoute GOOGLE_CLIENT_ID dans index.html'; return; }
-    var t=localStorage.getItem('estimake_gtok'), e=parseInt(localStorage.getItem('estimake_gexp'),10)||0;
-    if(t && e>Date.now()+60000){ G.token=t; G.exp=e; gConnectedUI(); }
-  }
-  document.getElementById('gBtn').addEventListener('click',function(){
-    if(!gReady()){ toast('Google indisponible — vérifie GOOGLE_CLIENT_ID.'); return; }
-    if(gStandalone() && !G.token){ toast('Astuce : si la fenêtre Google ne s\'ouvre pas, connecte-toi depuis Safari/Chrome (pas l\'icône d\'accueil).'); }
-    gClient().requestAccessToken({ prompt: G.token?'':'consent' });
-  });
-  function gEnsure(){ return new Promise(function(res){
-    if(G.token && G.exp>Date.now()+30000){ res(true); return; }
-    if(!gReady()){ res(false); return; }
-    gClient(function(){ res(true); }).requestAccessToken({ prompt:'' });
-    setTimeout(function(){ res(!!G.token); },4000);
-  }); }
-  async function gLoadCals(){
-    if(!G.token) return;
-    try{ var r=await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList',{headers:{Authorization:'Bearer '+G.token}});
-      var j=await r.json(); var sel=document.getElementById('gCal');
-      sel.innerHTML=(j.items||[]).map(function(c){ return '<option value="'+c.id+'"'+(c.id===G.calId?' selected':'')+'>'+(c.summary||c.id)+'</option>'; }).join('');
-      sel.onchange=function(){ G.calId=sel.value; localStorage.setItem('estimake_gcal_cal',G.calId); };
-    }catch(e){}
-  }
-  function gBody(r){
-    var body={ summary:r.titre||'RDV', description:(r.type?('['+r.type+'] '):'')+(r.note||'')+(r.lien?(' — '+r.lien):'') };
-    if(r.heure && /^\d{2}:\d{2}/.test(r.heure)){
-      var sh=parseInt(r.heure.slice(0,2),10), mm=r.heure.slice(3,5);
-      body.start={dateTime:r.date+'T'+r.heure.slice(0,5)+':00', timeZone:'Europe/Paris'};
-      body.end={dateTime:r.date+'T'+pad2((sh+1)%24)+':'+mm+':00', timeZone:'Europe/Paris'};
-    } else { var nd=new Date(r.date+'T00:00:00'); nd.setDate(nd.getDate()+1);
-      body.start={date:r.date}; body.end={date:nd.getFullYear()+'-'+pad2(nd.getMonth()+1)+'-'+pad2(nd.getDate())}; }
-    return body;
-  }
+  /* ---------- Google Agenda : synchro serveur (compte de service, aller-retour) ---------- */
+  /* Plus de connexion Google dans le navigateur : la fonction serveur api/gcal.js
+     utilise un COMPTE DE SERVICE Google (jeton permanent, aucune reconnexion, aucun
+     popup). app→Google à chaque enregistrement/suppression ; Google→app via le cron
+     Vercel (toutes les 5 min) et à chaque « Synchroniser » ou rafraîchissement. */
+  var gcalBusy=false;
   async function gPush(op, r){
-    if(!GOOGLE_CLIENT_ID || !r || !r.id) return;
-    if(!G.token) return;                       // pas connecté à Google (comportement attendu)
-    var ok=await gEnsure(); if(!ok || !G.token){ toast('Google : session expirée, reclique « Connecter Google ».'); return; }
-    var base='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(G.calId)+'/events';
+    if(!sb || !r || !r.id) return;
     try{
-      if(op==='delete'){ var gid=G.map[r.id]; if(gid){ var rd=await fetch(base+'/'+gid,{method:'DELETE',headers:{Authorization:'Bearer '+G.token}});
-        if(rd.ok||rd.status===410){ delete G.map[r.id]; gSaveMap(); toast('Supprimé de Google Agenda ✓'); } else { toast('Google (suppression) : '+(await rd.text()).slice(0,150)); } } return; }
-      var g2=G.map[r.id], resp;
-      if(g2){ resp=await fetch(base+'/'+g2,{method:'PATCH',headers:{Authorization:'Bearer '+G.token,'Content-Type':'application/json'},body:JSON.stringify(gBody(r))}); }
-      else { resp=await fetch(base,{method:'POST',headers:{Authorization:'Bearer '+G.token,'Content-Type':'application/json'},body:JSON.stringify(gBody(r))}); }
-      if(!resp.ok){ var t=await resp.text(); console.warn('[ESTIMAKE] Google', t); toast('Google a refusé : '+t.slice(0,150)); return; }
-      var jr=await resp.json(); if(jr && jr.id){ G.map[r.id]=jr.id; gSaveMap(); toast(g2?'Google Agenda mis à jour ✓':'Ajouté à Google Agenda ✓'); }
-    }catch(e){ console.warn('[ESTIMAKE] Google sync', e); toast('Google erreur : '+((e&&e.message)||e)); }
+      var res=await fetch('/api/gcal',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ action:(op==='delete'?'delete':'push'), id:r.id })});
+      if(!res.ok && res.status!==503) console.warn('[ESTIMAKE] gcal push', await res.text());
+    }catch(e){ console.warn('[ESTIMAKE] gcal push', e); }
   }
-  if(window.google && google.accounts) gInit(); else window.addEventListener('load',gInit);
+  async function gPull(opts){
+    if(!sb) return;
+    try{
+      var res=await fetch('/api/gcal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ action:'pull' })});
+      if(res.ok){ await syncAgenda(); if(opts&&opts.toast) toast('Google Agenda synchronisé ✓'); }
+      else if(res.status===503){ if(opts&&opts.toast) toast('Synchro Google pas encore configurée.'); }
+      else if(opts&&opts.toast){ toast('Google : '+(await res.text()).slice(0,120)); }
+    }catch(e){ if(opts&&opts.toast) toast('Google injoignable.'); }
+  }
+  (function(){
+    var b=document.getElementById('gBtn'); if(!b) return;
+    var sync='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v5h-5"/></svg>Synchroniser Google';
+    b.innerHTML=sync;
+    b.addEventListener('click',function(){ if(gcalBusy) return; gcalBusy=true; b.disabled=true; b.textContent='Synchronisation…';
+      gPull({toast:true}).finally(function(){ gcalBusy=false; b.disabled=false; b.innerHTML=sync; }); });
+  })();
   async function syncAgenda(){
     if(!sb) return;
     try{ var res=await sb.from('rdv').select('*').order('date',{ascending:true});
       if(res.error) throw res.error;
-      if(res.data){ agendaData=res.data.map(function(r){ return {id:r.id,titre:r.titre,type:r.type,date:r.date,heure:r.heure,lien:r.lien,note:r.note}; }); renderAgenda(); }
+      if(res.data){ agendaData=res.data.filter(function(r){ return !r.deleted; }).map(function(r){ return {id:r.id,titre:r.titre,type:r.type,date:r.date,heure:r.heure,lien:r.lien,note:r.note}; }); renderAgenda(); }
     }catch(e){ console.warn('[ESTIMAKE] Supabase rdv → démo', e); }
   }
-  syncAgenda();
+  syncAgenda(); gPull();
   var rdvModal=document.getElementById('rdvModal'), rdvForm=document.getElementById('rdvForm'),
       rdvErr=document.getElementById('rdvErr'), editingRdvId=null;
   function openRdvForm(r){
@@ -1748,8 +1701,7 @@
   document.getElementById('rdvDelete').addEventListener('click',async function(){
     if(!editingRdvId) return; var id=editingRdvId;
     try{
-      gPush('delete',{id:id});
-      if(sb){ var res=await sb.from('rdv').delete().eq('id',id); if(res.error) throw res.error; await syncAgenda(); }
+      if(sb){ var res=await sb.from('rdv').update({deleted:true}).eq('id',id); if(res.error) throw res.error; await gPush('delete',{id:id}); await syncAgenda(); }
       else { agendaData=agendaData.filter(function(x){return x.id!==id;}); renderAgenda(); }
       closeRdvForm(); toast('RDV supprimé');
     }catch(err){ rdvErr.textContent='Erreur : '+((err&&err.message)||err); rdvErr.classList.add('show'); }

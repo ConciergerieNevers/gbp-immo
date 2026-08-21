@@ -67,22 +67,36 @@ Tant que `STABILITY_API_KEY` n'est pas configurée, le bouton « Générer la ve
 restylée » affiche un message d'aide au lieu de planter. ⚠️ Les clés ne vont
 **jamais** dans le code front — uniquement dans les variables d'environnement Vercel.
 
-## Agenda ↔ Google Agenda (auto-sync)
+## Agenda ↔ Google Agenda — synchro « à vie », aller-retour
 
-L'agenda peut se synchroniser avec un compte Gmail (créer / déplacer / supprimer
-un RDV met à jour Google Agenda). Tout se passe **côté navigateur** — pas de
-secret, pas de backend — mais il faut un **identifiant OAuth Google** (gratuit) :
+La synchro se fait **côté serveur** (fonction `api/gcal.js`) avec un **compte de
+service Google** : jeton permanent, **aucune reconnexion, aucun popup**. Elle marche
+dans les deux sens — app → Google (à chaque création/modif/suppression) et
+Google → app (cron Vercel toutes les 5 min + bouton « Synchroniser »).
 
-1. **Google Cloud Console** ([console.cloud.google.com](https://console.cloud.google.com/)) → crée un projet.
-2. **APIs & Services → Bibliothèque** → active **Google Calendar API**.
-3. **APIs & Services → Écran de consentement OAuth** → type *Externe* → nom « ESTIMAKE » → ajoute ton e-mail → ajoute-toi comme **utilisateur de test**.
-4. **APIs & Services → Identifiants → Créer → ID client OAuth** → type **Application Web** → dans **Origines JavaScript autorisées** ajoute `https://gbp-immo.vercel.app` (et `http://localhost:PORT` pour tester) → Créer.
-5. Copie l'**ID client** (finit par `.apps.googleusercontent.com`).
-6. Colle-le dans `GOOGLE_CLIENT_ID` en haut d'`index.html`, commit + push (redéploie).
-7. Sur le site → **Agenda → Connecter Google** → choisis le compte Gmail (même un autre) → autorise → choisis le calendrier cible. Les RDV s'y synchronisent.
+**Configuration (une seule fois) :**
 
-Tant que `GOOGLE_CLIENT_ID` est vide, le bouton reste inactif ; le lien « Ajouter
-à Google Agenda » (1 clic par RDV) fonctionne toujours sans aucune config.
+1. **Compte de service** — Google Cloud Console → projet ESTIMAKE → *IAM et admin →
+   Comptes de service* → **Créer** (nom `estimake-sync`) → puis onglet **Clés →
+   Ajouter une clé → JSON** : un fichier `.json` se télécharge.
+2. **Calendar API** — *APIs et services → Bibliothèque* → activer **Google Calendar API**.
+3. **Partager le calendrier** — dans Google Agenda, ouvrir les *Paramètres* du
+   calendrier cible → *Partager avec des personnes* → ajouter l'**e-mail du compte
+   de service** (`…@…iam.gserviceaccount.com`, présent dans le JSON) avec le droit
+   **« Apporter des modifications aux événements »**.
+4. **Variables Vercel** (*Settings → Environment Variables*), puis redéployer :
+   - `GOOGLE_SA_KEY_JSON` — **tout** le contenu du fichier `.json`
+   - `GCAL_ID` — l'identifiant du calendrier cible (souvent l'e-mail du compte)
+   - `SB_URL` — l'URL du projet Supabase
+   - `SB_SERVICE_KEY` — la clé **service_role** Supabase (Settings → API)
+5. **SQL** — lancer `gcal.sql` dans Supabase (colonnes de synchro + table d'état).
+6. Le cron (`vercel.json`) s'active automatiquement au déploiement.
+
+> ⚠️ La clé service_role et le JSON du compte de service ne vont **jamais** dans le
+> code / le repo — uniquement dans les variables d'environnement Vercel (serveur).
+
+Tant que ces variables ne sont pas renseignées, l'agenda fonctionne normalement en
+local (Supabase), la synchro Google reste simplement en veille (réponse 503 ignorée).
 
 ## Prochaines étapes (V2)
 - Connexion par compte (Supabase Auth) + espace par négociateur, vue directeur consolidée.

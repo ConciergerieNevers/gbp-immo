@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/gcal?action=pull", "schedule": "*/5 * * * *" }
+  ]
+}
