@@ -64,7 +64,8 @@ function calBase(){ return 'https://www.googleapis.com/calendar/v3/calendars/'+e
 // Construit l'événement Google à partir d'une ligne rdv
 function gBody(r){
   var body = { summary:r.titre||'RDV',
-    description:(r.type?('['+r.type+'] '):'')+(r.note||'')+(r.lien?(' — '+r.lien):'') };
+    description:(r.type?('['+r.type+'] '):'')+(r.note||'')+(r.lien?(' — '+r.lien):''),
+    extendedProperties:{ private:{ estimakeId:String(r.id) } } };   // lien exact RDV↔événement (anti-doublon)
   if(r.heure && /^\d{2}:\d{2}/.test(r.heure)){
     var sh=parseInt(r.heure.slice(0,2),10), mm=r.heure.slice(3,5);
     body.start={ dateTime:r.date+'T'+r.heure.slice(0,5)+':00', timeZone:'Europe/Paris' };
@@ -118,6 +119,13 @@ function inParis(iso){
 // Applique un événement Google dans la base (Google → app)
 async function applyEvent(ev){
   var q = await sbFetch('rdv?gcal_id=eq.'+encodeURIComponent(ev.id)+'&select=id,deleted'); var ex = (await q.json())[0];
+  // Anti-doublon : si pas de correspondance par gcal_id, retrouver le RDV d'origine
+  // grâce à l'identifiant ESTIMAKE inscrit dans l'événement (créé par l'app).
+  var estId = ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.estimakeId;
+  if(!ex && estId){
+    var aq = await sbFetch('rdv?id=eq.'+encodeURIComponent(estId)+'&select=id'); var arow = (await aq.json())[0];
+    if(arow) ex = arow;
+  }
   if(ev.status === 'cancelled'){
     if(ex){ await sbFetch('rdv?id=eq.'+ex.id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ deleted:true }) }); return 1; }
     return 0;
