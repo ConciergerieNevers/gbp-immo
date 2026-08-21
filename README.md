@@ -67,6 +67,23 @@ Tant que `STABILITY_API_KEY` n'est pas configurée, le bouton « Générer la ve
 restylée » affiche un message d'aide au lieu de planter. ⚠️ Les clés ne vont
 **jamais** dans le code front — uniquement dans les variables d'environnement Vercel.
 
+## Agenda ↔ Google Agenda (auto-sync)
+
+L'agenda peut se synchroniser avec un compte Gmail (créer / déplacer / supprimer
+un RDV met à jour Google Agenda). Tout se passe **côté navigateur** — pas de
+secret, pas de backend — mais il faut un **identifiant OAuth Google** (gratuit) :
+
+1. **Google Cloud Console** ([console.cloud.google.com](https://console.cloud.google.com/)) → crée un projet.
+2. **APIs & Services → Bibliothèque** → active **Google Calendar API**.
+3. **APIs & Services → Écran de consentement OAuth** → type *Externe* → nom « ESTIMAKE » → ajoute ton e-mail → ajoute-toi comme **utilisateur de test**.
+4. **APIs & Services → Identifiants → Créer → ID client OAuth** → type **Application Web** → dans **Origines JavaScript autorisées** ajoute `https://gbp-immo.vercel.app` (et `http://localhost:PORT` pour tester) → Créer.
+5. Copie l'**ID client** (finit par `.apps.googleusercontent.com`).
+6. Colle-le dans `GOOGLE_CLIENT_ID` en haut d'`index.html`, commit + push (redéploie).
+7. Sur le site → **Agenda → Connecter Google** → choisis le compte Gmail (même un autre) → autorise → choisis le calendrier cible. Les RDV s'y synchronisent.
+
+Tant que `GOOGLE_CLIENT_ID` est vide, le bouton reste inactif ; le lien « Ajouter
+à Google Agenda » (1 clic par RDV) fonctionne toujours sans aucune config.
+
 ## Prochaines étapes (V2)
 - Connexion par compte (Supabase Auth) + espace par négociateur, vue directeur consolidée.
 - Comparables DVF récupérés en direct (API DVF / cadastre / Géorisques).
