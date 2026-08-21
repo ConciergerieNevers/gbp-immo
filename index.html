@@ -815,7 +815,7 @@
         </div>
         <div class="toolbar">
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input placeholder="Rechercher un contact…"></div>
-          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ajouter</button>
+          <button class="btn pri" id="addContactBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ajouter</button>
         </div>
         <div class="card" style="padding:6px 14px"><div class="clist" id="crmList"></div></div>
       </section>
@@ -1073,6 +1073,30 @@
       <div class="modal-ft">
         <button type="button" class="btn" id="bienCancel">Annuler</button>
         <button type="submit" class="btn pri" id="bienSave">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======== FORMULAIRE CONTACT (ajout / édition) ======== -->
+<div class="modal" id="contactModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b id="contactModalTitle">Nouveau contact</b>
+      <button class="modal-x" id="contactModalX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form class="modal-body" id="contactForm">
+      <div class="mfields">
+        <label class="mf mf-wide"><span>Nom</span><input name="nom" required placeholder="M. et Mme Delaunay"></label>
+        <label class="mf"><span>Type</span><select name="role"><option value="vendeur">Vendeur</option><option value="acquereur">Acquéreur</option><option value="prospect">Prospect</option></select></label>
+        <label class="mf"><span>Statut / mandat</span><input name="statut" placeholder="Exclusif · Chaud · Tiède…"></label>
+        <label class="mf mf-wide"><span>Détail (bien lié / recherche / origine)</span><input name="detail" placeholder="12 rue des Récollets · T3/T4 centre…"></label>
+        <label class="mf"><span>Budget (€) — acquéreur</span><input name="budget" type="number" inputmode="numeric" placeholder="160000"></label>
+        <label class="mf"><span>Dernière relance</span><input name="derniere_relance" placeholder="hier · il y a 3 j"></label>
+        <label class="mf mf-wide"><span>Prochaine action</span><input name="prochaine_action" placeholder="Signature RDV jeudi"></label>
+      </div>
+      <div class="autherr" id="contactErr"></div>
+      <div class="modal-ft">
+        <button type="button" class="btn" id="contactCancel">Annuler</button>
+        <button type="submit" class="btn pri" id="contactSave">Enregistrer</button>
       </div>
     </form>
   </div>
@@ -1362,44 +1386,109 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
 
   /* ---------- CRM ---------- */
-  var crm={
-    vendeurs:{head:['Vendeur','Bien','Mandat','Dernière relance','Prochaine action'],rows:[
-      ['Delaunay','#6a9','12 rue des Récollets','Exclusif','il y a 3 j','Signature RDV jeudi'],
-      ['Ferrand','#7aa','Quai de Médine T3','Exclusif','hier','Valider les photos'],
-      ['Ollivier','#b78','2 impasse des Vignes','Exclusif','il y a 5 j','Faire un retour visites'],
-      ['Renard','#a86','18 avenue Colbert','Simple','il y a 8 j','Proposer l\'exclusivité'],
-      ['Aubry','#699','7 rue du Commerce','Simple','il y a 12 j','Point sur baisse de prix']
-    ]},
-    acquereurs:{head:['Acquéreur','Recherche','Budget','Dernier contact','Prochaine action'],rows:[
-      ['Camille Petit','#6a9','T3/T4 centre','160 000 €','hier','Envoyer 2 biens correspondants'],
-      ['Thomas Girard','#7aa','Maison ≤ 200 k€','200 000 €','il y a 2 j','Visite samedi 15/08'],
-      ['Léa Fontaine','#b78','Locatif rentable','120 000 €','il y a 4 j','Relancer T2 rue Bovet'],
-      ['Hugo Blanc','#a86','Primo-accédant','140 000 €','il y a 6 j','Appeler courtier']
-    ]},
-    prospects:{head:['Prospect','Origine','Statut','Dernier contact','Prochaine action'],rows:[
-      ['Famille Lambert','#6a9','Estimation en ligne','Chaud','il y a 1 j','Caler RDV estimation'],
-      ['M. Chevalier','#7aa','Recommandation','Tiède','il y a 3 j','Rappeler mardi'],
-      ['Mme Roy','#b78','Porte-à-porte','À qualifier','il y a 7 j','Envoyer plaquette GBP'],
-      ['SCI Vauban','#a86','Réseau','Chaud','il y a 2 j','Proposer estimation loc.']
-    ]}
-  };
+  var contactsData=[
+    {id:'c1',role:'vendeur',nom:'Delaunay',detail:'12 rue des Récollets',statut:'Exclusif',budget:null,relance:'il y a 3 j',action:'Signature RDV jeudi',couleur:'#6a9'},
+    {id:'c2',role:'vendeur',nom:'Ferrand',detail:'Quai de Médine T3',statut:'Exclusif',budget:null,relance:'hier',action:'Valider les photos',couleur:'#7aa'},
+    {id:'c3',role:'vendeur',nom:'Ollivier',detail:'2 impasse des Vignes',statut:'Exclusif',budget:null,relance:'il y a 5 j',action:'Faire un retour visites',couleur:'#b78'},
+    {id:'c4',role:'vendeur',nom:'Renard',detail:'18 avenue Colbert',statut:'Simple',budget:null,relance:'il y a 8 j',action:'Proposer l\'exclusivité',couleur:'#a86'},
+    {id:'c5',role:'vendeur',nom:'Aubry',detail:'7 rue du Commerce',statut:'Simple',budget:null,relance:'il y a 12 j',action:'Point sur baisse de prix',couleur:'#699'},
+    {id:'c6',role:'acquereur',nom:'Camille Petit',detail:'T3/T4 centre',statut:null,budget:160000,relance:'hier',action:'Envoyer 2 biens correspondants',couleur:'#6a9'},
+    {id:'c7',role:'acquereur',nom:'Thomas Girard',detail:'Maison ≤ 200 k€',statut:null,budget:200000,relance:'il y a 2 j',action:'Visite samedi 15/08',couleur:'#7aa'},
+    {id:'c8',role:'acquereur',nom:'Léa Fontaine',detail:'Locatif rentable',statut:null,budget:120000,relance:'il y a 4 j',action:'Relancer T2 rue Bovet',couleur:'#b78'},
+    {id:'c9',role:'acquereur',nom:'Hugo Blanc',detail:'Primo-accédant',statut:null,budget:140000,relance:'il y a 6 j',action:'Appeler courtier',couleur:'#a86'},
+    {id:'c10',role:'prospect',nom:'Famille Lambert',detail:'Estimation en ligne',statut:'Chaud',budget:null,relance:'il y a 1 j',action:'Caler RDV estimation',couleur:'#6a9'},
+    {id:'c11',role:'prospect',nom:'M. Chevalier',detail:'Recommandation',statut:'Tiède',budget:null,relance:'il y a 3 j',action:'Rappeler mardi',couleur:'#7aa'},
+    {id:'c12',role:'prospect',nom:'Mme Roy',detail:'Porte-à-porte',statut:'À qualifier',budget:null,relance:'il y a 7 j',action:'Envoyer plaquette GBP',couleur:'#b78'},
+    {id:'c13',role:'prospect',nom:'SCI Vauban',detail:'Réseau',statut:'Chaud',budget:null,relance:'il y a 2 j',action:'Proposer estimation loc.',couleur:'#a86'}
+  ];
+  function contactTag(c){
+    if(c.role==='acquereur') return '<b class="tnum" style="font-size:14px">'+(c.budget?euro(c.budget):'—')+'</b>';
+    var st=c.statut||''; var cls={'Exclusif':'info','Chaud':'crit','Tiède':'warn'}[st]||'';
+    return '<span class="pill '+cls+'">'+st+'</span>';
+  }
+  var crmTab='vendeurs';
   function renderCrm(tab){
-    var d=crm[tab];
-    document.getElementById('crmList').innerHTML=d.rows.map(function(r){
-      var initials=r[0].split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-      var cls={'Exclusif':'info','Chaud':'crit','Tiède':'warn'}[r[3]]||'';
-      var tag=(tab==='acquereurs')?('<b class="tnum" style="font-size:14px">'+r[3]+'</b>'):('<span class="pill '+cls+'">'+r[3]+'</span>');
-      return '<div class="crow"><div class="av" style="background:'+r[1]+'">'+initials+'</div>'+
-        '<div class="cmain"><b>'+r[0]+'</b><small>'+r[2]+'</small></div>'+
-        '<div class="cmeta">'+tag+'<small class="cnext">'+r[5]+' →</small></div></div>';
-    }).join('');
+    if(tab) crmTab=tab;
+    var role={vendeurs:'vendeur',acquereurs:'acquereur',prospects:'prospect'}[crmTab];
+    var list=contactsData.filter(function(c){return c.role===role;});
+    document.getElementById('crmList').innerHTML = list.length ? list.map(function(c){
+      var initials=(c.nom||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      return '<div class="crow" data-id="'+c.id+'"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+initials+'</div>'+
+        '<div class="cmain"><b>'+(c.nom||'')+'</b><small>'+(c.detail||'')+'</small></div>'+
+        '<div class="cmeta">'+contactTag(c)+'<small class="cnext">'+((c.action||'')+' →')+'</small></div></div>';
+    }).join('') : '<div style="color:var(--ink-3);padding:18px 4px;font-size:14px">Aucun contact ici — clique « Ajouter ».</div>';
   }
   document.getElementById('crmTabs').addEventListener('click',function(e){
     var t=e.target.closest('.subtab');if(!t)return;
     this.querySelectorAll('.subtab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
     renderCrm(t.dataset.t);
   });
+  document.getElementById('crmList').addEventListener('click',function(e){
+    var row=e.target.closest('.crow'); if(!row) return;
+    var c=contactsData.find(function(x){return x.id===row.dataset.id;}); if(c) openContactForm(c);
+  });
   renderCrm('vendeurs');
+  async function syncContacts(){
+    if(!sb) return;
+    try{
+      var res=await sb.from('contacts').select('*').order('created_at',{ascending:true});
+      if(res.error) throw res.error;
+      if(res.data && res.data.length){
+        contactsData=res.data.map(function(r){ return {id:r.id, role:r.role, nom:r.nom, detail:r.detail,
+          statut:r.statut, budget:r.budget, relance:r.derniere_relance, action:r.prochaine_action, couleur:r.couleur||'#6a9'}; });
+        renderCrm();
+      }
+    }catch(e){ console.warn('[ESTIMAKE] Supabase contacts → démo', e); }
+  }
+  syncContacts();
+
+  /* ---------- formulaire contact : ajout / édition ---------- */
+  var contactModal=document.getElementById('contactModal'), contactForm=document.getElementById('contactForm'),
+      contactErr=document.getElementById('contactErr'), editingContactId=null;
+  var CPAL=['#6a9','#7aa','#b78','#a86','#699','#8a7'];
+  function openContactForm(c){
+    editingContactId = (c && c.id) ? c.id : null;
+    document.getElementById('contactModalTitle').textContent = c ? 'Modifier le contact' : 'Nouveau contact';
+    var e=contactForm.elements;
+    e.nom.value=c?(c.nom||''):''; e.role.value=c?(c.role||'vendeur'):'vendeur';
+    e.statut.value=c?(c.statut||''):''; e.detail.value=c?(c.detail||''):'';
+    e.budget.value=(c&&c.budget)?c.budget:''; e.derniere_relance.value=c?(c.relance||''):'';
+    e.prochaine_action.value=c?(c.action||''):'';
+    contactErr.classList.remove('show'); contactErr.textContent=''; contactModal.hidden=false;
+  }
+  function closeContactForm(){ contactModal.hidden=true; }
+  document.getElementById('addContactBtn').addEventListener('click',function(){ openContactForm(null); });
+  document.getElementById('contactModalX').addEventListener('click',closeContactForm);
+  document.getElementById('contactCancel').addEventListener('click',closeContactForm);
+  contactModal.addEventListener('click',function(e){ if(e.target===contactModal) closeContactForm(); });
+  contactForm.addEventListener('submit',async function(ev){
+    ev.preventDefault();
+    var e=contactForm.elements, budget=parseInt(e.budget.value,10); if(isNaN(budget)) budget=null;
+    var row={ role:e.role.value, nom:e.nom.value.trim(), detail:e.detail.value.trim(),
+      statut:e.statut.value.trim()||null, budget:budget, derniere_relance:e.derniere_relance.value.trim(),
+      prochaine_action:e.prochaine_action.value.trim(), couleur:CPAL[contactsData.length%CPAL.length] };
+    if(!row.nom){ contactErr.textContent='Le nom est obligatoire.'; contactErr.classList.add('show'); return; }
+    var tabName={vendeur:'vendeurs',acquereur:'acquereurs',prospect:'prospects'}[row.role];
+    function showTab(){ document.querySelectorAll('#crmTabs .subtab').forEach(function(x){ x.classList.toggle('on', x.dataset.t===tabName); }); renderCrm(tabName); }
+    var save=document.getElementById('contactSave'); save.disabled=true; var old=save.textContent; save.textContent='Enregistrement…';
+    try{
+      if(sb){
+        var res = editingContactId ? await sb.from('contacts').update(row).eq('id',editingContactId) : await sb.from('contacts').insert(row);
+        if(res.error) throw res.error;
+        await syncContacts(); showTab();
+        toast(editingContactId?'Contact modifié ✓':'Contact ajouté ✓');
+      } else {
+        var obj={ id:editingContactId||('c'+Date.now()), role:row.role, nom:row.nom, detail:row.detail,
+          statut:row.statut, budget:row.budget, relance:row.derniere_relance, action:row.prochaine_action, couleur:row.couleur };
+        if(editingContactId){ var i=contactsData.findIndex(function(x){return x.id===editingContactId;}); if(i>-1){ obj.couleur=contactsData[i].couleur; contactsData[i]=obj; } }
+        else { contactsData.push(obj); }
+        showTab();
+        toast(editingContactId?'Contact modifié (démo local)':'Contact ajouté (démo local)');
+      }
+      closeContactForm();
+    }catch(err){ contactErr.textContent='Erreur : '+((err&&err.message)||err); contactErr.classList.add('show'); }
+    finally{ save.disabled=false; save.textContent=old; }
+  });
 
   /* ---------- ESTIMATION engine ---------- */
   var comps={
