@@ -1696,16 +1696,19 @@
     return body;
   }
   async function gPush(op, r){
-    if(!GOOGLE_CLIENT_ID || !G.token || !r || !r.id) return;
-    var ok=await gEnsure(); if(!ok || !G.token) return;
+    if(!GOOGLE_CLIENT_ID || !r || !r.id) return;
+    if(!G.token) return;                       // pas connecté à Google (comportement attendu)
+    var ok=await gEnsure(); if(!ok || !G.token){ toast('Google : session expirée, reclique « Connecter Google ».'); return; }
     var base='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(G.calId)+'/events';
     try{
-      if(op==='delete'){ var gid=G.map[r.id]; if(gid){ await fetch(base+'/'+gid,{method:'DELETE',headers:{Authorization:'Bearer '+G.token}}); delete G.map[r.id]; gSaveMap(); } return; }
-      var g2=G.map[r.id];
-      if(g2){ await fetch(base+'/'+g2,{method:'PATCH',headers:{Authorization:'Bearer '+G.token,'Content-Type':'application/json'},body:JSON.stringify(gBody(r))}); toast('Google Agenda mis à jour ✓'); }
-      else { var resp=await fetch(base,{method:'POST',headers:{Authorization:'Bearer '+G.token,'Content-Type':'application/json'},body:JSON.stringify(gBody(r))});
-        var jr=await resp.json(); if(jr && jr.id){ G.map[r.id]=jr.id; gSaveMap(); toast('Ajouté à Google Agenda ✓'); } }
-    }catch(e){ console.warn('[ESTIMAKE] Google sync', e); }
+      if(op==='delete'){ var gid=G.map[r.id]; if(gid){ var rd=await fetch(base+'/'+gid,{method:'DELETE',headers:{Authorization:'Bearer '+G.token}});
+        if(rd.ok||rd.status===410){ delete G.map[r.id]; gSaveMap(); toast('Supprimé de Google Agenda ✓'); } else { toast('Google (suppression) : '+(await rd.text()).slice(0,150)); } } return; }
+      var g2=G.map[r.id], resp;
+      if(g2){ resp=await fetch(base+'/'+g2,{method:'PATCH',headers:{Authorization:'Bearer '+G.token,'Content-Type':'application/json'},body:JSON.stringify(gBody(r))}); }
+      else { resp=await fetch(base,{method:'POST',headers:{Authorization:'Bearer '+G.token,'Content-Type':'application/json'},body:JSON.stringify(gBody(r))}); }
+      if(!resp.ok){ var t=await resp.text(); console.warn('[ESTIMAKE] Google', t); toast('Google a refusé : '+t.slice(0,150)); return; }
+      var jr=await resp.json(); if(jr && jr.id){ G.map[r.id]=jr.id; gSaveMap(); toast(g2?'Google Agenda mis à jour ✓':'Ajouté à Google Agenda ✓'); }
+    }catch(e){ console.warn('[ESTIMAKE] Google sync', e); toast('Google erreur : '+((e&&e.message)||e)); }
   }
   if(window.google && google.accounts) gInit(); else window.addEventListener('load',gInit);
   async function syncAgenda(){
