@@ -177,6 +177,21 @@
   .modal-ft{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
   #bienErr{margin-top:12px}
   @media (max-width:520px){ .mfields{grid-template-columns:1fr} }
+  /* agenda */
+  .agday{font-size:12px;font-weight:640;text-transform:capitalize;color:var(--ink-2);margin:18px 2px 9px;letter-spacing:.01em}
+  .agday:first-child{margin-top:0}
+  .rdv-row{display:flex;align-items:center;gap:14px;padding:13px 15px;margin-bottom:8px;cursor:pointer;transition:transform .12s}
+  .rdv-row:hover{border-color:var(--line-2);transform:translateY(-1px)}
+  .rdv-time{font-weight:700;font-size:15px;color:var(--brand);width:52px;flex:none;text-align:center;font-variant-numeric:tabular-nums}
+  .rdv-main{flex:1;min-width:0}
+  .rdv-main b{font-weight:600;font-size:14.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rdv-main small{color:var(--ink-3);font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gcal{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+    display:grid;place-items:center;flex:none;text-decoration:none}
+  .gcal:hover{color:var(--brand);border-color:var(--brand)}
+  .gcal svg{width:17px;height:17px}
+  .btn.danger-o{color:var(--crit);border-color:var(--crit)}
+  .btn.danger-o:hover{background:var(--crit-bg)}
   /* calculette flottante */
   .fab{position:fixed;right:22px;bottom:26px;width:56px;height:56px;border-radius:18px;border:0;z-index:55;
     background:var(--brand);color:#fff;box-shadow:var(--shadow-lg);display:grid;place-items:center;cursor:pointer}
@@ -685,9 +700,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-4 6 4v11"/><path d="M9.5 13h5M9.5 16.5h5"/></svg>
       Estimation
     </button>
-    <button class="navitem" data-go="agence">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
-      Agence
+    <button class="navitem" data-go="agenda">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>
+      Agenda
     </button>
     <div class="spacer"></div>
     <div class="railuser" id="railuser">
@@ -990,45 +1005,13 @@
         </div>
       </section>
 
-      <!-- ============ AGENCE ============ -->
-      <section class="screen" id="agence">
-        <div class="sectitle" style="margin-top:4px"><h2>Challenge du trimestre</h2><div class="grow"></div><span class="pill info dot">T3 · en cours</span></div>
-        <div class="podium">
-          <div class="pod p2"><div class="medal">🥈</div><div class="av" style="background:linear-gradient(135deg,#7aa,#488)">SL</div><div class="nm">Sophie Lemaire</div><div class="role">Négociatrice</div><div class="pts tnum">1 240<small> pts</small></div></div>
-          <div class="pod p1"><div class="medal">🥇</div><div class="av" style="background:linear-gradient(135deg,#C79A4E,#9c6f22)">JG</div><div class="nm">Jimmy Garcia</div><div class="role">Négociateur</div><div class="pts tnum">1 610<small> pts</small></div></div>
-          <div class="pod p3"><div class="medal">🥉</div><div class="av" style="background:linear-gradient(135deg,#b78,#946)">KR</div><div class="nm">Karim Rousseau</div><div class="role">Négociateur</div><div class="pts tnum">980<small> pts</small></div></div>
+      <!-- ============ AGENDA ============ -->
+      <section class="screen" id="agenda">
+        <div class="toolbar">
+          <div style="flex:1"></div>
+          <button class="btn pri" id="addRdvBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Nouveau RDV</span></button>
         </div>
-
-        <div class="grid gtwo" style="gap:16px">
-          <div class="card pad">
-            <div class="eyebrow" style="margin-bottom:6px">Classement complet</div>
-            <table class="lb"><tbody>
-              <tr><td class="rk">1</td><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#C79A4E,#9c6f22)">JG</div><b>Jimmy Garcia</b></div></td><td class="barcell"><div class="bar"><i style="width:100%"></i></div></td><td class="ptcell tnum">1 610</td></tr>
-              <tr><td class="rk">2</td><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#7aa,#488)">SL</div><b>Sophie Lemaire</b></div></td><td class="barcell"><div class="bar"><i style="width:77%"></i></div></td><td class="ptcell tnum">1 240</td></tr>
-              <tr><td class="rk">3</td><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#b78,#946)">KR</div><b>Karim Rousseau</b></div></td><td class="barcell"><div class="bar"><i style="width:61%"></i></div></td><td class="ptcell tnum">980</td></tr>
-              <tr><td class="rk">4</td><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#6a9,#385)">EM</div><b>Élodie Mercier</b></div></td><td class="barcell"><div class="bar"><i style="width:48%"></i></div></td><td class="ptcell tnum">760</td></tr>
-            </tbody></table>
-          </div>
-          <div class="card pad">
-            <div class="eyebrow" style="margin-bottom:12px">Barème · points par action</div>
-            <div class="ptsgrid">
-              <div class="ptcard"><div class="p">+20</div><small>Estimation</small></div>
-              <div class="ptcard"><div class="p">+60</div><small>Mandat exclusif</small></div>
-              <div class="ptcard"><div class="p">+30</div><small>Mandat simple</small></div>
-              <div class="ptcard"><div class="p">+40</div><small>Visite</small></div>
-              <div class="ptcard"><div class="p">+80</div><small>Compromis</small></div>
-              <div class="ptcard"><div class="p">+150</div><small>Vente actée</small></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="sectitle"><h2>Performance de l'agence · 2026</h2></div>
-        <div class="grid kpigrid">
-          <div class="card kpi"><div class="lab">CA équipe</div><div class="val tnum">642 k<span class="unit">€</span></div><div class="meta"><span class="trend up">▲ 18 %</span> vs 2025</div></div>
-          <div class="card kpi"><div class="lab">Mandats en portefeuille</div><div class="val tnum">54</div><div class="meta">31 exclusifs · 57 %</div></div>
-          <div class="card kpi"><div class="lab">Ventes actées</div><div class="val tnum">41</div><div class="meta">délai moyen 78 j</div></div>
-          <div class="card kpi"><div class="lab">Taux exclusivité</div><div class="val tnum">57 <span class="unit">%</span></div><div class="meta"><span class="trend up">▲ 6 pts</span> objectif 60 %</div></div>
-        </div>
+        <div id="agendaList"></div>
       </section>
 
     </div>
@@ -1039,7 +1022,7 @@
       <button data-go="biens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Biens</button>
       <button data-go="estimation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V9l6-4 6 4v11M9.5 13h5"/></svg>Estimer</button>
       <button data-go="crm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/></svg>Contacts</button>
-      <button data-go="agence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/></svg>Agence</button>
+      <button data-go="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Agenda</button>
     </nav>
   </div>
 </div>
@@ -1097,6 +1080,30 @@
       <div class="modal-ft">
         <button type="button" class="btn" id="contactCancel">Annuler</button>
         <button type="submit" class="btn pri" id="contactSave">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======== FORMULAIRE RDV (agenda) ======== -->
+<div class="modal" id="rdvModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b id="rdvModalTitle">Nouveau RDV</b>
+      <button class="modal-x" id="rdvModalX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form class="modal-body" id="rdvForm">
+      <div class="mfields">
+        <label class="mf mf-wide"><span>Intitulé</span><input name="titre" required placeholder="Estimation — 12 rue des Récollets"></label>
+        <label class="mf"><span>Type</span><select name="type"><option>Estimation</option><option>Visite</option><option>Signature</option><option>Appel</option><option>Autre</option></select></label>
+        <label class="mf"><span>Date</span><input name="date" type="date" required></label>
+        <label class="mf"><span>Heure</span><input name="heure" type="time"></label>
+        <label class="mf"><span>Lié à (bien / contact)</span><input name="lien" placeholder="M. Delaunay · GBP-2041"></label>
+        <label class="mf mf-wide"><span>Note</span><input name="note" placeholder="Apporter les diagnostics"></label>
+      </div>
+      <div class="autherr" id="rdvErr"></div>
+      <div class="modal-ft">
+        <button type="button" class="btn danger-o" id="rdvDelete" style="margin-right:auto" hidden>Supprimer</button>
+        <button type="button" class="btn" id="rdvCancel">Annuler</button>
+        <button type="submit" class="btn pri" id="rdvSave">Enregistrer</button>
       </div>
     </form>
   </div>
@@ -1180,7 +1187,7 @@
     biens:['Portefeuille de biens','18 biens · Nevers et agglomération'],
     crm:['Contacts','Vendeurs, acquéreurs & prospects'],
     estimation:['Estimation','12 rue des Récollets, Nevers · en cours'],
-    agence:['Agence','Vue consolidée · 4 négociateurs']};
+    agenda:['Agenda','RDV, visites & signatures']};
   function go(id){
     document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('active',s.id===id);});
     document.querySelectorAll('.rail .navitem').forEach(function(b){b.classList.toggle('active',b.dataset.go===id);});
@@ -1487,6 +1494,104 @@
       }
       closeContactForm();
     }catch(err){ contactErr.textContent='Erreur : '+((err&&err.message)||err); contactErr.classList.add('show'); }
+    finally{ save.disabled=false; save.textContent=old; }
+  });
+
+  /* ---------- AGENDA (RDV) ---------- */
+  var agendaData=[
+    {id:'r1',titre:'Estimation — 12 rue des Récollets',type:'Estimation',date:'2026-08-21',heure:'14:30',lien:'M. et Mme Delaunay',note:'Apporter les diagnostics'},
+    {id:'r2',titre:'Visite — 2 impasse des Vignes',type:'Visite',date:'2026-08-22',heure:'11:00',lien:'M. Ollivier · GBP-2044',note:''},
+    {id:'r3',titre:'Signature compromis — 34 rue de Charleville',type:'Signature',date:'2026-08-22',heure:'16:00',lien:'Étude Me Petit',note:''},
+    {id:'r4',titre:'Appel acquéreur T3',type:'Appel',date:'2026-08-25',heure:'09:30',lien:'Camille Petit',note:'Proposer quai de Médine'}
+  ];
+  var TYPECOL={Estimation:'info',Visite:'warn',Signature:'good',Appel:'',Autre:''};
+  function frDay(iso){ try{ var d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return iso; } }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function gcalUrl(r){
+    var text=encodeURIComponent(r.titre||'RDV');
+    var det=encodeURIComponent((r.type?('['+r.type+'] '):'')+(r.note||'')+(r.lien?(' — '+r.lien):''));
+    var dates;
+    if(r.heure && /^\d{2}:\d{2}/.test(r.heure)){
+      var d=r.date.replace(/-/g,''), hm=r.heure.slice(0,5).replace(':','');
+      var sh=parseInt(r.heure.slice(0,2),10), eh=(sh+1)%24;
+      dates=d+'T'+hm+'00/'+d+'T'+pad2(eh)+r.heure.slice(3,5)+'00';
+    } else {
+      var d0=r.date.replace(/-/g,''); var nd=new Date(r.date+'T00:00:00'); nd.setDate(nd.getDate()+1);
+      dates=d0+'/'+(nd.getFullYear()+pad2(nd.getMonth()+1)+pad2(nd.getDate()));
+    }
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+text+'&dates='+dates+'&details='+det;
+  }
+  function renderAgenda(){
+    var el=document.getElementById('agendaList'); if(!el) return;
+    var list=agendaData.slice().sort(function(a,b){ return (a.date+(a.heure||'')).localeCompare(b.date+(b.heure||'')); });
+    if(!list.length){ el.innerHTML='<div class="card pad" style="color:var(--ink-3)">Aucun rendez-vous — clique « Nouveau RDV ».</div>'; return; }
+    var html='', curDay=null;
+    list.forEach(function(r){
+      if(r.date!==curDay){ curDay=r.date; html+='<div class="agday">'+frDay(r.date)+'</div>'; }
+      var cls=TYPECOL[r.type]||'';
+      var sub = r.lien ? (r.lien+(r.note?' · '+r.note:'')) : (r.note||'');
+      html+='<div class="card rdv-row" data-id="'+r.id+'"><div class="rdv-time">'+(r.heure||'--:--')+'</div>'+
+        '<div class="rdv-main"><b>'+r.titre+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</div>'+
+        '<span class="pill '+cls+'">'+r.type+'</span>'+
+        '<a class="gcal" href="'+gcalUrl(r)+'" target="_blank" rel="noopener" title="Ajouter à Google Agenda" aria-label="Ajouter à Google Agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4M12 12v5M9.5 14.5h5"/></svg></a></div>';
+    });
+    el.innerHTML=html;
+  }
+  document.getElementById('agendaList').addEventListener('click',function(e){ if(e.target.closest('.gcal')) return;
+    var row=e.target.closest('.rdv-row'); if(!row) return;
+    var r=agendaData.find(function(x){return x.id===row.dataset.id;}); if(r) openRdvForm(r); });
+  renderAgenda();
+  async function syncAgenda(){
+    if(!sb) return;
+    try{ var res=await sb.from('rdv').select('*').order('date',{ascending:true});
+      if(res.error) throw res.error;
+      if(res.data){ agendaData=res.data.map(function(r){ return {id:r.id,titre:r.titre,type:r.type,date:r.date,heure:r.heure,lien:r.lien,note:r.note}; }); renderAgenda(); }
+    }catch(e){ console.warn('[ESTIMAKE] Supabase rdv → démo', e); }
+  }
+  syncAgenda();
+  var rdvModal=document.getElementById('rdvModal'), rdvForm=document.getElementById('rdvForm'),
+      rdvErr=document.getElementById('rdvErr'), editingRdvId=null;
+  function openRdvForm(r){
+    editingRdvId=(r&&r.id)?r.id:null;
+    document.getElementById('rdvModalTitle').textContent=r?'Modifier le RDV':'Nouveau RDV';
+    var e=rdvForm.elements;
+    e.titre.value=r?(r.titre||''):''; e.type.value=r?(r.type||'Estimation'):'Estimation';
+    e.date.value=r?(r.date||''):''; e.heure.value=r?(r.heure||''):''; e.lien.value=r?(r.lien||''):''; e.note.value=r?(r.note||''):'';
+    document.getElementById('rdvDelete').hidden = !editingRdvId;
+    rdvErr.classList.remove('show'); rdvErr.textContent=''; rdvModal.hidden=false;
+  }
+  function closeRdvForm(){ rdvModal.hidden=true; }
+  document.getElementById('addRdvBtn').addEventListener('click',function(){ openRdvForm(null); });
+  document.getElementById('rdvDelete').addEventListener('click',async function(){
+    if(!editingRdvId) return; var id=editingRdvId;
+    try{
+      if(sb){ var res=await sb.from('rdv').delete().eq('id',id); if(res.error) throw res.error; await syncAgenda(); }
+      else { agendaData=agendaData.filter(function(x){return x.id!==id;}); renderAgenda(); }
+      closeRdvForm(); toast('RDV supprimé');
+    }catch(err){ rdvErr.textContent='Erreur : '+((err&&err.message)||err); rdvErr.classList.add('show'); }
+  });
+  document.getElementById('rdvModalX').addEventListener('click',closeRdvForm);
+  document.getElementById('rdvCancel').addEventListener('click',closeRdvForm);
+  rdvModal.addEventListener('click',function(e){ if(e.target===rdvModal) closeRdvForm(); });
+  rdvForm.addEventListener('submit',async function(ev){
+    ev.preventDefault();
+    var e=rdvForm.elements;
+    var row={ titre:e.titre.value.trim(), type:e.type.value, date:e.date.value, heure:e.heure.value||null, lien:e.lien.value.trim(), note:e.note.value.trim() };
+    if(!row.titre || !row.date){ rdvErr.textContent='Intitulé et date obligatoires.'; rdvErr.classList.add('show'); return; }
+    var save=document.getElementById('rdvSave'); save.disabled=true; var old=save.textContent; save.textContent='Enregistrement…';
+    try{
+      if(sb){
+        var res = editingRdvId ? await sb.from('rdv').update(row).eq('id',editingRdvId) : await sb.from('rdv').insert(row);
+        if(res.error) throw res.error;
+        await syncAgenda(); toast(editingRdvId?'RDV modifié ✓':'RDV ajouté ✓');
+      } else {
+        var obj={ id:editingRdvId||('r'+Date.now()), titre:row.titre, type:row.type, date:row.date, heure:row.heure, lien:row.lien, note:row.note };
+        if(editingRdvId){ var i=agendaData.findIndex(function(x){return x.id===editingRdvId;}); if(i>-1) agendaData[i]=obj; }
+        else { agendaData.push(obj); }
+        renderAgenda(); toast(editingRdvId?'RDV modifié (démo local)':'RDV ajouté (démo local)');
+      }
+      closeRdvForm();
+    }catch(err){ rdvErr.textContent='Erreur : '+((err&&err.message)||err); rdvErr.classList.add('show'); }
     finally{ save.disabled=false; save.textContent=old; }
   });
 
