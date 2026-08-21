@@ -1653,12 +1653,20 @@
   function gSaveMap(){ localStorage.setItem('estimake_gcal_map', JSON.stringify(G.map)); }
   function gReady(){ return !!(window.google && google.accounts && google.accounts.oauth2 && GOOGLE_CLIENT_ID); }
   function gConnectedUI(){ var b=document.getElementById('gBtn'); b.textContent='Google connecté ✓'; document.getElementById('gCal').style.display=''; gLoadCals(); }
+  function gStandalone(){ return (window.navigator.standalone===true) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches); }
   function gClient(cb){
     if(!G.client){ G.client=google.accounts.oauth2.initTokenClient({
       client_id:GOOGLE_CLIENT_ID,
       scope:'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
       callback:function(resp){ if(resp&&resp.access_token){ G.token=resp.access_token; G.exp=Date.now()+((resp.expires_in||3600)*1000);
-        localStorage.setItem('estimake_gtok',G.token); localStorage.setItem('estimake_gexp',G.exp); gConnectedUI(); if(cb)cb(); } } }); }
+        localStorage.setItem('estimake_gtok',G.token); localStorage.setItem('estimake_gexp',G.exp); gConnectedUI(); if(cb)cb(); }
+        else { toast('Connexion Google non aboutie — réessaie.'); } },
+      error_callback:function(err){
+        var ty=(err&&err.type)||'';
+        if(ty==='popup_failed_to_open'){ toast('Fenêtre Google bloquée. Ouvre l\'app dans Safari/Chrome (pas depuis l\'icône) et autorise les pop-ups.'); }
+        else if(ty==='popup_closed'){ toast('Fenêtre Google fermée avant la fin — reclique « Connecter Google ».'); }
+        else { toast('Google : '+(ty||'connexion impossible')); }
+      } }); }
     return G.client;
   }
   function gInit(){
@@ -1669,6 +1677,7 @@
   }
   document.getElementById('gBtn').addEventListener('click',function(){
     if(!gReady()){ toast('Google indisponible — vérifie GOOGLE_CLIENT_ID.'); return; }
+    if(gStandalone() && !G.token){ toast('Astuce : si la fenêtre Google ne s\'ouvre pas, connecte-toi depuis Safari/Chrome (pas l\'icône d\'accueil).'); }
     gClient().requestAccessToken({ prompt: G.token?'':'consent' });
   });
   function gEnsure(){ return new Promise(function(res){
