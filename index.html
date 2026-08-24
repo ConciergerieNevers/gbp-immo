@@ -438,6 +438,8 @@
   .restyle-notes:focus{outline:none;border-color:var(--accent)}
   .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
   @media (max-width:640px){ .clifields{grid-template-columns:1fr} }
+  .comptable th[data-sort]{cursor:pointer;user-select:none}
+  .comptable th[data-sort]:hover{color:var(--accent)}
   .comptable tr.selrow{cursor:pointer}
   .comptable tr.selrow .ck{color:var(--accent);font-size:14px}
   .comptable tr.selrow.out{opacity:.42}
@@ -1148,7 +1150,7 @@
               <div class="chips" id="yearBar" style="margin:9px 0 4px" hidden></div>
               <div style="overflow-x:auto">
                 <table class="comptable"><thead>
-                  <tr><th>Adresse · date</th><th>Surface</th><th>Prix vendu</th><th>€/m²</th></tr>
+                  <tr><th data-sort="date">Adresse · date</th><th data-sort="surface">Surface ⇅</th><th data-sort="prix">Prix vendu ⇅</th><th data-sort="pm2">€/m² ⇅</th></tr>
                 </thead><tbody id="compBody"></tbody></table>
               </div>
               <div class="compnote">
@@ -2272,7 +2274,7 @@
   function renderYearBar(){
     var bar=document.getElementById('yearBar'); if(!bar) return;
     if(!dvfComps){ bar.hidden=true; return; }
-    var years={}; dvfComps.forEach(function(c){ var y=String(c.date||'').slice(0,4); if(y) years[y]=1; });
+    var years={}; dvfComps.forEach(function(c){ var m=String(c.date||'').match(/\d{4}/); if(m) years[m[0]]=1; });
     var ks=Object.keys(years).sort();
     if(ks.length<2){ bar.hidden=true; return; }
     bar.hidden=false;
@@ -2282,7 +2284,7 @@
   document.addEventListener('click',function(e){
     var b=e.target.closest('#yearBar .chip'); if(!b||!dvfComps) return;
     var y=b.dataset.y; dvfYearsOff[y]=!dvfYearsOff[y];
-    dvfComps.forEach(function(c){ if(String(c.date||'').slice(0,4)===y){ c.sel=!dvfYearsOff[y]; } });
+    dvfComps.forEach(function(c){ var m=String(c.date||'').match(/\d{4}/); if(m&&m[0]===y){ c.sel=!dvfYearsOff[y]; } });
     renderDvfComps();
   });
   function renderDvfComps(){
@@ -2302,6 +2304,18 @@
       document.getElementById('compSummary').innerHTML='\u26a0\ufe0f Aucune vente s\u00e9lectionn\u00e9e \u2014 touche une ligne pour en retenir au moins une.';
     }
   }
+  var dvfSort={key:null,dir:1};
+  document.querySelector('.comptable thead').addEventListener('click',function(e){
+    var th=e.target.closest('th[data-sort]'); if(!th||!dvfComps) return;
+    var k=th.dataset.sort;
+    dvfSort.dir=(dvfSort.key===k)?-dvfSort.dir:1; dvfSort.key=k;
+    dvfComps.sort(function(a,b){
+      var va=a[k], vb=b[k];
+      if(k==='date'){ va=String(a.date||''); vb=String(b.date||''); return va<vb?-dvfSort.dir:(va>vb?dvfSort.dir:0); }
+      return ((va||0)-(vb||0))*dvfSort.dir;
+    });
+    renderDvfComps();
+  });
   document.getElementById('compBody').addEventListener('click',function(e){
     var tr=e.target.closest('tr.selrow'); if(!tr||!dvfComps) return;
     var i=parseInt(tr.dataset.i,10); dvfComps[i].sel=!dvfComps[i].sel; renderDvfComps();
