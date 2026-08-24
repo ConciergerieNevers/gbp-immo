@@ -673,76 +673,65 @@
     .app,.authgate,.mobnav,.topbar,.scrim,.drawer,.iconbtn,.btn{display:none!important}
     #dossier{display:block!important}
   }
-  /* Charte AVIS DE VALEUR — noir & or (modèle GB Immobilier) */
+  /* Charte AVIS DE VALEUR — noir & or (modèle GB Immobilier, V2 moderne) */
   #dossier{color:#1A1710;font-family:var(--sans);-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;
     --or:#C99B3F; --or-2:#B08A2E; --or-pale:#E8D9B4; --noir:#131108; --gris:#6E675A; --filet:#E6DFCE;}
   .dsheet{max-width:210mm;margin:0 auto;position:relative;padding:0 0 6mm}
-  .dsheet.pageN{padding:10mm 14mm;page-break-before:always}
-  .av-topbar{height:7mm;background:linear-gradient(90deg,#D9AC55,#C08A2E)}
-  .av-body{padding:6mm 14mm 0}
-  .av-hd{display:grid;grid-template-columns:36mm 1fr 52mm;gap:6mm;align-items:start;margin-bottom:4mm}
-  .av-logo{width:34mm;height:34mm;object-fit:contain;display:block;margin-top:2mm}
-  .av-title{text-align:center;padding-top:7mm}
-  .av-title h1{font-size:30px;letter-spacing:.06em;margin:0;color:#131108;font-weight:800}
-  .av-script{font-family:"Snell Roundhand","Savoye LET","Brush Script MT",cursive;font-size:26px;color:var(--or);margin-top:1mm}
-  .av-strike{height:3px;background:#131108;border-radius:3px;width:70%;margin:2.5mm auto 0;transform:rotate(-1.6deg)}
-  .av-photo{height:44mm;background:linear-gradient(135deg,#D9AC55,#C08A2E);clip-path:polygon(18% 0,100% 0,100% 100%,0 100%);
-    display:block;position:relative;overflow:hidden}
-  .av-photo img{position:absolute;inset:2.5mm 0 2.5mm 6mm;width:calc(100% - 6mm);height:calc(100% - 5mm);object-fit:cover;
-    clip-path:polygon(15% 0,100% 0,100% 100%,0 100%)}
-  .av-agency{font-size:10.5px;font-weight:700;color:#1A1710;line-height:1.75;margin:0 0 4mm}
-  .av-inforow{display:grid;grid-template-columns:1.3fr 1fr 1.3fr;gap:5mm;align-items:center;margin-bottom:4mm}
-  .av-legal{font-size:8.5px;color:#3C382E;line-height:1.65;font-weight:600}
-  .av-chip{display:flex;align-items:center;gap:3.5mm;font-size:11px}
-  .av-chip .ic{width:12mm;height:12mm;border-radius:50%;background:linear-gradient(145deg,#D9AC55,#BE8F33);flex:none;display:grid;place-items:center}
-  .av-chip .ic svg{width:6mm;height:6mm;stroke:#fff}
-  .av-chip b{display:block;font-size:12px;color:#131108}
-  .av-chip small{color:#57503F;font-size:10.5px}
-  .av-rule{height:2.5px;background:#131108;margin:0 0 4mm}
-  .av-rule.or{height:1.5px;background:var(--or);margin-top:4mm}
-  .av-loc{display:flex;gap:4mm;align-items:flex-start;margin-bottom:1mm}
-  .av-loc .ic{width:11mm;height:11mm;border-radius:50%;background:linear-gradient(145deg,#D9AC55,#BE8F33);flex:none;display:grid;place-items:center}
-  .av-loc .ic svg{width:5.5mm;height:5.5mm;stroke:#fff}
-  .av-loc b{font-size:14px;color:#131108;display:block;margin-bottom:1mm}
-  .av-loc p{font-size:11px;color:#3C382E;margin:0}
-  .av-cols{display:grid;grid-template-columns:1fr 1.15fr;gap:0;margin-top:4mm}
-  .av-col{padding-right:6mm}
-  .av-col+.av-col{border-left:1.5px solid var(--or-pale);padding-left:6mm;padding-right:0}
-  .av-sec{display:flex;gap:4mm;margin-bottom:6mm;break-inside:avoid}
-  .av-sec .ic{width:12mm;height:12mm;border-radius:50%;background:#131108;flex:none;display:grid;place-items:center}
-  .av-sec .ic svg{width:6mm;height:6mm;stroke:#fff}
-  .av-sec h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--or-2);margin:0 0 1.5mm;font-weight:800}
-  .av-sec p{font-size:10.8px;line-height:1.6;color:#2A261C;margin:0;text-align:justify}
-  .av-specs{display:grid;grid-template-columns:1fr 1fr;gap:2mm;margin-top:1.5mm}
-  .av-specs span{font-size:10.5px;color:#2A261C}
+  .dsheet.av{height:295mm;padding:0;display:flex;flex-direction:column;overflow:hidden;page-break-after:always}
+  .dsheet.pageN{padding:9mm 14mm 5mm;page-break-before:always}
+  .av-topbar{height:5mm;background:linear-gradient(90deg,#D9AC55,#C08A2E);flex:none}
+  .av-body{padding:6mm 12mm 0;flex:1;overflow:hidden;min-width:0}
+  .av-hd{display:flex;align-items:center;gap:5mm;margin-bottom:4.5mm}
+  .av-logo{width:24mm;height:24mm;object-fit:contain;flex:none;display:block}
+  .av-ttl{flex:1;min-width:0}
+  .av-ttl h1{font-size:23px;letter-spacing:.14em;margin:0;color:#131108;font-weight:800;white-space:nowrap}
+  .av-script{font-family:"Snell Roundhand","Savoye LET","Brush Script MT",cursive;font-size:20px;color:var(--or);margin-top:.5mm}
+  .av-photo{width:52mm;height:32mm;border-radius:12px;flex:none;background:linear-gradient(135deg,#D9AC55,#C08A2E);
+    box-shadow:0 0 0 1.5px #fff,0 0 0 3px var(--or);overflow:hidden;position:relative}
+  .av-photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .av-info{display:grid;grid-template-columns:1.3fr 1fr 1.15fr;gap:4mm;margin-bottom:4.5mm}
+  .av-cell{background:#F8F4EA;border-radius:9px;border-top:2.5px solid var(--or);padding:3mm 3.5mm;min-width:0}
+  .av-cell .t{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--or-2);font-weight:800;margin-bottom:1.2mm}
+  .av-cell b{display:block;font-size:10.5px;color:#131108}
+  .av-cell small{display:block;font-size:9px;color:#57503F;line-height:1.55;overflow-wrap:break-word}
+  .av-cell .lgl{font-size:7.2px;color:#6E675A;line-height:1.5;margin-top:1.4mm}
+  .av-band{background:#131108;border-radius:10px;padding:3.5mm 5mm;margin-bottom:4.5mm}
+  .av-band b{display:block;color:#E8D9B4;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .av-band small{display:block;color:#B9AE8F;font-size:9.5px;margin-top:.8mm}
+  .av-cols{display:grid;grid-template-columns:1fr 1.12fr;gap:0}
+  .av-col{padding-right:5mm;min-width:0}
+  .av-col+.av-col{border-left:1.5px solid var(--or-pale);padding-left:5mm;padding-right:0}
+  .av-sec{margin-bottom:4.5mm;break-inside:avoid}
+  .av-sec h3{display:flex;align-items:center;gap:2mm;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--or-2);margin:0 0 1.6mm;font-weight:800}
+  .av-sec h3:after{content:"";flex:1;height:1px;background:var(--or-pale)}
+  .av-sec p{font-size:10px;line-height:1.55;color:#2A261C;margin:0;text-align:justify}
+  .av-specs{display:grid;grid-template-columns:1fr 1fr;gap:1.4mm 3mm;margin-top:.5mm}
+  .av-specs span{font-size:9.8px;color:#57503F}
   .av-specs span b{color:#131108}
-  .av-between{font-size:13.5px;font-weight:800;color:var(--or-2);text-align:center;margin:4mm 0 8mm}
-  .av-pricewrap{position:relative;margin:0 2mm 6mm;break-inside:avoid}
-  .av-priceic{width:15mm;height:15mm;border-radius:50%;background:#131108;border:2.5px solid #fff;display:grid;place-items:center;
-    position:absolute;top:-8mm;left:50%;transform:translateX(-50%);z-index:2}
-  .av-priceic svg{width:7mm;height:7mm;stroke:#fff}
-  .av-pricebox{background:#17150E;border:2.5px solid transparent;border-radius:20px;padding:12mm 6mm 8mm;text-align:center;
-    background-clip:padding-box;box-shadow:0 0 0 2.5px #C99B3F, inset 0 0 24px rgba(201,155,63,.12)}
-  .av-pricebox .p{font-family:var(--serif);font-size:35px;font-weight:700;color:#D9AC55;letter-spacing:.01em}
-  .av-pricebox .et{color:#fff;font-size:13px;margin:1.5mm 0}
-  .av-crit{margin-top:2mm}
-  .av-crit .qo{font-family:Georgia,serif;font-size:34px;color:var(--or);line-height:.6}
-  .av-crit h3{display:inline-block;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--or-2);margin:0 0 2mm 2mm;font-weight:800}
-  .av-crit p{font-size:10.5px;line-height:1.65;color:#2A261C;text-align:justify;margin:0}
-  .av-crit .qc{text-align:right;font-family:Georgia,serif;font-size:34px;color:var(--or);line-height:.6;margin-top:1mm}
+  .av-between{font-size:11.5px;font-weight:800;color:#131108;text-align:center;margin:1mm 0 7mm}
+  .av-pricewrap{position:relative;margin:0 1mm 5mm;break-inside:avoid}
+  .av-priceic{width:12mm;height:12mm;border-radius:50%;background:#131108;border:2px solid #fff;display:grid;place-items:center;
+    position:absolute;top:-6.5mm;left:50%;transform:translateX(-50%);z-index:2}
+  .av-priceic svg{width:5.6mm;height:5.6mm;stroke:#D9AC55}
+  .av-pricebox{background:#17150E;border-radius:16px;padding:9mm 5mm 6mm;text-align:center;
+    box-shadow:0 0 0 2px #C99B3F, inset 0 0 20px rgba(201,155,63,.12)}
+  .av-pricebox .p{font-family:var(--serif);font-size:29px;font-weight:700;color:#D9AC55;letter-spacing:.01em}
+  .av-pricebox .et{color:#fff;font-size:11px;margin:1mm 0}
+  .av-crit{background:#F8F4EA;border-left:3px solid var(--or);border-radius:0 9px 9px 0;padding:3mm 4mm;break-inside:avoid}
+  .av-crit h3{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--or-2);margin:0 0 1.6mm;font-weight:800}
+  .av-crit p{font-size:9.3px;line-height:1.55;color:#2A261C;text-align:justify;margin:0}
   .av-ft{background:linear-gradient(90deg,#D9AC55,#C08A2E);display:flex;gap:6mm;
-    align-items:center;padding:5mm 10mm;margin-top:6mm}
-  .av-ft p{flex:0 0 62mm}
+    align-items:center;padding:4mm 9mm;margin-top:auto;flex:none}
+  .av-ft p{flex:0 0 60mm;font-size:9px;line-height:1.5;color:#131108;margin:0}
   .av-ft .who{display:block!important;flex:1;min-width:0}
   .av-ft .av-sign{flex:0 0 auto}
-  .av-ft .ic{width:13mm;height:13mm;border-radius:50%;background:#131108;display:grid;place-items:center;flex:none}
-  .av-ft .ic svg{width:6.5mm;height:6.5mm;stroke:#D9AC55}
-  .av-ft p{font-size:9.8px;line-height:1.55;color:#131108;margin:0;max-width:70mm}
-  .av-ft .who b{display:block;font-size:13px;color:#131108}
-  .av-ft .who span{font-size:10.5px;font-weight:700;color:#131108;display:block}
-  .av-ft .who small{display:block;font-size:10px;color:#2A2415;margin-top:.6mm}
-  .av-sign{font-family:"Snell Roundhand","Savoye LET","Brush Script MT",cursive;font-size:24px;color:#131108}
-  .av-bottom{background:#131108;color:#E8D9B4;text-align:center;font-size:9.5px;padding:3mm 6mm}
+  .av-ft .ic{width:11mm;height:11mm;border-radius:50%;background:#131108;display:grid;place-items:center;flex:none}
+  .av-ft .ic svg{width:5.5mm;height:5.5mm;stroke:#D9AC55}
+  .av-ft .who b{display:block;font-size:12px;color:#131108}
+  .av-ft .who span{font-size:10px;font-weight:700;color:#131108;display:block}
+  .av-ft .who small{display:block;font-size:9.5px;color:#2A2415;margin-top:.5mm}
+  .av-sign{font-family:"Snell Roundhand","Savoye LET","Brush Script MT",cursive;font-size:21px;color:#131108}
+  .av-bottom{background:#131108;color:#E8D9B4;text-align:center;font-size:9px;padding:2.6mm 6mm;flex:none}
   /* Pages suivantes (analyse, risques, home staging) */
   #dossier h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--or-2);border-bottom:1.5px solid var(--or-pale);padding-bottom:6px;margin:22px 0 11px;break-after:avoid;font-weight:800}
   .pageN .p2hd{display:flex;align-items:center;gap:4mm;border-bottom:2.5px solid #131108;padding-bottom:3mm;margin-bottom:2mm}
@@ -2112,7 +2101,11 @@
     var dd=new Date(); var dateStr=dd.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
     var cliN=(g('cliNom')&&g('cliNom').value.trim())||'Madame, Monsieur';
     var cliM=(g('cliMail')&&g('cliMail').value.trim())||'';
-    var villeMaj=(ville.split('(')[0]||'').trim().toUpperCase()||'NEVERS';
+    var vClean=(ville.split('\u00b7')[0]||'').trim();
+    var mV=vClean.match(/^(\d{5})\s+(.+)$/); var vNom=vClean||'\u2014', vCp='';
+    if(mV){ vCp=mV[1]; vNom=mV[2]; }
+    var villeAff=vNom+(vCp?' ('+vCp+')':'');
+    var villeMaj=vNom.toUpperCase()||'NEVERS';
     var ic=function(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>'; };
     var icCal=ic('<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>');
     var icUser=ic('<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.5-3.4 4.2-5 7.5-5s6 1.6 7.5 5"/>');
@@ -2130,56 +2123,54 @@
       '<span>Année : <b>'+(g('fAnnee').value||'—')+'</b></span></div>';
     var arg='Au regard des ventes réellement enregistrées autour du bien (données DVF de la DGFiP) et de leur médiane au m², corrigée de l\'état intérieur, du DPE, de la qualité de l\'emplacement et des équipements, la valeur de marché de ce bien s\'établit dans une fourchette de '+low+' à '+high+'. Compte tenu du positionnement retenu et d\'un marché local stable, nous recommandons un prix de mise en vente de '+reco+', cohérent avec les biens comparables du secteur tout en préservant une marge de négociation raisonnable.';
     g('dossier').innerHTML=
-      /* ============ PAGE 1 — AVIS DE VALEUR (modèle GB Immobilier) ============ */
-      '<div class="dsheet">'+
+      /* ============ PAGE 1 — AVIS DE VALEUR (GB Immobilier, V2) ============ */
+      '<div class="dsheet av">'+
         '<div class="av-topbar"></div>'+
         '<div class="av-body">'+
           '<header class="av-hd">'+
             '<img class="av-logo" src="/logo-gb.png" alt="GB Immobilier">'+
-            '<div class="av-title"><h1>AVIS DE VALEUR</h1><div class="av-script">Estimation immobilière</div><div class="av-strike"></div></div>'+
+            '<div class="av-ttl"><h1>AVIS DE VALEUR</h1><div class="av-script">Estimation immobili\u00e8re</div></div>'+
             '<div class="av-photo">'+(cover?'<img src="'+cover+'" alt="">':'')+'</div>'+
           '</header>'+
-          '<div class="av-agency">26 Avenue Pierre Bérégovoy - 58000 NEVERS<br>03 86 61 14 15<br>nevers@gbinimmobilier.net</div>'+
-          '<div class="av-inforow">'+
-            '<div class="av-legal">Siren 6718 417 RCS Nevers<br>Cartes Transaction N°113 et Gestion N°112<br>Caisse de Garantie de l\'Immobilier FNAIM<br>89 rue de la Boétie - 75008 Paris</div>'+
-            '<div class="av-chip"><span class="ic">'+icCal+'</span><div><b>À Nevers,</b><small>Le '+dateStr+'</small></div></div>'+
-            '<div class="av-chip"><span class="ic">'+icUser+'</span><div><b>'+cliN+'</b>'+(cliM?'<small>'+cliM+'</small>':'')+'</div></div>'+
+          '<div class="av-info">'+
+            '<div class="av-cell"><div class="t">Agence</div><b>GB Immobilier \u2014 Nevers</b>'+
+              '<small>26 Avenue Pierre B\u00e9r\u00e9govoy - 58000 NEVERS<br>03 86 61 14 15 \u00b7 nevers@gbinimmobilier.net</small>'+
+              '<div class="lgl">Siren 6718 417 RCS Nevers \u00b7 Cartes Transaction N\u00b0113 et Gestion N\u00b0112 \u00b7 Caisse de Garantie de l\'Immobilier FNAIM, 89 rue de la Bo\u00e9tie - 75008 Paris</div></div>'+
+            '<div class="av-cell"><div class="t">Fait \u00e0</div><b>Nevers</b><small>Le '+dateStr+'</small></div>'+
+            '<div class="av-cell"><div class="t">\u00c0 l\'attention de</div><b>'+cliN+'</b>'+(cliM?'<small>'+cliM+'</small>':'')+'</div>'+
           '</div>'+
-          '<div class="av-rule"></div>'+
-          '<div class="av-loc"><span class="ic">'+icPin+'</span><div><b>À '+ville+', '+adresse+'</b>'+
-            '<p>Pour donner suite à votre demande, nous sommes en mesure de vous donner un avis de valeur concernant ce bien.</p></div></div>'+
-          '<div class="av-rule or"></div>'+
+          '<div class="av-band"><b>\u00c0 '+villeAff+' \u2014 '+adresse+'</b>'+
+            '<small>Pour donner suite \u00e0 votre demande, nous sommes en mesure de vous donner un avis de valeur concernant ce bien.</small></div>'+
           '<div class="av-cols">'+
             '<div class="av-col">'+
-              '<div class="av-sec"><span class="ic">'+icClip+'</span><div><h3>Mission</h3>'+
-                '<p>Cet avis de valeur est réalisé à la demande de '+cliN+' afin de déterminer la valeur vénale de ce bien. Cette indication de prix ne peut être assimilée à une expertise et ne peut engager la responsabilité de l\'agence.</p></div></div>'+
-              '<div class="av-sec"><span class="ic">'+icHome+'</span><div><h3>Visite des lieux</h3>'+
-                '<p>La visite des lieux a été effectuée le '+dateStr+' par Jimmy Garcia.</p></div></div>'+
-              '<div class="av-sec"><span class="ic">'+icClip+'</span><div><h3>Descriptif du bien</h3>'+specs+'</div></div>'+
+              '<div class="av-sec"><h3>Mission</h3>'+
+                '<p>Cet avis de valeur est r\u00e9alis\u00e9 \u00e0 la demande de '+cliN+' afin de d\u00e9terminer la valeur v\u00e9nale de ce bien. Cette indication de prix ne peut \u00eatre assimil\u00e9e \u00e0 une expertise et ne peut engager la responsabilit\u00e9 de l\'agence.</p></div>'+
+              '<div class="av-sec"><h3>Visite des lieux</h3>'+
+                '<p>La visite des lieux a \u00e9t\u00e9 effectu\u00e9e le '+dateStr+' par Jimmy Garcia.</p></div>'+
+              '<div class="av-sec"><h3>Descriptif du bien</h3>'+specs+'</div>'+
+              '<div class="av-sec"><h3>Conclusions</h3>'+
+                '<p>Compte tenu du march\u00e9 immobilier actuel et sous r\u00e9serve du r\u00e9sultat des diagnostics obligatoires ou des examens plus approfondis (certificat d\'urbanisme, titre de propri\u00e9t\u00e9, etc.) permettant de d\u00e9celer servitude ou engagement contractuel :</p></div>'+
             '</div>'+
             '<div class="av-col">'+
-              '<div class="av-sec"><span class="ic">'+icCheck+'</span><div><h3>Conclusions</h3>'+
-                '<p>Compte tenu du marché immobilier actuel et sous réserve du résultat des diagnostics obligatoires ou des examens plus approfondis (certificat d\'urbanisme, titre de propriété, etc.) permettant de déceler servitude ou engagement contractuel :</p></div></div>'+
-              '<div class="av-between">La valeur vénale de votre bien est comprise entre :</div>'+
+              '<div class="av-between">La valeur v\u00e9nale de votre bien est comprise entre :</div>'+
               '<div class="av-pricewrap"><span class="av-priceic">'+icHome+'</span>'+
                 '<div class="av-pricebox"><div class="p">'+low+'</div><div class="et">et</div><div class="p">'+high+'</div></div></div>'+
-              '<div class="av-crit"><span class="qo">“</span><h3>Critères pris en compte</h3>'+
-                '<p>Il y a lieu de noter que cette estimation tient compte de divers critères relatifs à la situation géographique et à l\'environnement, à l\'ancienneté, la vétusté et l\'état des différents corps d\'état composant le bâtiment, aux éléments de confort et d\'équipement, à la situation et la valeur locale ainsi qu\'aux tendances du Marché Immobilier de la ville de '+villeMaj+' et du département de la Nièvre.</p>'+
-                '<div class="qc">”</div></div>'+
+              '<div class="av-crit"><h3>Crit\u00e8res pris en compte</h3>'+
+                '<p>Il y a lieu de noter que cette estimation tient compte de divers crit\u00e8res relatifs \u00e0 la situation g\u00e9ographique et \u00e0 l\'environnement, \u00e0 l\'anciennet\u00e9, la v\u00e9tust\u00e9 et l\'\u00e9tat des diff\u00e9rents corps d\'\u00e9tat composant le b\u00e2timent, aux \u00e9l\u00e9ments de confort et d\'\u00e9quipement, \u00e0 la situation et la valeur locale ainsi qu\'aux tendances du March\u00e9 Immobilier de la ville de '+villeMaj+' et du d\u00e9partement de la Ni\u00e8vre.</p></div>'+
             '</div>'+
           '</div>'+
         '</div>'+
         '<footer class="av-ft">'+
           '<span class="ic">'+icMail+'</span>'+
-          '<p>Vous remerciant de la confiance que vous voulez bien nous témoigner et restant à votre disposition pour participer à la négociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments dévoués.</p>'+
+          '<p>Vous remerciant de la confiance que vous voulez bien nous t\u00e9moigner et restant \u00e0 votre disposition pour participer \u00e0 la n\u00e9gociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments d\u00e9vou\u00e9s.</p>'+
           '<div class="who"><b style="display:block">Jimmy Garcia</b><span style="display:block">Conseiller Immobilier</span><small style="display:block">06.78.86.56.12</small><small style="display:block">garciaj@gbimmobilier.net</small></div>'+
           '<div class="av-sign">Jimmy Garcia</div>'+
         '</footer>'+
-        '<div class="av-bottom">Cet avis de valeur est établi à titre indicatif&nbsp;&nbsp;—&nbsp;&nbsp;Il ne peut en aucun cas se substituer à une expertise</div>'+
+        '<div class="av-bottom">Cet avis de valeur est \u00e9tabli \u00e0 titre indicatif&nbsp;&nbsp;\u2014&nbsp;&nbsp;Il ne peut en aucun cas se substituer \u00e0 une expertise</div>'+
       '</div>'+
       /* ============ PAGE 2 — ANALYSE & ANNEXES ============ */
       '<div class="dsheet pageN">'+
-        '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>Analyse de marché &amp; annexes</b><span>'+adresse+' · '+ville+' · '+dateStr+'</span></div></div>'+
+        '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>Analyse de marché &amp; annexes</b><span>'+adresse+' · '+villeAff+' · '+dateStr+'</span></div></div>'+
         '<h2>Ventes comparables · DVF</h2><table class="dtable"><thead><tr><th>Adresse · date</th><th>Surface</th><th>Prix vendu</th><th>€/m²</th></tr></thead><tbody>'+compRows+'</tbody></table>'+
         '<p class="dnote">'+txt('compSummary')+'</p>'+
         '<h2>Analyse &amp; positionnement du prix</h2><table class="dtable"><tbody>'+breakRows+'</tbody></table>'+
