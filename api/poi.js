@@ -6,7 +6,7 @@
 //  Appel : /api/poi?lat=46.98&lon=3.15
 // ============================================================
 
-export const config = { maxDuration: 20 };
+export const config = { maxDuration: 15 };
 
 const MIRRORS = [
   'https://overpass-api.de/api/interpreter',
@@ -45,17 +45,18 @@ export default async function handler(req, res){
       'node(around:3000,'+lat+','+lon+')[railway=station];'+
       'node(around:900,'+lat+','+lon+')[highway=bus_stop];'+
       ');out body 100;';
-    var j=null, lastErr=null;
-    for(var m=0;m<MIRRORS.length && !j;m++){
-      try{
-        var r=await fetch(MIRRORS[m], { method:'POST',
-          headers:{'Content-Type':'application/x-www-form-urlencoded'},
-          body:'data='+encodeURIComponent(qy) });
-        if(r.ok){ j=await r.json(); }
-        else { lastErr='HTTP '+r.status; }
-      }catch(e){ lastErr=String((e&&e.message)||e); }
+    // tous les miroirs en parallèle, le premier qui répond gagne (timeout 9 s chacun)
+    function tryMirror(u){
+      var ctl=new AbortController(); var to=setTimeout(function(){ ctl.abort(); }, 9000);
+      return fetch(u, { method:'POST', signal:ctl.signal,
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'data='+encodeURIComponent(qy) })
+        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .finally(function(){ clearTimeout(to); });
     }
-    if(!j){ res.status(502).json({ error:'Overpass indisponible ('+lastErr+')' }); return; }
+    var j=null;
+    try{ j=await Promise.any(MIRRORS.map(tryMirror)); }
+    catch(e){ res.status(502).json({ error:'Overpass indisponible (tous les miroirs)' }); return; }
     var best={};
     (j.elements||[]).forEach(function(el){
       var t=el.tags||{};
