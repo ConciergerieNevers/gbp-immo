@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('estimake_theme')||'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}</script>
 <meta name="theme-color" content="#1B342D">
 <meta name="description" content="ESTIMAKE — pilotage d'activité et estimation immobilière terrain (Nevers).">
@@ -70,6 +70,9 @@
 
   *{box-sizing:border-box}
   html,body{margin:0;overflow-x:hidden}
+  /* Anti-zoom iOS : pas de zoom au double-tap, pas de zoom auto en tapant un champ */
+  html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+  @media (max-width:768px){ input,select,textarea{font-size:16px!important} }
   body{
     background:var(--ground); color:var(--ink); font-family:var(--sans);
     font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
