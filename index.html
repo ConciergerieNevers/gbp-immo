@@ -485,6 +485,14 @@
     .stickyprice b{font-size:15px;font-variant-numeric:tabular-nums;color:#fff}
     .stickyprice .sp-reco b{color:var(--accent)}
   }
+  /* Mes estimations (écran Biens) */
+  .estimlist{display:flex;flex-direction:column;gap:9px;margin-bottom:6px}
+  .estimempty{font-size:13px;color:var(--ink-3);background:var(--surface);border:1px dashed var(--line-2);border-radius:12px;padding:16px;text-align:center}
+  .estitem{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px;cursor:pointer;box-shadow:var(--shadow)}
+  .estitem .l1{display:flex;align-items:center;gap:9px}
+  .estitem .l1 b{font-size:14.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .estitem .prix{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .estitem .l2{font-size:12px;color:var(--ink-3);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
   /* Raccourcis Immo-Facile (cockpit) */
   .ifedit{border:0;background:none;color:var(--accent);font:inherit;font-size:13px;font-weight:640;cursor:pointer;padding:4px 6px}
   .iflinks{display:flex;flex-wrap:wrap;gap:9px}
@@ -993,6 +1001,9 @@
           <button class="subtab" data-go="estimation" type="button">Estimation</button>
           <button class="subtab on" type="button">Mes biens</button>
         </div>
+        <div class="sectitle"><h2>Mes estimations</h2><div class="grow"></div><span class="eyebrow" id="estimCount"></span></div>
+        <div class="estimlist" id="estimList"><div class="estimempty">Aucune estimation enregistrée pour l'instant — elles apparaîtront ici dès que tu enregistres depuis l'écran Estimer.</div></div>
+        <div class="sectitle" style="margin-top:22px"><h2>Portefeuille</h2></div>
         <div class="toolbar">
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="bienSearch" placeholder="Rechercher une adresse, une réf., un propriétaire…"></div>
           <button class="btn pri" id="addBienBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Ajouter un bien</span></button>
@@ -2133,6 +2144,53 @@
       finally{ b.disabled=false; b.textContent=old; }
     });
   })();
+  /* ---------- mes estimations (écran Biens) ---------- */
+  async function loadEstimations(){
+    if(!sb) return;
+    try{
+      var res=await sb.from('estimations').select('*').order('created_at',{ascending:false}).limit(40);
+      if(res.error) throw res.error;
+      var list=document.getElementById('estimList'); if(!list) return;
+      var rows=res.data||[];
+      document.getElementById('estimCount').textContent=rows.length?(rows.length+' estimation'+(rows.length>1?'s':'')):'';
+      if(!rows.length) return;
+      window.__estims=rows;
+      list.innerHTML=rows.map(function(r,i){
+        var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
+        var prix=(r.prix_final||r.prix_conseille); 
+        return '<div class="estitem" data-i="'+i+'">'+
+          '<div class="l1"><b>'+(r.adresse||'\u2014')+'</b><span class="prix">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</span></div>'+
+          '<div class="l2"><span>'+(r.type||'')+'</span>'+(r.surface?'<span>'+r.surface+' m\u00b2</span>':'')+
+          (r.valeur_basse?'<span>'+Math.round(r.valeur_basse/1000)+' \u2013 '+Math.round((r.valeur_haute||0)/1000)+' k\u20ac</span>':'')+
+          (r.client?'<span>'+r.client+'</span>':'')+'<span>'+d+'</span></div></div>';
+      }).join('');
+    }catch(e){ console.warn('[ESTIMAKE] estimations', e); }
+  }
+  document.getElementById('estimList').addEventListener('click',function(e){
+    var it=e.target.closest('.estitem'); if(!it||!window.__estims) return;
+    var r=window.__estims[parseInt(it.dataset.i,10)]; if(!r) return;
+    // recharge les données dans l'écran Estimer
+    var g=function(id){return document.getElementById(id);};
+    if(r.adresse){ g('addrA').textContent=r.adresse; g('addrS').textContent='estimation du '+(r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR'):'')+' \u00b7 re-s\u00e9lectionne l\u2019adresse pour recharger le march\u00e9'; }
+    if(r.type) g('fType').value=r.type;
+    if(r.surface) g('fSurf').value=r.surface;
+    if(r.complement&&g('fCompl')) g('fCompl').value=r.complement;
+    if(r.client&&g('cliNom')) g('cliNom').value=r.client;
+    if(r.client_email&&g('cliMail')) g('cliMail').value=r.client_email;
+    if(r.description&&g('fDesc')) g('fDesc').value=r.description;
+    var dt=r.data||{};
+    if(dt.terrain) g('fTerr').value=dt.terrain;
+    if(dt.pieces) g('fPieces').value=dt.pieces;
+    if(dt.chambres) g('fChambres').value=dt.chambres;
+    if(dt.sdb&&g('fSdb')) g('fSdb').value=dt.sdb;
+    if(dt.annee) g('fAnnee').value=dt.annee;
+    if(Array.isArray(dt.custom)){ state.custom=dt.custom.slice(); }
+    if(r.prix_final){ state.override=r.prix_final; }
+    compute();
+    go('estimation');
+    toast('Estimation rechargée \u2014 '+(r.adresse||''));
+  });
+  loadEstimations();
   /* ---------- enregistrement de l'estimation ---------- */
   async function saveEstimation(){
     if(!sb) { toast('Base non connectée.'); return false; }
@@ -2168,6 +2226,7 @@
     b.addEventListener('click',async function(){
       b.disabled=true; var old=b.innerHTML; b.innerHTML='Enregistrement…';
       var ok=await saveEstimation();
+      if(ok && typeof loadEstimations==='function') loadEstimations();
       toast(ok?'Estimation enregistrée ✓':'Enregistrement impossible — réessaie.');
       b.disabled=false; b.innerHTML=old;
     });
@@ -2655,7 +2714,7 @@
   }
   document.getElementById('genBtn').addEventListener('click',function(){
     var b=this;var old=b.innerHTML;
-    saveEstimation().then(function(ok){ if(ok) toast('Estimation enregistrée ✓'); });
+    saveEstimation().then(function(ok){ if(ok){ toast('Estimation enregistrée ✓'); if(typeof loadEstimations==='function') loadEstimations(); } });
     buildDossier();
     b.disabled=true; b.innerHTML='G\u00e9n\u00e9ration du PDF\u2026';
     exportPDF().then(function(){
