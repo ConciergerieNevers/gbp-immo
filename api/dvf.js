@@ -79,7 +79,9 @@ export default async function handler(req, res){
     }
 
     var lat = parseFloat(q.lat), lon = parseFloat(q.lon);
-    var type = (q.type==='Appartement') ? 'Appartement' : 'Maison';
+    var type = (q.type==='Appartement') ? 'Appartement'
+             : (q.type==='Local') ? 'Local industriel. commercial ou assimilé'
+             : 'Maison';
     var rayon = Math.min(parseInt(q.rayon,10)||800, 5000);
     if(!/^\d{5}$/.test(insee) || isNaN(lat) || isNaN(lon)){
       res.status(400).json({ error: 'Paramètres manquants (insee, lat, lon).' }); return;

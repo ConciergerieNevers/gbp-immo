@@ -1283,6 +1283,7 @@
                 <button type="button" class="btn pri" id="addLotBtn" style="margin-left:auto;padding:8px 13px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Lot</span></button></h3>
               <div id="lotsList"><div class="estimempty">Ajoute chaque lot (appartement, local commercial, garage…) avec ses propres caractéristiques.</div></div>
               <div class="lotsynth" id="lotSynth" hidden></div>
+              <div id="lotVals"></div>
             </div>
 
             <div class="card estcard" id="marketCard">
@@ -1621,6 +1622,9 @@
         <label class="mf"><span>Occupation</span><select name="l_occ"><option>Loué</option><option>Vacant</option><option>Occupé propriétaire</option></select></label>
         <label class="mf mf-wide"><span>Note</span><input name="l_note" placeholder="Bail 3/6/9 en cours, compteurs séparés…"></label>
       </div>
+      <div class="restyle-sub">Photos du lot</div>
+      <input type="file" accept="image/*" multiple id="lotPhotoInput" hidden>
+      <div class="staging-grid" id="lotGallery"></div>
       <div class="autherr" id="lotErr"></div>
       <div class="modal-ft">
         <button type="button" class="btn danger-o" id="lotDelete" style="margin-right:auto" hidden>Supprimer</button>
@@ -3066,6 +3070,49 @@
     }
     return tot;
   }
+  var LOT_DVF_TYPE={'Appartement':'Appartement','Studio':'Appartement','Maison':'Maison','Local commercial':'Local','Bureau':'Local'};
+  var LOT_ETAT_ADJ={'Refait à neuf':1.05,'Bon état':1,'À rafraîchir':0.92,'Travaux':0.82};
+  window.__lotMed=window.__lotMed||{};
+  async function loadLotMedians(){
+    if(!estCoord||!estCoord.insee) return;
+    var types={}; estLots.forEach(function(l){ var t=LOT_DVF_TYPE[l.type]; if(t) types[t]=1; });
+    var jobs=Object.keys(types).map(function(t){
+      var key=estCoord.insee+'_'+t+'_'+state.rayon;
+      if(window.__lotMed[key]) return Promise.resolve();
+      return fetch('/api/dvf?insee='+encodeURIComponent(estCoord.insee)+'&lat='+estCoord.lat+'&lon='+estCoord.lon+'&type='+t+'&rayon='+state.rayon)
+        .then(function(r){return r.json();})
+        .then(function(j){ if(j&&j.median) window.__lotMed[key]={median:j.median,count:j.count}; })
+        .catch(function(){});
+    });
+    await Promise.all(jobs);
+  }
+  function lotValue(l){
+    var t=LOT_DVF_TYPE[l.type];
+    var adj=LOT_ETAT_ADJ[l.etat]||1;
+    if(t && estCoord && estCoord.insee){
+      var m=window.__lotMed[estCoord.insee+'_'+t+'_'+state.rayon];
+      if(m && m.median){ return {v:Math.round(l.surf*m.median*adj/1000)*1000, src:m.median.toLocaleString('fr-FR')+' \u20ac/m\u00b2 ('+m.count+' ventes '+(t==='Local'?'locaux':t.toLowerCase()+'s')+')'}; }
+    }
+    if(l.loyer){ return {v:Math.round(l.loyer*12/0.10/1000)*1000, src:'capitalisation 10 %'}; }
+    return null;
+  }
+  async function updateLotVals(){
+    var box=document.getElementById('lotVals'); if(!box) return;
+    if(document.getElementById('fType').value!=='Immeuble' || !estLots.length){ box.innerHTML=''; return; }
+    await loadLotMedians();
+    var rows='', totV=0, totL=0, allVal=true;
+    estLots.forEach(function(l,i){
+      var lv=lotValue(l); var loyA=(parseFloat(l.loyer)||0)*12; totL+=loyA;
+      if(lv){ totV+=lv.v; } else { allVal=false; }
+      var rdt=(lv&&loyA)?(loyA/lv.v*100):null;
+      rows+='<div class="cadjrow"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">Lot '+(i+1)+' \u2014 '+l.type+' \u00b7 '+l.surf+' m\u00b2'+(lv?' <small style="color:var(--ink-3)">('+lv.src+')</small>':'')+'</span>'+
+        '<b class="tnum">'+(lv?lv.v.toLocaleString('fr-FR')+' \u20ac':'\u2014')+(rdt?' \u00b7 <span style="color:var(--good)">'+rdt.toFixed(1).replace('.',',')+' %</span>':'')+'</b></div>';
+    });
+    var immRdt=(totV&&totL)?(totL/totV*100):null;
+    rows+='<div class="cadjrow" style="background:var(--accent-soft);font-weight:700"><span>Immeuble complet '+(allVal?'':'(partiel) ')+'\u2014 par sommation des lots</span>'+
+      '<b class="tnum">'+(totV?totV.toLocaleString('fr-FR')+' \u20ac':'\u2014')+(immRdt?' \u00b7 <span style="color:var(--good)">'+immRdt.toFixed(1).replace('.',',')+' %</span>':'')+'</b></div>';
+    box.innerHTML='<div class="restyle-sub">Valeur estim\u00e9e &amp; rendement par lot <small style="text-transform:none;letter-spacing:0">(m\u00e9dianes DVF par type de bien \u00b7 ajust\u00e9es \u00e0 l\'\u00e9tat)</small></div>'+rows;
+  }
   function renderLots(){
     var card=document.getElementById('lotsCard'); if(!card) return;
     var isImm=document.getElementById('fType').value==='Immeuble';
@@ -3091,8 +3138,31 @@
     // surface habitable du bien = somme des lots (pour la base m²)
     if(surfT>0){ document.getElementById('fSurf').value=surfT; }
     compute();
+    updateLotVals();
   }
   var lotModal=document.getElementById('lotModal'), lotForm=document.getElementById('lotForm'), editingLotIdx=null;
+  var lotPhotosTmp=[];
+  function renderLotGallery(){
+    var g=document.getElementById('lotGallery'); if(!g) return;
+    var addSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+    g.innerHTML=lotPhotosTmp.map(function(p,i){
+      return '<div class="sthumb"><img src="'+p+'"><button type="button" class="sdel" data-lp="'+i+'">\u2715</button></div>';
+    }).join('')+'<button type="button" class="sadd" id="lotAddTile">'+addSVG+'<span>Ajouter</span></button>';
+    document.getElementById('lotAddTile').addEventListener('click',function(){ document.getElementById('lotPhotoInput').click(); });
+  }
+  document.getElementById('lotGallery').addEventListener('click',function(e){
+    var d=e.target.closest('.sdel'); if(!d) return;
+    e.stopPropagation(); lotPhotosTmp.splice(parseInt(d.dataset.lp,10),1); renderLotGallery();
+  });
+  document.getElementById('lotPhotoInput').addEventListener('change',function(){
+    var files=[].slice.call(this.files||[]).slice(0, 4-lotPhotosTmp.length);
+    files.forEach(function(f){
+      var rd=new FileReader();
+      rd.onload=async function(ev){ var th=await makeThumb(ev.target.result); if(th) lotPhotosTmp.push(th); renderLotGallery(); };
+      rd.readAsDataURL(f);
+    });
+    this.value='';
+  });
   function lotFieldsToggle(){
     var t=lotForm.elements.l_type.value;
     document.querySelectorAll('#lotForm .lot-hab').forEach(function(el){ el.hidden=!lotIsHab(t); });
@@ -3110,6 +3180,8 @@
     e.l_pieces.value=l?(l.pieces||''):''; e.l_ch.value=l?(l.ch||''):''; e.l_sdb.value=l?(l.sdb||''):'';
     e.l_dpe.value=l?(l.dpe||''):''; e.l_activite.value=l?(l.activite||''):''; e.l_vitrine.value=l?(l.vitrine||''):'';
     e.l_loyer.value=l?(l.loyer||''):''; e.l_occ.value=l?(l.occ||'Loué'):'Loué'; e.l_note.value=l?(l.note||''):'';
+    lotPhotosTmp=(l&&Array.isArray(l.photos))?l.photos.slice():[];
+    renderLotGallery();
     lotFieldsToggle();
     document.getElementById('lotErr').classList.remove('show');
     lotModal.hidden=false;
@@ -3125,10 +3197,10 @@
     ev.preventDefault();
     var e=lotForm.elements;
     if(!e.l_surf.value){ var er=document.getElementById('lotErr'); er.textContent='La surface est obligatoire.'; er.classList.add('show'); return; }
-    var l={ type:e.l_type.value, etage:e.l_etage.value.trim(), surf:parseFloat(e.l_surf.value)||0,
+    var l={ type:e.l_type.value, etage:e.l_etage.value, surf:parseFloat(e.l_surf.value)||0,
       etat:e.l_etat.value, pieces:e.l_pieces.value, ch:e.l_ch.value, sdb:e.l_sdb.value, dpe:e.l_dpe.value,
       activite:e.l_activite.value.trim(), vitrine:e.l_vitrine.value, loyer:parseFloat(e.l_loyer.value)||0,
-      occ:e.l_occ.value, note:e.l_note.value.trim() };
+      occ:e.l_occ.value, note:e.l_note.value.trim(), photos:lotPhotosTmp.slice() };
     if(editingLotIdx!==null){ estLots[editingLotIdx]=l; } else { estLots.push(l); }
     lotModal.hidden=true; renderLots(); toast('Lot enregistr\u00e9 \u2713');
   });
@@ -3285,7 +3357,7 @@
     var a=document.getElementById('simLbc'), b=document.getElementById('simSl');
     if(a) a.href=lbc; if(b) b.href=sl;
   }
-  function refreshMarket(){ loadMarket(); loadPOI(); updateMap(); updateSimLinks(); if(estCoord&&estCoord.insee){ loadDVF(); } }
+  function refreshMarket(){ loadMarket(); loadPOI(); updateMap(); updateSimLinks(); if(estCoord&&estCoord.insee){ loadDVF(); } if(typeof updateLotVals==='function') updateLotVals(); }
   (function(){ var b=document.getElementById('mktRefresh'); if(b) b.addEventListener('click',function(){ refreshMarket(); toast('Donn\u00e9es de march\u00e9 actualis\u00e9es\u2026'); }); })();
 
   async function updateRisks(lat, lon, insee){
@@ -3588,14 +3660,33 @@
       blk(12,'<p class="dnote">Prix de mise en vente conseill\u00e9 : <b>'+reco+'</b> \u00b7 '+pm2+'</p>');
       if(estLots.length && g('fType').value==='Immeuble'){
         blk(9,'<h2>D\u00e9tail des lots de l\u2019immeuble</h2>');
+        var totLV=0, totLL=0, allLV=true;
         var lotRows=estLots.map(function(l,i){
           var det=[]; if(lotIsHab(l.type)){ if(l.pieces) det.push(l.pieces+' p.'); if(l.ch) det.push(l.ch+' ch.'); if(l.sdb) det.push(l.sdb+' sdb'); if(l.dpe) det.push('DPE '+l.dpe); }
           if(lotIsCom(l.type)&&l.activite) det.push(l.activite);
           if(l.note) det.push(l.note);
+          var lv=(typeof lotValue==='function')?lotValue(l):null;
+          var loyA=(parseFloat(l.loyer)||0)*12; totLL+=loyA;
+          if(lv){ totLV+=lv.v; } else { allLV=false; }
+          var rdt=(lv&&loyA)?(loyA/lv.v*100):null;
           return '<tr><td>Lot '+(i+1)+' \u2014 '+l.type+(l.etage?' \u00b7 '+l.etage:'')+(det.length?'<br><span style="color:#8A8272;font-size:8.6px">'+det.join(' \u00b7 ')+'</span>':'')+'</td>'+
-            '<td>'+l.surf+' m\u00b2</td><td>'+(l.etat||'')+'</td><td>'+(l.loyer?parseFloat(l.loyer).toLocaleString('fr-FR')+' \u20ac/mois':'\u2014')+'<br><span style="color:#8A8272;font-size:8.6px">'+(l.occ||'')+'</span></td></tr>';
+            '<td>'+l.surf+' m\u00b2 \u00b7 '+(l.etat||'')+'</td>'+
+            '<td>'+(lv?lv.v.toLocaleString('fr-FR')+' \u20ac':'\u2014')+(lv?'<br><span style="color:#8A8272;font-size:8.2px">'+lv.src+'</span>':'')+'</td>'+
+            '<td>'+(l.loyer?parseFloat(l.loyer).toLocaleString('fr-FR')+' \u20ac/mois':'\u2014')+(rdt?'<br><span style="color:#2F6E4F;font-weight:700">'+rdt.toFixed(1).replace('.',',')+' %</span>':'<br><span style="color:#8A8272;font-size:8.6px">'+(l.occ||'')+'</span>')+'</td></tr>';
         }).join('');
-        blk(14+estLots.length*11,'<table class="dtable"><thead><tr><th>Lot</th><th>Surface</th><th>\u00c9tat</th><th>Loyer</th></tr></thead><tbody>'+lotRows+'</tbody></table>');
+        var immRdtP=(totLV&&totLL)?(totLL/totLV*100):null;
+        lotRows+='<tr class="tot"><td>Immeuble complet \u2014 sommation des lots'+(allLV?'':' (partielle)')+'</td><td></td>'+
+          '<td>'+(totLV?totLV.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</td>'+
+          '<td>'+(totLL?Math.round(totLL/12).toLocaleString('fr-FR')+' \u20ac/mois':'')+(immRdtP?'<br><span style="color:#2F6E4F;font-weight:700">'+immRdtP.toFixed(1).replace('.',',')+' %</span>':'')+'</td></tr>';
+        blk(20+estLots.length*13,'<table class="dtable"><thead><tr><th>Lot</th><th>Surface \u00b7 \u00e9tat</th><th>Valeur estim\u00e9e</th><th>Loyer \u00b7 rendement</th></tr></thead><tbody>'+lotRows+'</tbody></table>');
+        // photos des lots
+        estLots.forEach(function(l,i){
+          if(Array.isArray(l.photos)&&l.photos.length){
+            var ph=l.photos.slice(0,4).map(function(p){ return '<div class="dimg" style="background-image:url('+p+')"></div>'; }).join('');
+            blk(9,'<h2>Lot '+(i+1)+' \u2014 '+l.type+(l.etage?' \u00b7 '+l.etage:'')+' \u00b7 photos</h2>');
+            blk(52,'<div class="dpair" style="grid-template-columns:repeat('+Math.min(l.photos.length,2)+',1fr)">'+ph+'</div>');
+          }
+        });
       }
       var loyM=(typeof loyersMensuels==='function')?loyersMensuels():0;
       if(loyM>0){
