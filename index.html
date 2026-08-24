@@ -1368,8 +1368,9 @@
           <!-- RESULT PANEL -->
           <div class="card result">
             <div class="hd">
-              <div class="eyebrow">Valeur de marché estimée</div>
+              <div class="eyebrow">Valeur de marché estimée <button type="button" class="recoedit" id="rangeEdit" style="color:#D9BC7A" title="Ajuster la fourchette">✎ ajuster</button></div>
               <div class="fourchette"><b id="rLow">185 000 €</b> — <b id="rHigh">200 000 €</b></div>
+              <div class="recoflag" id="rangeFlag" hidden style="color:#D9BC7A">Fourchette ajustée · <button type="button" id="rangeReset" style="color:#fff">revenir au calcul</button></div>
             </div>
             <div class="reco">
               <div class="eyebrow">Prix de mise en vente conseillé <button type="button" class="recoedit" id="recoEdit" title="Ajuster le prix final">✎ ajuster</button></div>
@@ -2481,7 +2482,7 @@
       ['9 rue de Charleville','avr. 2026',150,255000,false],['4 quai de Médine','fév. 2026',72,158000,false],
       ['loft atelier, r. Bovet','jan. 2026',210,196000,true],['grange, Coulanges','juil. 2025',300,145000,true]]
   };
-  var state={loc:0,rayon:500,etat:3,dpe:2,terr:2,trav:0,tgls:{},custom:[],override:null};
+  var state={loc:0,rayon:500,etat:3,dpe:2,terr:2,trav:0,tgls:{},custom:[],override:null,overLow:null,overHigh:null};
   function median(arr){arr=arr.slice().sort(function(a,b){return a-b;});var m=Math.floor(arr.length/2);
     return arr.length%2?arr[m]:(arr[m-1]+arr[m])/2;}
   function renderComps(){
@@ -2503,9 +2504,12 @@
     var customEur=0; state.custom.forEach(function(c){ customEur+=c.e; });
     var adjusted=base*(1+pct/100)+toggEur+customEur+parseFloat(state.trav);
     var low=adjusted*0.955, high=adjusted*1.045;
+    if(state.overLow) low=state.overLow;
+    if(state.overHigh) high=state.overHigh;
     var reco=Math.round(adjusted*1.02/1000)*1000;
     if(state.override){ reco=state.override; }
     var flag=document.getElementById('recoFlag'); if(flag) flag.hidden=!state.override;
+    var rflag=document.getElementById('rangeFlag'); if(rflag) rflag.hidden=!(state.overLow||state.overHigh);
     document.getElementById('rLow').textContent=euro(Math.round(low/1000)*1000);
     document.getElementById('rHigh').textContent=euro(Math.round(high/1000)*1000);
     document.getElementById('rReco').textContent=euro(reco);
@@ -2577,6 +2581,18 @@
       state.override=v; compute(); toast('Prix final ajusté \u2713');
     });
     document.getElementById('recoReset').addEventListener('click',function(){ state.override=null; compute(); toast('Retour au prix calculé'); });
+    var re=document.getElementById('rangeEdit');
+    if(re) re.addEventListener('click',function(){
+      var curL=(document.getElementById('rLow').textContent||'').replace(/[^0-9]/g,'');
+      var curH=(document.getElementById('rHigh').textContent||'').replace(/[^0-9]/g,'');
+      var vl=prompt('Valeur basse (\u20ac) :', curL); if(vl===null) return;
+      var vh=prompt('Valeur haute (\u20ac) :', curH); if(vh===null) return;
+      vl=parseInt(String(vl).replace(/[^0-9]/g,''),10); vh=parseInt(String(vh).replace(/[^0-9]/g,''),10);
+      if(!vl||!vh||vh<vl){ toast('Fourchette invalide.'); return; }
+      state.overLow=vl; state.overHigh=vh; compute(); toast('Fourchette ajustée \u2713');
+    });
+    var rr=document.getElementById('rangeReset');
+    if(rr) rr.addEventListener('click',function(){ state.overLow=null; state.overHigh=null; compute(); toast('Retour à la fourchette calculée'); });
   })();
   /* ---------- géolocalisation (je suis devant le bien) ---------- */
   (function(){
@@ -2983,6 +2999,7 @@
     if(dt.annee) g('fAnnee').value=dt.annee;
     if(Array.isArray(dt.custom)){ state.custom=dt.custom.slice(); }
     if(r.prix_final){ state.override=r.prix_final; }
+    state.overLow=dt.overLow||null; state.overHigh=dt.overHigh||null;
     if(dt.cover && typeof window.__setEstCover==='function'){ window.__setEstCover(dt.cover); }
     estLots=Array.isArray(dt.lots)?dt.lots.slice():[];
     if(dt.loyer&&g('fLoyer')) g('fLoyer').value=dt.loyer;
@@ -3020,6 +3037,7 @@
       prix_final: state.override||null,
       data:{ cover:(estPhotos.length?await makeThumb(estPhotos[0].after||estPhotos[0].before):null),
              lots:(estLots.length?estLots:null), loyer:(g('fLoyer')&&g('fLoyer').value)||null,
+             overLow:state.overLow||null, overHigh:state.overHigh||null,
              terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav }
     };
