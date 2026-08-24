@@ -2276,11 +2276,19 @@
       box.innerHTML=cs.length?cs.join(''):'<span class="poi muted">Aucune commodit\u00e9 trouv\u00e9e \u00e0 proximit\u00e9.</span>';
       window.__poi=cs.length?box.innerHTML:null;
     }
-    // 1) appel DIRECT depuis l'appareil (non bloqué par Overpass, CORS ouvert)
+    // 1) appel DIRECT depuis l'appareil (non bloqué par Overpass, CORS ouvert) — 3 miroirs
+    var MIRS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
     try{
       var qy='[out:json][timeout:12];(node(around:1300,'+la+','+lo+')[amenity~"school|kindergarten|pharmacy|doctors|hospital|post_office"];node(around:1300,'+la+','+lo+')[shop~"supermarket|bakery|convenience"];node(around:3000,'+la+','+lo+')[railway=station];node(around:900,'+la+','+lo+')[highway=bus_stop];);out body 100;';
-      var r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(qy)});
-      if(r.ok){
+      var r=null;
+      for(var mi=0; mi<MIRS.length && !(r&&r.ok); mi++){
+        try{
+          var ctl=new AbortController(); var tmo=setTimeout(function(){ ctl.abort(); },9000);
+          r=await fetch(MIRS[mi],{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(qy)});
+          clearTimeout(tmo);
+        }catch(me){ r=null; }
+      }
+      if(r&&r.ok){
         var j=await r.json();
         var CAT=[['school','\u00c9cole'],['kindergarten','Cr\u00e8che / maternelle'],['supermarket','Supermarch\u00e9'],['bakery','Boulangerie'],['convenience','Sup\u00e9rette'],['pharmacy','Pharmacie'],['doctors','M\u00e9decin'],['hospital','H\u00f4pital'],['post_office','Poste'],['station','Gare'],['bus_stop','Arr\u00eat de bus']];
         function hv(a1,o1,a2,o2){var d=Math.PI/180,R=6371000;var x=Math.sin((a2-a1)*d/2),y=Math.sin((o2-o1)*d/2);return 2*R*Math.asin(Math.sqrt(x*x+Math.cos(a1*d)*Math.cos(a2*d)*y*y));}
@@ -2298,7 +2306,11 @@
       var r2=await fetch('/api/poi?lat='+la+'&lon='+lo);
       var j2=await r2.json(); if(!r2.ok) throw new Error(j2.error||r2.status);
       chips(j2.poi);
-    }catch(e){ box.innerHTML='<span class="poi muted">Analyse du quartier indisponible pour le moment \u2014 \u21bb Actualiser pour r\u00e9essayer.</span>'; }
+    }catch(e){
+      box.innerHTML='<span class="poi muted">Analyse du quartier indisponible \u2014 nouvel essai automatique\u2026</span>';
+      if(!loadPOI._retried){ loadPOI._retried=true; setTimeout(function(){ loadPOI(); },20000); }
+      else { loadPOI._retried=false; box.innerHTML='<span class="poi muted">Analyse du quartier indisponible pour le moment \u2014 \u21bb Actualiser pour r\u00e9essayer.</span>'; }
+    }
   }
   var dvfMarkers=[];
   function renderDvfMarkers(){
