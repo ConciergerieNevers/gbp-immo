@@ -438,6 +438,10 @@
   .restyle-notes:focus{outline:none;border-color:var(--accent)}
   .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
   @media (max-width:640px){ .clifields{grid-template-columns:1fr} }
+  .compfilters{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:7px 0 9px}
+  .compfilters input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 9px;font:inherit;font-size:13px;color:var(--ink);min-width:0}
+  .compfilters input:focus{outline:none;border-color:var(--accent)}
+  .compfilters[hidden]{display:none}
   .comptable th[data-sort]{cursor:pointer;user-select:none}
   .comptable th[data-sort]:hover{color:var(--accent)}
   .comptable tr.selrow{cursor:pointer}
@@ -1226,6 +1230,12 @@
                 <button data-r="5000">5 km</button>
               </div>
               <div class="chips" id="yearBar" style="margin:9px 0 4px" hidden></div>
+              <div class="compfilters" id="compFilters" hidden>
+                <input id="cfSmin" type="number" placeholder="Surface min">
+                <input id="cfSmax" type="number" placeholder="Surface max">
+                <input id="cfPmin" type="number" placeholder="Prix min €">
+                <input id="cfPmax" type="number" placeholder="Prix max €">
+              </div>
               <div style="overflow-x:auto">
                 <table class="comptable"><thead>
                   <tr><th data-sort="date">Adresse · date</th><th data-sort="surface">Surface ⇅</th><th data-sort="prix">Prix vendu ⇅</th><th data-sort="pm2">€/m² ⇅</th></tr>
@@ -2882,23 +2892,40 @@
     dvfComps.forEach(function(c){ var m=String(c.date||'').match(/\d{4}/); if(m&&m[0]===y){ c.sel=!dvfYearsOff[y]; } });
     renderDvfComps();
   });
+  function compFilterPass(c){
+    var smin=parseInt((document.getElementById('cfSmin')||{}).value,10)||null;
+    var smax=parseInt((document.getElementById('cfSmax')||{}).value,10)||null;
+    var pmin=parseInt((document.getElementById('cfPmin')||{}).value,10)||null;
+    var pmax=parseInt((document.getElementById('cfPmax')||{}).value,10)||null;
+    if(smin && c.surface<smin) return false;
+    if(smax && c.surface>smax) return false;
+    if(pmin && c.prix<pmin) return false;
+    if(pmax && c.prix>pmax) return false;
+    return true;
+  }
   function renderDvfComps(){
     renderYearBar();
     if(typeof renderDvfMarkers==='function') renderDvfMarkers();
     if(!dvfComps) return;
+    var cf=document.getElementById('compFilters'); if(cf) cf.hidden=!(dvfComps.length&&!dvfComps[0].demo);
     var body=document.getElementById('compBody');
-    body.innerHTML=dvfComps.map(function(c,i){
-      return '<tr class="selrow'+(c.sel?'':' out')+'" data-i="'+i+'"><td><span class="ck">'+(c.sel?'\u2611':'\u2610')+'</span> '+(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
-    }).join('');
-    var kept=dvfComps.filter(function(c){return c.sel;}).map(function(c){return c.pm2;});
+    var flt=[]; dvfComps.forEach(function(c,i){ if(compFilterPass(c)) flt.push({c:c,i:i}); });
+    var shown=flt.slice(0,20);
+    body.innerHTML=shown.map(function(x){ var c=x.c;
+      return '<tr class="selrow'+(c.sel?'':' out')+'" data-i="'+x.i+'"><td><span class="ck">'+(c.sel?'\u2611':'\u2610')+'</span> '+(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
+    }).join('') + (flt.length>20?'<tr><td colspan="4" style="color:var(--ink-3);font-size:12px;text-align:center;padding:8px">'+(flt.length-20)+' autres ventes correspondantes (affinez surface/prix pour les voir) \u2014 toutes comptent dans la m\u00e9diane</td></tr>':'');
+    var kept=flt.map(function(x){return x.c;}).filter(function(c){return c.sel;}).map(function(c){return c.pm2;});
     if(kept.length){
       var med=median(kept);
-      document.getElementById('compSummary').innerHTML='M\u00e9diane retenue : <b>'+Math.round(med).toLocaleString('fr-FR')+' \u20ac/m\u00b2</b> sur '+kept.length+' vente'+(kept.length>1?'s':'')+' s\u00e9lectionn\u00e9e'+(kept.length>1?'s':'')+(dvfComps.length-kept.length?' \u00b7 '+(dvfComps.length-kept.length)+' \u00e9cart\u00e9e(s)':'')+(dvfComps[0]&&dvfComps[0].demo?' \u00b7 donn\u00e9es de d\u00e9mo \u2014 choisis une adresse r\u00e9elle':'')+' \u00b7 touche une vente (ou sa pastille sur la carte) pour l\u2019inclure/l\u2019\u00e9carter';
+      document.getElementById('compSummary').innerHTML='M\u00e9diane retenue : <b>'+Math.round(med).toLocaleString('fr-FR')+' \u20ac/m\u00b2</b> sur '+kept.length+' vente'+(kept.length>1?'s':'')+' correspondante'+(kept.length>1?'s':'')+(dvfComps[0]&&dvfComps[0].demo?' \u00b7 donn\u00e9es de d\u00e9mo \u2014 choisis une adresse r\u00e9elle':'')+' \u00b7 touche une vente pour l\u2019\u00e9carter';
       state.baseM2=med; compute();
     } else {
       document.getElementById('compSummary').innerHTML='\u26a0\ufe0f Aucune vente s\u00e9lectionn\u00e9e \u2014 touche une ligne pour en retenir au moins une.';
     }
   }
+  ['cfSmin','cfSmax','cfPmin','cfPmax'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.addEventListener('input',function(){ renderDvfComps(); });
+  });
   var dvfSort={key:null,dir:1};
   document.querySelector('.comptable thead').addEventListener('click',function(e){
     var th=e.target.closest('th[data-sort]'); if(!th||!dvfComps) return;
@@ -3021,8 +3048,11 @@
     if(!miniMap || !window.L) return;
     dvfMarkers.forEach(function(m){ m.remove(); }); dvfMarkers=[];
     if(!dvfComps) return;
+    var shown=0;
     dvfComps.forEach(function(c,i){
       if(c.lat===undefined||c.lon===undefined) return;
+      if(!compFilterPass(c)) return;
+      if(++shown>40) return;
       var mk=L.circleMarker([c.lat,c.lon],{radius:7,color:'#fff',weight:1.5,
         fillColor:(c.sel?'#B08A2E':'#9a938a'), fillOpacity:(c.sel?0.95:0.45)}).addTo(miniMap);
       mk.bindTooltip((c.adresse||'')+' · '+euro(c.prix)+' · '+c.pm2.toLocaleString('fr-FR')+' €/m²');
@@ -3262,7 +3292,7 @@
     var ville=(document.querySelector('#estimation .addrbox small')||{}).textContent||'';
     var compRows, compExtra=0;
     if(dvfComps && dvfComps.some(function(c){return c.sel;})){
-      var selComps=dvfComps.filter(function(c){return c.sel;});
+      var selComps=dvfComps.filter(function(c){return c.sel && compFilterPass(c);});
       compExtra=Math.max(0, selComps.length-15);
       compRows=selComps.slice(0,15).map(function(c){
         return '<tr><td>'+(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
