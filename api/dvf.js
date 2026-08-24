@@ -26,10 +26,58 @@ function parseLine(line){
   out.push(cur); return out;
 }
 
+async function loadYear(insee, year){
+  var dept = insee.slice(0,2);
+  var url = 'https://files.data.gouv.fr/geo-dvf/latest/csv/'+year+'/communes/'+dept+'/'+insee+'.csv';
+  var r = await fetch(url);
+  if(!r.ok) return null;
+  var txt = await r.text();
+  var lines = txt.split('\n');
+  if(lines.length<2) return null;
+  var head = parseLine(lines[0]);
+  var idx = function(n){ return head.indexOf(n); };
+  var iId=idx('id_mutation'), iVal=idx('valeur_fonciere'), iType=idx('type_local'), iSurf=idx('surface_reelle_bati');
+  var rows=[];
+  for(var i=1;i<lines.length;i++){
+    if(!lines[i]) continue;
+    var f=parseLine(lines[i]);
+    var val=parseFloat(f[iVal]), surf=parseFloat(f[iSurf]);
+    rows.push({id:f[iId], type:f[iType], val:val, surf:surf});
+  }
+  return rows;
+}
+
 export default async function handler(req, res){
   try{
     var q = req.query || {};
     var insee = String(q.insee||'').trim();
+    var mode = q.mode || 'comparables';
+
+    // ---- MODE STATS : marché de la commune sur 5 ans (médiane €/m² + volume) ----
+    if(mode === 'stats'){
+      if(!/^\d{5}$/.test(insee)){ res.status(400).json({ error:'insee manquant' }); return; }
+      var typeS = (q.type==='Appartement') ? 'Appartement' : 'Maison';
+      var now = new Date().getFullYear();
+      var yrs = []; for(var y=now-1; y>=now-5; y--) yrs.push(String(y));
+      var out = [];
+      var results = await Promise.all(yrs.map(function(yy){ return loadYear(insee, yy).catch(function(){ return null; }); }));
+      for(var k=0;k<yrs.length;k++){
+        var rows = results[k]; if(!rows){ continue; }
+        // mutations mono-lot du type demandé
+        var byId={};
+        rows.forEach(function(r){ if(r.type===typeS && r.val>0 && r.surf>9){ (byId[r.id]=byId[r.id]||[]).push(r); } });
+        var pm2=[];
+        Object.keys(byId).forEach(function(id){ if(byId[id].length===1){ var r=byId[id][0]; var p=r.val/r.surf; if(p>=300&&p<=9000) pm2.push(p); } });
+        if(pm2.length){ out.push({ annee:parseInt(yrs[k],10), median:Math.round(median(pm2)), ventes:pm2.length }); }
+      }
+      out.sort(function(a,b){ return a.annee-b.annee; });
+      var evo1=null, evo5=null;
+      if(out.length>=2){ var l=out[out.length-1], p1=out[out.length-2]; evo1=Math.round((l.median-p1.median)/p1.median*1000)/10; }
+      if(out.length>=2){ var f=out[0], l2=out[out.length-1]; evo5=Math.round((l2.median-f.median)/f.median*1000)/10; }
+      res.status(200).json({ annees:out, evo1:evo1, evo5:evo5 });
+      return;
+    }
+
     var lat = parseFloat(q.lat), lon = parseFloat(q.lon);
     var type = (q.type==='Appartement') ? 'Appartement' : 'Maison';
     var rayon = Math.min(parseInt(q.rayon,10)||800, 5000);

@@ -438,6 +438,22 @@
   .restyle-notes:focus{outline:none;border-color:var(--accent)}
   .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
   @media (max-width:640px){ .clifields{grid-template-columns:1fr} }
+  /* Marché & quartier */
+  .mk-auto{font-size:11px;color:var(--accent);font-weight:640;margin-left:8px;text-transform:none;letter-spacing:0}
+  .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:13px}
+  @media (max-width:640px){ .mtiles{grid-template-columns:repeat(2,1fr)} }
+  .mtile{background:var(--surface-2);border-radius:11px;padding:11px 12px;text-align:center}
+  .mtile small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:660;margin-bottom:4px}
+  .mtile b{font-size:17px;font-variant-numeric:tabular-nums}
+  .mtile b.pos{color:var(--good)} .mtile b.neg{color:var(--crit)}
+  .mchart{margin-bottom:13px}
+  .mchart svg{width:100%;height:110px;display:block}
+  .poichips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+  .poi{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:20px;padding:7px 12px;font-size:12.5px;font-weight:560}
+  .poi b{color:var(--accent);font-weight:700}
+  .poi.muted{color:var(--ink-3);font-weight:500}
+  .minimap{height:220px;border-radius:12px;overflow:hidden;border:1px solid var(--line);display:none}
+  .minimap.show{display:block}
   /* Ajustements manuels */
   .cadjlist{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
   .cadjrow{display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:9px;padding:9px 12px;font-size:13.5px}
@@ -793,6 +809,16 @@
   .drisk{border:1px solid var(--filet);border-radius:9px;padding:9px 10px}
   .drisk b{display:block;font-size:11.5px;color:#131108} .drisk small{font-size:10.5px;color:#8E8672}
   .darg{font-size:12.5px;line-height:1.55;color:#3C382E;margin:4px 0 0}
+  .pmtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin:2mm 0 4mm}
+  .pmtile{background:#F6F1E3;border-radius:9px;padding:4mm 3mm;text-align:center}
+  .pmtile small{display:block;font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:#8E8672;font-weight:700;margin-bottom:1.2mm}
+  .pmtile b{font-size:14px;color:#131108;font-variant-numeric:tabular-nums}
+  .pmchart svg{width:100%;height:34mm;display:block}
+  .pmchart svg text{fill:#8E8672}
+  .pmchart svg rect{fill:#C99B3F}
+  .pmpoi .poi{background:#F6F1E3;color:#2A261C;font-size:10px;padding:2mm 3mm}
+  .pmpoi .poi b{color:#B08A2E}
+  #dMapSlot img{width:100%;height:60mm;object-fit:cover;border-radius:9px;border:1px solid var(--filet);margin-top:4mm;display:block}
   .dstaging{display:flex;flex-direction:column;gap:11px}
   .dpair{display:grid;grid-template-columns:1fr 1fr;gap:9px;break-inside:avoid}
   .dpair figure{margin:0}
@@ -1112,6 +1138,21 @@
               <div class="restyle-msg" id="dvfMsg" hidden></div>
             </div>
 
+            <div class="card estcard" id="marketCard">
+              <h3><span class="stepnum">★</span> Marché &amp; quartier <span class="mk-auto">auto dès l'adresse</span>
+                <button type="button" class="ifedit" id="mktRefresh" style="margin-left:auto">↻ Actualiser</button></h3>
+              <div class="mtiles" id="mTiles">
+                <div class="mtile"><small>Prix médian secteur</small><b id="mMed">—</b></div>
+                <div class="mtile"><small>Évolution 1 an</small><b id="mEvo1">—</b></div>
+                <div class="mtile"><small>Évolution 5 ans</small><b id="mEvo5">—</b></div>
+                <div class="mtile"><small>Ventes / an</small><b id="mVol">—</b></div>
+              </div>
+              <div class="mchart" id="mChart"></div>
+              <div class="restyle-sub">À proximité</div>
+              <div class="poichips" id="poiChips"><span class="poi muted">Choisis une adresse pour analyser le quartier…</span></div>
+              <div id="miniMap" class="minimap"></div>
+            </div>
+
             <div class="card estcard">
               <h3><span class="stepnum">4</span> Ajustements d'expert</h3>
               <div class="adj">
@@ -1340,6 +1381,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <script>
 (function(){
   "use strict";
@@ -1448,6 +1491,8 @@
     document.getElementById('pgTitle').textContent=titles[id][0];
     document.getElementById('pgSub').textContent=titles[id][1];
     var sp=document.getElementById('stickyPrice'); if(sp) sp.classList.toggle('show', id==='estimation');
+    var cf=document.getElementById('calcFab'); if(cf) cf.style.display=(id==='estimation')?'none':'';
+    var cp=document.getElementById('calcPop'); if(cp && id==='estimation') cp.hidden=true;
     window.scrollTo(0,0);
   }
   document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
@@ -2056,6 +2101,7 @@
           document.getElementById('pgSub').textContent=p.label+' · en cours';
           if(typeof updateRisks==='function') updateRisks(estCoord.lat, estCoord.lon, estCoord.insee);
           if(typeof resetDVF==='function') resetDVF();
+          if(typeof refreshMarket==='function') refreshMarket();
           toast('Position trouvée : '+(p.label||''));
         }catch(e){ toast('Géolocalisation impossible — vérifie l\u2019autorisation.'); }
         finally{ b.disabled=false; b.textContent=old; }
@@ -2153,6 +2199,73 @@
     finally{ btn.disabled=false; }
   }
   document.getElementById('dvfBtn').addEventListener('click',loadDVF);
+  /* ---------- Marché & quartier (stats DVF 5 ans + POI + carte) ---------- */
+  var miniMap=null, miniMarker=null;
+  function euroM2(v){ return v ? (Math.round(v).toLocaleString('fr-FR')+' \u20ac/m\u00b2') : '\u2014'; }
+  function pctTxt(v){ return (v===null||v===undefined) ? '\u2014' : ((v>0?'+':'')+String(v).replace('.',',')+' %'); }
+  async function loadMarket(){
+    if(!estCoord || !estCoord.insee) return;
+    try{
+      var t=document.getElementById('fType').value;
+      var r=await fetch('/api/dvf?mode=stats&insee='+encodeURIComponent(estCoord.insee)+'&type='+encodeURIComponent(t));
+      var j=await r.json(); if(!r.ok || !j.annees || !j.annees.length) return;
+      window.__market=j;
+      var last=j.annees[j.annees.length-1];
+      document.getElementById('mMed').textContent=euroM2(last.median);
+      var e1=document.getElementById('mEvo1'); e1.textContent=pctTxt(j.evo1); e1.className=(j.evo1>0?'pos':(j.evo1<0?'neg':''));
+      var e5=document.getElementById('mEvo5'); e5.textContent=pctTxt(j.evo5); e5.className=(j.evo5>0?'pos':(j.evo5<0?'neg':''));
+      var volMoy=Math.round(j.annees.reduce(function(a,x){return a+x.ventes;},0)/j.annees.length);
+      document.getElementById('mVol').textContent=volMoy;
+      // graphe barres médiane par année (SVG)
+      var max=Math.max.apply(null,j.annees.map(function(x){return x.median;}));
+      var W=100/j.annees.length;
+      var bars=j.annees.map(function(x,i){
+        var h=Math.max(8, x.median/max*72);
+        return '<rect x="'+(i*W+W*0.18)+'" y="'+(86-h)+'" width="'+(W*0.64)+'" height="'+h+'" rx="1.5" fill="var(--accent)" opacity="'+(i===j.annees.length-1?'1':'0.55')+'"/>'+
+          '<text x="'+(i*W+W/2)+'" y="97" text-anchor="middle" font-size="6.5" fill="var(--ink-3)">'+x.annee+'</text>'+
+          '<text x="'+(i*W+W/2)+'" y="'+(82-h)+'" text-anchor="middle" font-size="6" font-weight="700" fill="var(--ink-2)">'+Math.round(x.median/10)*10+'</text>';
+      }).join('');
+      document.getElementById('mChart').innerHTML='<svg viewBox="0 0 100 100" preserveAspectRatio="none">'+bars+'</svg>';
+    }catch(e){ console.warn('[ESTIMAKE] market', e); }
+  }
+  async function loadPOI(){
+    if(!estCoord) return;
+    var box=document.getElementById('poiChips');
+    box.innerHTML='<span class="poi muted">Analyse du quartier\u2026</span>';
+    var la=estCoord.lat, lo=estCoord.lon;
+    var qy='[out:json][timeout:12];(node(around:1300,'+la+','+lo+')[amenity~"school|kindergarten|pharmacy|doctors|hospital|post_office"];node(around:1300,'+la+','+lo+')[shop~"supermarket|bakery|convenience"];node(around:3000,'+la+','+lo+')[railway=station];node(around:900,'+la+','+lo+')[highway=bus_stop];);out body 80;';
+    try{
+      var r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(qy),headers:{'Content-Type':'application/x-www-form-urlencoded'}});
+      var j=await r.json();
+      var CAT=[['school','\u00c9cole'],['kindergarten','Cr\u00e8che/maternelle'],['supermarket','Supermarch\u00e9'],['bakery','Boulangerie'],['convenience','Sup\u00e9rette'],['pharmacy','Pharmacie'],['doctors','M\u00e9decin'],['hospital','H\u00f4pital'],['post_office','Poste'],['station','Gare'],['bus_stop','Arr\u00eat de bus']];
+      function hv(a1,o1,a2,o2){var d=Math.PI/180,R=6371000;var x=Math.sin((a2-a1)*d/2),y=Math.sin((o2-o1)*d/2);return 2*R*Math.asin(Math.sqrt(x*x+Math.cos(a1*d)*Math.cos(a2*d)*y*y));}
+      var best={};
+      (j.elements||[]).forEach(function(el){
+        var t=el.tags||{}; var key=t.amenity||t.shop||(t.railway==='station'?'station':(t.highway==='bus_stop'?'bus_stop':null));
+        if(!key) return; var dist=hv(la,lo,el.lat,el.lon);
+        if(!best[key]||dist<best[key]) best[key]=dist;
+      });
+      var chips=[];
+      CAT.forEach(function(c){ if(best[c[0]]!==undefined){ var m=Math.round(best[c[0]]/10)*10;
+        chips.push('<span class="poi">'+c[1]+' <b>'+(m>=1000?((m/1000).toFixed(1).replace('.',',')+' km'):(m+' m'))+'</b></span>'); } });
+      box.innerHTML=chips.length?chips.join(''):'<span class="poi muted">Aucune commodit\u00e9 trouv\u00e9e \u00e0 proximit\u00e9.</span>';
+      window.__poi=box.innerHTML;
+    }catch(e){ box.innerHTML='<span class="poi muted">Analyse du quartier indisponible.</span>'; }
+  }
+  function updateMap(){
+    if(!estCoord || !window.L) return;
+    var el=document.getElementById('miniMap'); el.classList.add('show');
+    if(!miniMap){
+      miniMap=L.map('miniMap',{zoomControl:false,attributionControl:true}).setView([estCoord.lat,estCoord.lon],16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,crossOrigin:true,attribution:'\u00a9 OpenStreetMap'}).addTo(miniMap);
+    } else { miniMap.setView([estCoord.lat,estCoord.lon],16); }
+    if(miniMarker) miniMarker.remove();
+    miniMarker=L.circleMarker([estCoord.lat,estCoord.lon],{radius:9,color:'#B08A2E',fillColor:'#D4AF37',fillOpacity:.85,weight:2.5}).addTo(miniMap);
+    setTimeout(function(){ miniMap.invalidateSize(); },250);
+  }
+  function refreshMarket(){ loadMarket(); loadPOI(); updateMap(); if(estCoord&&estCoord.insee){ loadDVF(); } }
+  (function(){ var b=document.getElementById('mktRefresh'); if(b) b.addEventListener('click',function(){ refreshMarket(); toast('Donn\u00e9es de march\u00e9 actualis\u00e9es\u2026'); }); })();
+
   async function updateRisks(lat, lon, insee){
     try{ var a=await (await fetch('https://georisques.gouv.fr/api/v1/rga?latlon='+lon+','+lat)).json();
       if(a && a.exposition) document.getElementById('rkArgiles').textContent=a.exposition; }catch(e){}
@@ -2319,6 +2432,7 @@
       // nouvelle adresse → risques réels + reset DVF
       if(typeof updateRisks==='function') updateRisks(estCoord.lat, estCoord.lon, estCoord.insee);
       if(typeof resetDVF==='function') resetDVF();
+      if(typeof refreshMarket==='function') refreshMarket();
     });
   })();
 
@@ -2420,6 +2534,17 @@
         '<p class="dnote">'+txt('compSummary')+'</p>'+
         '<h2>Analyse &amp; positionnement du prix</h2><table class="dtable"><tbody>'+breakRows+'</tbody></table>'+
         '<p class="dnote">Prix de mise en vente conseill\u00e9 : <b>'+reco+'</b> \u00b7 '+pm2+'</p>')+
+      (window.__market ? pf('March\u00e9 &amp; quartier',
+        '<h2>March\u00e9 de la commune \u00b7 5 ans (DVF)</h2>'+
+        '<div class="pmtiles">'+
+          '<div class="pmtile"><small>Prix m\u00e9dian secteur</small><b>'+(window.__market.annees.length?Math.round(window.__market.annees[window.__market.annees.length-1].median).toLocaleString('fr-FR')+' \u20ac/m\u00b2':'\u2014')+'</b></div>'+
+          '<div class="pmtile"><small>\u00c9volution 1 an</small><b>'+((window.__market.evo1>0?'+':'')+(window.__market.evo1!==null?String(window.__market.evo1).replace('.',','):'\u2014'))+' %</b></div>'+
+          '<div class="pmtile"><small>\u00c9volution 5 ans</small><b>'+((window.__market.evo5>0?'+':'')+(window.__market.evo5!==null?String(window.__market.evo5).replace('.',','):'\u2014'))+' %</b></div>'+
+          '<div class="pmtile"><small>Ventes / an</small><b>'+Math.round(window.__market.annees.reduce(function(a,x){return a+x.ventes;},0)/window.__market.annees.length)+'</b></div>'+
+        '</div>'+
+        '<div class="pmchart">'+document.getElementById('mChart').innerHTML+'</div>'+
+        (window.__poi?('<h2>Commodit\u00e9s \u00e0 proximit\u00e9</h2><div class="poichips pmpoi">'+window.__poi+'</div>'):'')+
+        '<div id="dMapSlot"></div>') : '')+
       pf('Environnement &amp; annexes',
         '<h2>Environnement &amp; risques \u00b7 G\u00e9orisques</h2><div class="drisks">'+risks+'</div>'+
         (pairs.length?('<h2>Home staging \u2014 avant / apr\u00e8s</h2><div class="dstaging">'+pairHtml(pairs.slice(0,2))+'</div>'):''))+
@@ -2468,6 +2593,12 @@
       // attendre le chargement des images (logo, photos)
       var imgs=[].slice.call(el.querySelectorAll('img'));
       await Promise.all(imgs.map(function(im){ return (im.complete&&im.naturalWidth)?null:new Promise(function(res){ im.onload=im.onerror=res; }); }));
+      // carte du quartier → image dans la feuille Marché (si dispo)
+      var slot=el.querySelector('#dMapSlot'), mapEl=document.getElementById('miniMap');
+      if(slot && mapEl && mapEl.classList.contains('show')){
+        try{ var mcv=await html2canvas(mapEl,{scale:1.4,useCORS:true,logging:false});
+          slot.innerHTML='<img src="'+mcv.toDataURL('image/jpeg',0.88)+'" alt="Plan du quartier">'; }catch(e){ console.warn('map shot',e); }
+      }
       var sheets=el.querySelectorAll('.dsheet');
       var pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4',compress:true});
       for(var i=0;i<sheets.length;i++){
