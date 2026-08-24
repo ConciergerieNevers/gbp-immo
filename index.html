@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('estimake_theme')||'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}</script>
 <meta name="theme-color" content="#1B342D">
 <meta name="description" content="ESTIMAKE — pilotage d'activité et estimation immobilière terrain (Nevers).">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -415,6 +416,10 @@
   .restyle{margin-top:14px}
   .restyle[hidden]{display:none}
   .restyle-lab{font-size:13px;color:var(--ink-2);font-weight:520;margin-bottom:9px}
+  .restyle-sub{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:660;margin:12px 0 6px}
+  .restyle-notes{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;
+    font:inherit;font-size:13px;color:var(--ink);resize:vertical;min-height:40px}
+  .restyle-notes:focus{outline:none;border-color:var(--accent)}
   .restyle-styles{display:flex;gap:6px;flex-wrap:wrap}
   .rst{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:7px 13px;font-size:13px;
     color:var(--ink-2);font-weight:540;cursor:pointer}
@@ -905,16 +910,33 @@
                 </button>
               </label>
               <div class="restyle" id="restyleBox" hidden>
-                <div class="restyle-lab">✨ Restyler cette pièce avec l'IA — choisis une ambiance :</div>
+                <div class="restyle-lab">✨ Réaménager cette pièce avec l'IA — la structure réelle (murs, fenêtres, volumes) est conservée.</div>
+                <div class="restyle-sub">Transformer en</div>
+                <div class="restyle-styles" id="restyleRooms">
+                  <button type="button" class="rst on" data-r="">Même pièce</button>
+                  <button type="button" class="rst" data-r="cuisine">Cuisine</button>
+                  <button type="button" class="rst" data-r="salon">Salon</button>
+                  <button type="button" class="rst" data-r="salle à manger">Salle à manger</button>
+                  <button type="button" class="rst" data-r="chambre">Chambre</button>
+                  <button type="button" class="rst" data-r="chambre d'enfant">Chambre enfant</button>
+                  <button type="button" class="rst" data-r="dressing">Dressing</button>
+                  <button type="button" class="rst" data-r="salle de bain">Salle de bain</button>
+                  <button type="button" class="rst" data-r="bureau">Bureau</button>
+                </div>
+                <div class="restyle-sub">Ambiance</div>
                 <div class="restyle-styles" id="restyleStyles">
                   <button type="button" class="rst on" data-s="Moderne">Moderne</button>
                   <button type="button" class="rst" data-s="Scandinave">Scandinave</button>
                   <button type="button" class="rst" data-s="Cosy">Cosy</button>
                   <button type="button" class="rst" data-s="Luxe">Luxe</button>
                   <button type="button" class="rst" data-s="Épuré">Épuré</button>
+                  <button type="button" class="rst" data-s="Industriel">Industriel</button>
                 </div>
-                <button type="button" class="btn gold" id="restyleBtn" style="width:100%;justify-content:center;margin-top:11px">
-                  Générer la version restylée
+                <div class="restyle-sub">Remarques / modifications (optionnel)</div>
+                <textarea id="restyleNotes" class="restyle-notes" rows="2" maxlength="400"
+                  placeholder="ex : îlot central, sol parquet clair, garder les rideaux, murs blanc cassé, ambiance chaleureuse…"></textarea>
+                <button type="button" class="btn gold" id="restyleBtn" style="width:100%;justify-content:center;margin-top:14px">
+                  Générer le réaménagement
                 </button>
                 <div class="restyle-out" id="restyleOut" hidden>
                   <div class="ba">
@@ -1196,12 +1218,13 @@
   var checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
   var euro=function(n){return Math.round(n).toLocaleString('fr-FR')+' €';};
 
-  /* ---------- theme ---------- */
+  /* ---------- theme : mode JOUR par défaut, sombre optionnel et mémorisé ---------- */
   var root=document.documentElement;
+  root.setAttribute('data-theme', localStorage.getItem('estimake_theme')||'light');
   document.getElementById('themeBtn').addEventListener('click',function(){
-    var cur=root.getAttribute('data-theme');
-    if(!cur){cur=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
-    root.setAttribute('data-theme',cur==='dark'?'light':'dark');
+    var next=(root.getAttribute('data-theme')==='dark')?'light':'dark';
+    root.setAttribute('data-theme',next);
+    localStorage.setItem('estimake_theme',next);
   });
 
   /* ---------- rafraîchir / déconnexion (haut de page) ---------- */
@@ -1895,12 +1918,14 @@
   /* ---------- restyling IA (Claude rédige le prompt + modèle d'image via /api/restyle) ---------- */
   (function(){
     var box=document.getElementById('restyleBox'); if(!box) return;
-    var styles=document.getElementById('restyleStyles'), btn=document.getElementById('restyleBtn'),
+    var styles=document.getElementById('restyleStyles'), rooms=document.getElementById('restyleRooms'),
+        btn=document.getElementById('restyleBtn'),
         out=document.getElementById('restyleOut'), before=document.getElementById('restyleBefore'),
         after=document.getElementById('restyleAfter'), dl=document.getElementById('restyleDl'),
         msg=document.getElementById('restyleMsg');
-    styles.addEventListener('click',function(e){ var b=e.target.closest('.rst'); if(!b) return;
-      styles.querySelectorAll('.rst').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); });
+    function pickHandler(group){ group.addEventListener('click',function(e){ var b=e.target.closest('.rst'); if(!b) return;
+      group.querySelectorAll('.rst').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); }); }
+    pickHandler(styles); if(rooms) pickHandler(rooms);
     function scale(dataURL){ return new Promise(function(res){
       var im=new Image();
       im.onload=function(){ var max=1024, w=im.width, h=im.height;
@@ -1911,10 +1936,12 @@
     btn.addEventListener('click',async function(){
       if(!estPhoto) return;
       var sel=styles.querySelector('.rst.on'); var style=sel?sel.dataset.s:'Moderne';
-      msg.hidden=true; out.hidden=true; var old=btn.textContent; btn.disabled=true; btn.textContent='Génération en cours… (30–60 s)';
+      var rsel=rooms?rooms.querySelector('.rst.on'):null; var room=rsel?(rsel.dataset.r||''):'';
+      var notesEl=document.getElementById('restyleNotes'); var notes=notesEl?notesEl.value.trim():'';
+      msg.hidden=true; out.hidden=true; var old=btn.textContent; btn.disabled=true; btn.textContent='Génération en cours… (15–30 s)';
       try{
         var small=await scale(estPhoto);
-        var r=await fetch('/api/restyle',{ method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ image:small, style:style }) });
+        var r=await fetch('/api/restyle',{ method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ image:small, style:style, room:room, notes:notes }) });
         var j=await r.json().catch(function(){ return { error:'Réponse invalide du serveur.' }; });
         if(!r.ok || !j.image){ throw new Error(j.error || ('Erreur '+r.status)); }
         before.src=small; after.src=j.image; dl.href=j.image; out.hidden=false;
