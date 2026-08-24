@@ -2416,6 +2416,7 @@
           document.getElementById('addrA').textContent=p.name||p.label;
           document.getElementById('addrS').textContent=(p.postcode||'')+' '+(p.city||'')+' · géolocalisé ✓';
           estCoord={lat:c[1], lon:c[0], insee:p.citycode, label:p.label};
+          if(typeof editingEstimId!=='undefined') editingEstimId=null;
           document.getElementById('addrSearch').hidden=true; document.getElementById('addrDisplay').hidden=false;
           document.getElementById('pgSub').textContent=p.label+' · en cours';
           if(typeof updateRisks==='function') updateRisks(estCoord.lat, estCoord.lon, estCoord.insee);
@@ -2789,6 +2790,7 @@
     if(Array.isArray(dt.custom)){ state.custom=dt.custom.slice(); }
     if(r.prix_final){ state.override=r.prix_final; }
     if(dt.cover && typeof window.__setEstCover==='function'){ window.__setEstCover(dt.cover); }
+    editingEstimId=r.id;
     compute();
     go('estimation');
     toast('Estimation rechargée \u2014 '+(r.adresse||''));
@@ -2804,6 +2806,7 @@
       c.getContext('2d').drawImage(im,0,0,w,h);
       try{ res(c.toDataURL('image/jpeg',0.72)); }catch(e){ res(null); } };
     im.onerror=function(){ res(null); }; im.src=dataURL; }); }
+  var editingEstimId=null;   // estimation rechargée → enregistrer = mettre à jour
   async function saveEstimation(){
     if(!sb) { toast('Base non connectée.'); return false; }
     var g=function(id){return document.getElementById(id);};
@@ -2823,7 +2826,9 @@
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav }
     };
     try{
-      var res=await sb.from('estimations').insert(row);
+      var res = editingEstimId
+        ? await sb.from('estimations').update(row).eq('id',editingEstimId)
+        : await sb.from('estimations').insert(row);
       if(res.error) throw res.error;
       return true;
     }catch(e){
@@ -3236,6 +3241,7 @@
       document.getElementById('addrA').textContent=b.dataset.name||b.dataset.label;
       document.getElementById('addrS').textContent=b.dataset.ctx+' · géolocalisé ✓';
       estCoord={lat:+b.dataset.lat, lon:+b.dataset.lon, insee:b.dataset.insee, label:b.dataset.label};
+      if(typeof editingEstimId!=='undefined') editingEstimId=null;
       search.hidden=true; disp.hidden=false; sug.innerHTML='';
       document.getElementById('pgSub').textContent=b.dataset.label+' · en cours';
       // nouvelle adresse → risques réels + reset DVF
