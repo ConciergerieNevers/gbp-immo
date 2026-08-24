@@ -2007,16 +2007,11 @@
   function median(arr){arr=arr.slice().sort(function(a,b){return a-b;});var m=Math.floor(arr.length/2);
     return arr.length%2?arr[m]:(arr[m-1]+arr[m])/2;}
   function renderComps(){
-    var rows=comps[state.rayon];var body=document.getElementById('compBody');
-    var kept=[];
-    body.innerHTML=rows.map(function(r){
-      var pm2=r[3]/r[2];if(!r[4])kept.push(pm2);
-      return '<tr class="'+(r[4]?'out':'')+'"><td>'+r[0]+' · '+r[1]+'</td><td>'+r[2]+' m²</td><td>'+euro(r[3])+'</td><td>'+Math.round(pm2).toLocaleString('fr-FR')+'</td></tr>';
-    }).join('');
-    var med=median(kept);
-    document.getElementById('compSummary').innerHTML='Médiane retenue : <b>'+Math.round(med).toLocaleString('fr-FR')+' €/m²</b> sur '+kept.length+' ventes comparables ('+(rows.length-kept.length)+' biens atypiques écartés).';
-    state.baseM2=med;
-    compute();
+    // données de démonstration converties au format sélectionnable unifié
+    dvfComps=(comps[state.rayon]||[]).map(function(r){
+      return { adresse:r[0], date:r[1], surface:r[2], prix:r[3], pm2:Math.round(r[3]/r[2]), sel:!r[4], demo:true };
+    });
+    renderDvfComps();
   }
   function compute(){
     var surf=parseFloat(document.getElementById('fSurf').value)||127;
@@ -2208,6 +2203,7 @@
   });
   function renderDvfComps(){
     renderYearBar();
+    if(typeof renderDvfMarkers==='function') renderDvfMarkers();
     if(!dvfComps) return;
     var body=document.getElementById('compBody');
     body.innerHTML=dvfComps.map(function(c,i){
@@ -2216,7 +2212,7 @@
     var kept=dvfComps.filter(function(c){return c.sel;}).map(function(c){return c.pm2;});
     if(kept.length){
       var med=median(kept);
-      document.getElementById('compSummary').innerHTML='M\u00e9diane retenue : <b>'+Math.round(med).toLocaleString('fr-FR')+' \u20ac/m\u00b2</b> sur '+kept.length+' vente'+(kept.length>1?'s':'')+' s\u00e9lectionn\u00e9e'+(kept.length>1?'s':'')+(dvfComps.length-kept.length?' \u00b7 '+(dvfComps.length-kept.length)+' \u00e9cart\u00e9e(s)':'')+' \u00b7 touche une vente pour l\u2019inclure/l\u2019\u00e9carter';
+      document.getElementById('compSummary').innerHTML='M\u00e9diane retenue : <b>'+Math.round(med).toLocaleString('fr-FR')+' \u20ac/m\u00b2</b> sur '+kept.length+' vente'+(kept.length>1?'s':'')+' s\u00e9lectionn\u00e9e'+(kept.length>1?'s':'')+(dvfComps.length-kept.length?' \u00b7 '+(dvfComps.length-kept.length)+' \u00e9cart\u00e9e(s)':'')+(dvfComps[0]&&dvfComps[0].demo?' \u00b7 donn\u00e9es de d\u00e9mo \u2014 choisis une adresse r\u00e9elle':'')+' \u00b7 touche une vente (ou sa pastille sur la carte) pour l\u2019inclure/l\u2019\u00e9carter';
       state.baseM2=med; compute();
     } else {
       document.getElementById('compSummary').innerHTML='\u26a0\ufe0f Aucune vente s\u00e9lectionn\u00e9e \u2014 touche une ligne pour en retenir au moins une.';
@@ -2304,6 +2300,20 @@
       chips(j2.poi);
     }catch(e){ box.innerHTML='<span class="poi muted">Analyse du quartier indisponible pour le moment \u2014 \u2buo Actualiser pour r\u00e9essayer.</span>'.replace('\u2buo','\u21bb'); }
   }
+  var dvfMarkers=[];
+  function renderDvfMarkers(){
+    if(!miniMap || !window.L) return;
+    dvfMarkers.forEach(function(m){ m.remove(); }); dvfMarkers=[];
+    if(!dvfComps) return;
+    dvfComps.forEach(function(c,i){
+      if(c.lat===undefined||c.lon===undefined) return;
+      var mk=L.circleMarker([c.lat,c.lon],{radius:7,color:'#fff',weight:1.5,
+        fillColor:(c.sel?'#B08A2E':'#9a938a'), fillOpacity:(c.sel?0.95:0.45)}).addTo(miniMap);
+      mk.bindTooltip((c.adresse||'')+' · '+euro(c.prix)+' · '+c.pm2.toLocaleString('fr-FR')+' €/m²');
+      mk.on('click',function(){ c.sel=!c.sel; renderDvfComps(); });
+      dvfMarkers.push(mk);
+    });
+  }
   function updateMap(){
     if(!estCoord || !window.L) return;
     var el=document.getElementById('miniMap'); el.classList.add('show');
@@ -2312,7 +2322,9 @@
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,crossOrigin:true,attribution:'\u00a9 OpenStreetMap'}).addTo(miniMap);
     } else { miniMap.setView([estCoord.lat,estCoord.lon],16); }
     if(miniMarker) miniMarker.remove();
-    miniMarker=L.circleMarker([estCoord.lat,estCoord.lon],{radius:9,color:'#B08A2E',fillColor:'#D4AF37',fillOpacity:.85,weight:2.5}).addTo(miniMap);
+    miniMarker=L.circleMarker([estCoord.lat,estCoord.lon],{radius:10,color:'#131108',fillColor:'#D4AF37',fillOpacity:.95,weight:3}).addTo(miniMap);
+    miniMarker.bindTooltip('Le bien estimé');
+    renderDvfMarkers();
     setTimeout(function(){ miniMap.invalidateSize(); },250);
   }
   function refreshMarket(){ loadMarket(); loadPOI(); updateMap(); if(estCoord&&estCoord.insee){ loadDVF(); } }

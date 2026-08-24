@@ -139,7 +139,7 @@ export default async function handler(req, res){
       count: top.length,
       comparables: top.map(function(r){
         return { adresse:(r.adr||'Adresse non communiquée'), date:r.date, surface:Math.round(r.surf),
-          prix:Math.round(r.val), pm2:Math.round(r.pm2), distance:Math.round(r.dist) };
+          prix:Math.round(r.val), pm2:Math.round(r.pm2), distance:Math.round(r.dist), lat:r.lat, lon:r.lon };
       })
     });
   }catch(e){
