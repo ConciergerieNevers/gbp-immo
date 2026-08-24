@@ -459,6 +459,8 @@
   .poi{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:20px;padding:7px 12px;font-size:12.5px;font-weight:560}
   .poi b{color:var(--accent);font-weight:700}
   .poi.muted{color:var(--ink-3);font-weight:500}
+  .simrow{display:flex;gap:9px;margin-bottom:13px}
+  .simrow .btn{flex:1;justify-content:center;text-decoration:none}
   .minimap{height:220px;border-radius:12px;overflow:hidden;border:1px solid var(--line);display:none;position:relative;z-index:0;isolation:isolate}
   .minimap.show{display:block}
   /* Ajustements manuels */
@@ -920,6 +922,7 @@
         <div class="menu" id="userMenu" hidden role="menu">
           <div class="menu-hd"><div class="av" id="menuAvBig">JG</div><div style="min-width:0"><b id="menuName">Jimmy Garcia</b><small id="menuEmail">—</small></div></div>
           <a class="menu-item" href="https://v2.immo-facile.com/catalog/admin-v2/home.php" target="_blank" rel="noopener" role="menuitem" style="text-decoration:none;color:inherit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> Ouvrir Immo-Facile</a>
+          <button class="menu-item" id="trashBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg> Corbeille</button>
           <button class="menu-item" id="pwdBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Changer le mot de passe</button>
           <button class="menu-item danger" id="logoutMenu" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg> Se déconnecter</button>
         </div>
@@ -1176,6 +1179,11 @@
               <div class="mtrend" id="mTrend" hidden></div>
               <div class="restyle-sub">À proximité</div>
               <div class="poichips" id="poiChips"><span class="poi muted">Choisis une adresse pour analyser le quartier…</span></div>
+              <div class="restyle-sub">Biens similaires en vente</div>
+              <div class="simrow" id="simRow">
+                <a class="btn" id="simLbc" href="#" target="_blank" rel="noopener">🔎 LeBonCoin</a>
+                <a class="btn" id="simSl" href="#" target="_blank" rel="noopener">🔎 SeLoger</a>
+              </div>
               <div id="miniMap" class="minimap"></div>
             </div>
 
@@ -1332,6 +1340,7 @@
       </div>
       <div class="autherr" id="bienErr"></div>
       <div class="modal-ft">
+        <button type="button" class="btn danger-o" id="bienDelete" style="margin-right:auto" hidden>Supprimer</button>
         <button type="button" class="btn" id="bienCancel">Annuler</button>
         <button type="submit" class="btn pri" id="bienSave">Enregistrer</button>
       </div>
@@ -1356,10 +1365,20 @@
       </div>
       <div class="autherr" id="contactErr"></div>
       <div class="modal-ft">
+        <button type="button" class="btn danger-o" id="contactDelete" style="margin-right:auto" hidden>Supprimer</button>
         <button type="button" class="btn" id="contactCancel">Annuler</button>
         <button type="submit" class="btn pri" id="contactSave">Enregistrer</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ======== CORBEILLE ======== -->
+<div class="modal" id="trashModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b>Corbeille</b>
+      <button class="modal-x" id="trashX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div id="trashBody" style="max-height:60vh;overflow-y:auto"><div class="estimempty">Chargement…</div></div>
   </div>
 </div>
 
@@ -1649,6 +1668,7 @@
       bienErr=document.getElementById('bienErr'), editingBienId=null;
   function openBienForm(b){
     editingBienId = (b && b.id) ? b.id : null;
+    var bd=document.getElementById('bienDelete'); if(bd) bd.hidden=!editingBienId;
     document.getElementById('bienModalTitle').textContent = b ? 'Modifier le bien' : 'Nouveau bien';
     var e=bienForm.elements;
     e.adresse.value=b?(b.ad||''):''; e.secteur.value=b?(b.tw||''):''; e.type.value=b?(b.ty||'Maison'):'Maison';
@@ -1774,7 +1794,7 @@
   async function syncContacts(){
     if(!sb) return;
     try{
-      var res=await sb.from('contacts').select('*').order('created_at',{ascending:true});
+      var res=await sb.from('contacts').select('*').eq('deleted',false).order('created_at',{ascending:true});
       if(res.error) throw res.error;
       if(res.data && res.data.length){
         contactsData=res.data.map(function(r){ return {id:r.id, role:r.role, nom:r.nom, detail:r.detail,
@@ -1791,6 +1811,7 @@
   var CPAL=['#6a9','#7aa','#b78','#a86','#699','#8a7'];
   function openContactForm(c){
     editingContactId = (c && c.id) ? c.id : null;
+    var cd=document.getElementById('contactDelete'); if(cd) cd.hidden=!editingContactId;
     document.getElementById('contactModalTitle').textContent = c ? 'Modifier le contact' : 'Nouveau contact';
     var e=contactForm.elements;
     e.nom.value=c?(c.nom||''):''; e.role.value=c?(c.role||'vendeur'):'vendeur';
@@ -2168,11 +2189,76 @@
       dl.innerHTML=contactsData.map(function(c){ return '<option value="'+esc(c.nom)+'">'+esc((c.role||'')+(c.detail?(' \u00b7 '+c.detail):''))+'</option>'; }).join('');
     });
   })();
+  /* ---------- suppression (corbeille) : biens & contacts ---------- */
+  (function(){
+    var bd=document.getElementById('bienDelete');
+    if(bd) bd.addEventListener('click',async function(){
+      if(!editingBienId) return;
+      if(sb){ try{ var r=await sb.from('biens').update({deleted:true}).eq('id',editingBienId); if(r.error) throw r.error; }catch(e){ toast('Suppression impossible.'); return; } }
+      biens=biens.filter(function(x){ return x.ref!==editingBienId && x.id!==editingBienId; });
+      var f=document.querySelector('#bienChips .chip.on');
+      renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
+      closeBienForm(); toast('Bien d\u00e9plac\u00e9 dans la corbeille \u2713');
+    });
+    var cd=document.getElementById('contactDelete');
+    if(cd) cd.addEventListener('click',async function(){
+      if(!editingContactId) return;
+      if(sb){ try{ var r=await sb.from('contacts').update({deleted:true}).eq('id',editingContactId); if(r.error) throw r.error; }catch(e){ toast('Suppression impossible.'); return; } }
+      contactsData=contactsData.filter(function(x){ return x.id!==editingContactId; });
+      renderCrm(); closeContactForm(); toast('Contact d\u00e9plac\u00e9 dans la corbeille \u2713');
+    });
+  })();
+  /* ---------- corbeille (restauration) ---------- */
+  (function(){
+    var modal=document.getElementById('trashModal'), body=document.getElementById('trashBody');
+    if(!modal) return;
+    async function openTrash(){
+      modal.hidden=false; body.innerHTML='<div class="estimempty">Chargement\u2026</div>';
+      if(!sb){ body.innerHTML='<div class="estimempty">Corbeille indisponible hors connexion.</div>'; return; }
+      try{
+        var qs=await Promise.all([
+          sb.from('biens').select('id,adresse,prix').eq('deleted',true),
+          sb.from('contacts').select('id,nom,role,detail').eq('deleted',true),
+          sb.from('estimations').select('id,adresse,prix_conseille,created_at').eq('deleted',true).order('created_at',{ascending:false}),
+          sb.from('rdv').select('id,titre,date,heure').eq('deleted',true).order('date',{ascending:false})
+        ]);
+        var html='';
+        function grp(titre, rows, fmt, table){
+          if(!rows||!rows.length) return;
+          html+='<div class="restyle-sub" style="margin-top:12px">'+titre+' ('+rows.length+')</div>';
+          rows.forEach(function(r){ html+='<div class="cadjrow"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+fmt(r)+'</span>'+
+            '<button type="button" class="mkclient" data-rt="'+table+'" data-rid="'+r.id+'">Restaurer</button></div>'; });
+        }
+        grp('Biens', qs[0].data, function(r){ return (r.adresse||'\u2014')+(r.prix?' \u00b7 '+r.prix.toLocaleString('fr-FR')+' \u20ac':''); }, 'biens');
+        grp('Contacts', qs[1].data, function(r){ return (r.nom||'\u2014')+' \u00b7 '+(r.role||'')+(r.detail?' \u00b7 '+r.detail:''); }, 'contacts');
+        grp('Estimations', qs[2].data, function(r){ return (r.adresse||'\u2014')+(r.prix_conseille?' \u00b7 '+r.prix_conseille.toLocaleString('fr-FR')+' \u20ac':''); }, 'estimations');
+        grp('Rendez-vous', qs[3].data, function(r){ return (r.titre||'\u2014')+' \u00b7 '+(r.date||'')+(r.heure?' '+r.heure:''); }, 'rdv');
+        body.innerHTML=html||'<div class="estimempty">La corbeille est vide.</div>';
+      }catch(e){ body.innerHTML='<div class="estimempty">Erreur de chargement de la corbeille.</div>'; }
+    }
+    body.addEventListener('click',async function(e){
+      var b=e.target.closest('[data-rt]'); if(!b) return;
+      b.disabled=true;
+      try{
+        var r=await sb.from(b.dataset.rt).update({deleted:false}).eq('id',b.dataset.rid);
+        if(r.error) throw r.error;
+        toast('Restaur\u00e9 \u2713');
+        if(b.dataset.rt==='biens') syncBiens();
+        if(b.dataset.rt==='contacts') syncContacts();
+        if(b.dataset.rt==='estimations') loadEstimations();
+        if(b.dataset.rt==='rdv'){ syncAgenda(); gPush('save',{id:b.dataset.rid}); }
+        openTrash();
+      }catch(err){ toast('Restauration impossible.'); b.disabled=false; }
+    });
+    document.getElementById('trashBtn').addEventListener('click',function(){ closeMenu(); openTrash(); });
+    document.getElementById('trashX').addEventListener('click',function(){ modal.hidden=true; });
+    modal.addEventListener('click',function(e){ if(e.target===modal) modal.hidden=true; });
+  })();
   /* ---------- mes estimations (écran Biens) ---------- */
   async function loadEstimations(){
     if(!sb) return;
     try{
-      var res=await sb.from('estimations').select('*').order('created_at',{ascending:false}).limit(40);
+      var res=await sb.from('estimations').select('*').eq('deleted',false).order('created_at',{ascending:false}).limit(40);
       if(res.error) throw res.error;
       var list=document.getElementById('estimList'); if(!list) return;
       var rows=res.data||[];
@@ -2183,14 +2269,19 @@
         var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
         var prix=(r.prix_final||r.prix_conseille); 
         return '<div class="estitem" data-i="'+i+'">'+
-          '<div class="l1"><b>'+(r.adresse||'\u2014')+'</b><span class="prix">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</span></div>'+
+          '<div class="l1"><b>'+(r.adresse||'\u2014')+'</b><span class="prix">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</span>'+
+          '<button type="button" class="cadjdel estdel" data-del="'+r.id+'" title="Supprimer">\u2715</button></div>'+
           '<div class="l2"><span>'+(r.type||'')+'</span>'+(r.surface?'<span>'+r.surface+' m\u00b2</span>':'')+
           (r.valeur_basse?'<span>'+Math.round(r.valeur_basse/1000)+' \u2013 '+Math.round((r.valeur_haute||0)/1000)+' k\u20ac</span>':'')+
           (r.client?'<span>'+r.client+'</span>':'')+'<span>'+d+'</span></div></div>';
       }).join('');
     }catch(e){ console.warn('[ESTIMAKE] estimations', e); }
   }
-  document.getElementById('estimList').addEventListener('click',function(e){
+  document.getElementById('estimList').addEventListener('click',async function(e){
+    var del=e.target.closest('.estdel');
+    if(del){ e.stopPropagation();
+      if(sb){ try{ var r=await sb.from('estimations').update({deleted:true}).eq('id',del.dataset.del); if(r.error) throw r.error; }catch(err){ toast('Suppression impossible.'); return; } }
+      toast('Estimation d\u00e9plac\u00e9e dans la corbeille \u2713'); loadEstimations(); return; }
     var it=e.target.closest('.estitem'); if(!it||!window.__estims) return;
     var r=window.__estims[parseInt(it.dataset.i,10)]; if(!r) return;
     // recharge les données dans l'écran Estimer
@@ -2437,7 +2528,22 @@
     renderDvfMarkers();
     setTimeout(function(){ miniMap.invalidateSize(); },250);
   }
-  function refreshMarket(){ loadMarket(); loadPOI(); updateMap(); if(estCoord&&estCoord.insee){ loadDVF(); } }
+  function slugify(v){ return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  function updateSimLinks(){
+    var sTxt=(document.getElementById('addrS')||{}).textContent||'';
+    var mcp=sTxt.match(/(\d{5})\s+([A-Za-z\u00c0-\u017f' -]+)/);
+    if(!mcp) return;
+    var cp=mcp[1], ville=mcp[2].split('\u00b7')[0].trim();
+    var t=document.getElementById('fType').value;
+    var surf=parseInt(document.getElementById('fSurf').value,10)||null;
+    var lbcType=(t==='Appartement')?2:(t==='Terrain')?3:(t==='Garage / Parking')?4:1;
+    var lbc='https://www.leboncoin.fr/recherche?category=9&locations='+encodeURIComponent(ville+'_'+cp)+'&real_estate_type='+lbcType+(surf?('&square='+Math.round(surf*0.75)+'-'+Math.round(surf*1.25)):'');
+    var slType=(t==='Appartement')?'bien-appartement/':(t==='Maison')?'bien-maison/':'';
+    var sl='https://www.seloger.com/immobilier/achat/immo-'+slugify(ville)+'-'+cp.slice(0,2)+'/'+slType;
+    var a=document.getElementById('simLbc'), b=document.getElementById('simSl');
+    if(a) a.href=lbc; if(b) b.href=sl;
+  }
+  function refreshMarket(){ loadMarket(); loadPOI(); updateMap(); updateSimLinks(); if(estCoord&&estCoord.insee){ loadDVF(); } }
   (function(){ var b=document.getElementById('mktRefresh'); if(b) b.addEventListener('click',function(){ refreshMarket(); toast('Donn\u00e9es de march\u00e9 actualis\u00e9es\u2026'); }); })();
 
   async function updateRisks(lat, lon, insee){
@@ -2803,7 +2909,7 @@
   async function syncBiens(){
     if(!sb) return;                       // pas de config → on reste sur la démo
     try{
-      var res=await sb.from('biens').select('*').order('prix',{ascending:false});
+      var res=await sb.from('biens').select('*').eq('deleted',false).order('prix',{ascending:false});
       if(res.error) throw res.error;
       if(res.data && res.data.length){
         biens=res.data.map(mapBien);
