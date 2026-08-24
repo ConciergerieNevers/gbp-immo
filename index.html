@@ -438,6 +438,10 @@
   .restyle-notes:focus{outline:none;border-color:var(--accent)}
   .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
   @media (max-width:640px){ .clifields{grid-template-columns:1fr} }
+  .comptable tr.selrow{cursor:pointer}
+  .comptable tr.selrow .ck{color:var(--accent);font-size:14px}
+  .comptable tr.selrow.out{opacity:.42}
+  .comptable tr.selrow.out td{text-decoration:line-through}
   /* Marché & quartier */
   .mk-auto{font-size:11px;color:var(--accent);font-weight:640;margin-left:8px;text-transform:none;letter-spacing:0}
   .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:13px}
@@ -452,7 +456,7 @@
   .poi{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:20px;padding:7px 12px;font-size:12.5px;font-weight:560}
   .poi b{color:var(--accent);font-weight:700}
   .poi.muted{color:var(--ink-3);font-weight:500}
-  .minimap{height:220px;border-radius:12px;overflow:hidden;border:1px solid var(--line);display:none}
+  .minimap{height:220px;border-radius:12px;overflow:hidden;border:1px solid var(--line);display:none;position:relative;z-index:0;isolation:isolate}
   .minimap.show{display:block}
   /* Ajustements manuels */
   .cadjlist{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
@@ -472,7 +476,7 @@
   /* Bandeau prix toujours visible (mobile) */
   .stickyprice{display:none}
   @media (max-width:900px){
-    .stickyprice{position:fixed;left:10px;right:10px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:49;
+    .stickyprice{position:fixed;left:10px;right:10px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:60;
       display:none;align-items:center;justify-content:space-between;gap:10px;background:var(--rail);color:#EBDFC2;
       border-radius:13px;padding:10px 15px;box-shadow:var(--shadow-lg)}
     .stickyprice.show{display:flex}
@@ -1102,6 +1106,8 @@
                   <input class="inp" id="fPieces" type="number" value="5"></div>
                 <div class="field"><label>Chambres</label>
                   <input class="inp" id="fChambres" type="number" value="4"></div>
+                <div class="field"><label>Salles de bain</label>
+                  <input class="inp" id="fSdb" type="number" value="1"></div>
                 <div class="field"><label>Année (approx.)</label>
                   <input class="inp" id="fAnnee" type="number" value="1972"></div>
               </div>
@@ -2142,7 +2148,7 @@
       client_email:(g('cliMail')&&g('cliMail').value.trim())||null,
       description:(g('fDesc')&&g('fDesc').value.trim())||null,
       prix_final: state.override||null,
-      data:{ terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, annee:g('fAnnee').value,
+      data:{ terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav }
     };
     try{
@@ -2177,9 +2183,29 @@
   /* ---------- ventes réelles DVF (via /api/dvf) + risques réels (Géorisques) ---------- */
   var dvfActive=false;
   function dvfMsg(m){ var el=document.getElementById('dvfMsg'); el.textContent='⚠️ '+m; el.hidden=false; }
-  function resetDVF(){ dvfActive=false; var b=document.getElementById('dvfBtn'); if(b){ b.disabled=false;
+  function resetDVF(){ dvfActive=false; dvfComps=null; var b=document.getElementById('dvfBtn'); if(b){ b.disabled=false;
     b.querySelector('svg')||0; b.lastChild.textContent=' Charger les ventes réelles (DVF)'; } document.getElementById('dvfMsg').hidden=true; renderComps(); }
   function fmtDate(d){ if(!d) return ''; var p=String(d).split('-'); return p.length===3 ? (p[2]+'/'+p[1]+'/'+p[0]) : d; }
+  var dvfComps=null;   // ventes DVF sélectionnables (tap = inclure/écarter)
+  function renderDvfComps(){
+    if(!dvfComps) return;
+    var body=document.getElementById('compBody');
+    body.innerHTML=dvfComps.map(function(c,i){
+      return '<tr class="selrow'+(c.sel?'':' out')+'" data-i="'+i+'"><td><span class="ck">'+(c.sel?'\u2611':'\u2610')+'</span> '+(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
+    }).join('');
+    var kept=dvfComps.filter(function(c){return c.sel;}).map(function(c){return c.pm2;});
+    if(kept.length){
+      var med=median(kept);
+      document.getElementById('compSummary').innerHTML='M\u00e9diane retenue : <b>'+Math.round(med).toLocaleString('fr-FR')+' \u20ac/m\u00b2</b> sur '+kept.length+' vente'+(kept.length>1?'s':'')+' s\u00e9lectionn\u00e9e'+(kept.length>1?'s':'')+(dvfComps.length-kept.length?' \u00b7 '+(dvfComps.length-kept.length)+' \u00e9cart\u00e9e(s)':'')+' \u00b7 touche une vente pour l\u2019inclure/l\u2019\u00e9carter';
+      state.baseM2=med; compute();
+    } else {
+      document.getElementById('compSummary').innerHTML='\u26a0\ufe0f Aucune vente s\u00e9lectionn\u00e9e \u2014 touche une ligne pour en retenir au moins une.';
+    }
+  }
+  document.getElementById('compBody').addEventListener('click',function(e){
+    var tr=e.target.closest('tr.selrow'); if(!tr||!dvfComps) return;
+    var i=parseInt(tr.dataset.i,10); dvfComps[i].sel=!dvfComps[i].sel; renderDvfComps();
+  });
   async function loadDVF(){
     if(!estCoord || !estCoord.insee){ dvfMsg('Sélectionne d\'abord une adresse réelle (étape 1 → Modifier).'); return; }
     var btn=document.getElementById('dvfBtn'); btn.disabled=true; btn.lastChild.textContent=' Chargement des ventes…';
@@ -2189,11 +2215,8 @@
       var r=await fetch(url); var j=await r.json().catch(function(){ return { error:'Réponse invalide du serveur.' }; });
       if(!r.ok) throw new Error(j.error||('Erreur '+r.status));
       if(!j.comparables || !j.comparables.length){ dvfMsg(j.note||'Aucune vente réelle trouvée à proximité.'); btn.lastChild.textContent=' Charger les ventes réelles (DVF)'; return; }
-      document.getElementById('compBody').innerHTML=j.comparables.map(function(c){
-        return '<tr><td>'+(c.adresse||'—')+' · '+fmtDate(c.date)+'</td><td>'+c.surface+' m²</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
-      }).join('');
-      document.getElementById('compSummary').innerHTML='Médiane <b>réelle</b> : <b>'+j.median.toLocaleString('fr-FR')+' €/m²</b> sur '+j.count+' ventes DVF enregistrées (données DGFiP).';
-      state.baseM2=j.median; dvfActive=true; compute();
+      dvfComps=j.comparables.map(function(c){ c.sel=true; return c; });
+      dvfActive=true; renderDvfComps();
       document.getElementById('dvfMsg').hidden=true; btn.lastChild.textContent=' Ventes réelles chargées ✓';
     }catch(e){ dvfMsg((e.message||e)+' — le DVF réel fonctionne une fois le site déployé sur Vercel.'); btn.lastChild.textContent=' Réessayer'; }
     finally{ btn.disabled=false; }
@@ -2436,10 +2459,17 @@
     var type=g('fType').value;
     var adresse=(document.querySelector('#estimation .addrbox .a')||{}).textContent||'';
     var ville=(document.querySelector('#estimation .addrbox small')||{}).textContent||'';
-    var rows=comps[state.rayon]||[];
-    var compRows=rows.filter(function(r){return !r[4];}).map(function(r){
-      return '<tr><td>'+r[0]+' · '+r[1]+'</td><td>'+r[2]+' m²</td><td>'+euro(r[3])+'</td><td>'+Math.round(r[3]/r[2]).toLocaleString('fr-FR')+'</td></tr>';
-    }).join('');
+    var compRows;
+    if(dvfComps && dvfComps.some(function(c){return c.sel;})){
+      compRows=dvfComps.filter(function(c){return c.sel;}).map(function(c){
+        return '<tr><td>'+(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
+      }).join('');
+    } else {
+      var rows=comps[state.rayon]||[];
+      compRows=rows.filter(function(r){return !r[4];}).map(function(r){
+        return '<tr><td>'+r[0]+' · '+r[1]+'</td><td>'+r[2]+' m²</td><td>'+euro(r[3])+'</td><td>'+Math.round(r[3]/r[2]).toLocaleString('fr-FR')+'</td></tr>';
+      }).join('');
+    }
     var breakRows=[].slice.call(document.querySelectorAll('#rBreak .li')).map(function(li){
       var s=li.querySelector('span').textContent, bEl=li.querySelector('b');
       var cls=bEl.classList.contains('pos')?'dpos':(bEl.classList.contains('neg')?'dneg':'');
@@ -2478,6 +2508,7 @@
       '<span>Terrain : <b>'+(g('fTerr').value||'—')+' m²</b></span>'+
       '<span>Pièces : <b>'+(g('fPieces').value||'—')+'</b></span>'+
       '<span>Chambres : <b>'+(g('fChambres').value||'—')+'</b></span>'+
+      '<span>Salles de bain : <b>'+((g('fSdb')&&g('fSdb').value)||'—')+'</b></span>'+
       '<span>Année : <b>'+(g('fAnnee').value||'—')+'</b></span></div>';
     var arg='Au regard des ventes réellement enregistrées autour du bien (données DVF de la DGFiP) et de leur médiane au m², corrigée de l\'état intérieur, du DPE, de la qualité de l\'emplacement et des équipements, la valeur de marché de ce bien s\'établit dans une fourchette de '+low+' à '+high+'. Compte tenu du positionnement retenu et d\'un marché local stable, nous recommandons un prix de mise en vente de '+reco+', cohérent avec les biens comparables du secteur tout en préservant une marge de négociation raisonnable.';
     g('dossier').innerHTML=
