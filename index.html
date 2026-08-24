@@ -2749,8 +2749,11 @@
       list.innerHTML=rows.map(function(r,i){
         var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
         var prix=(r.prix_final||r.prix_conseille);
+        var cov=(r.data&&r.data.cover)||null;
         return '<div class="card bien estimcard" data-i="'+i+'">'+
-          '<div class="ph" style="background:'+facades[i%facades.length]+'">'+houseSVG+
+          (cov
+            ?('<div class="ph" style="background-image:url('+cov+');background-size:cover;background-position:center">')
+            :('<div class="ph" style="background:'+facades[i%facades.length]+'">'+houseSVG))+
             '<div class="top"><span class="pill" style="background:rgba(20,17,10,.55);color:#EFE3C2">Estimation</span>'+
             '<button type="button" class="estdel" data-del="'+r.id+'" title="Supprimer">\u2715</button></div>'+
             '<div class="price tnum">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</div></div>'+
@@ -2785,12 +2788,22 @@
     if(dt.annee) g('fAnnee').value=dt.annee;
     if(Array.isArray(dt.custom)){ state.custom=dt.custom.slice(); }
     if(r.prix_final){ state.override=r.prix_final; }
+    if(dt.cover && typeof window.__setEstCover==='function'){ window.__setEstCover(dt.cover); }
     compute();
     go('estimation');
     toast('Estimation rechargée \u2014 '+(r.adresse||''));
   });
   loadEstimations();
   /* ---------- enregistrement de l'estimation ---------- */
+  function makeThumb(dataURL){ return new Promise(function(res){
+    if(!dataURL){ res(null); return; }
+    var im=new Image();
+    im.onload=function(){ var w=520, h=Math.round(im.height*w/im.width);
+      if(im.width<w){ w=im.width; h=im.height; }
+      var c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(im,0,0,w,h);
+      try{ res(c.toDataURL('image/jpeg',0.72)); }catch(e){ res(null); } };
+    im.onerror=function(){ res(null); }; im.src=dataURL; }); }
   async function saveEstimation(){
     if(!sb) { toast('Base non connectée.'); return false; }
     var g=function(id){return document.getElementById(id);};
@@ -2805,7 +2818,8 @@
       client_email:(g('cliMail')&&g('cliMail').value.trim())||null,
       description:(g('fDesc')&&g('fDesc').value.trim())||null,
       prix_final: state.override||null,
-      data:{ terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
+      data:{ cover:(estPhotos.length?await makeThumb(estPhotos[0].after||estPhotos[0].before):null),
+             terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav }
     };
     try{
@@ -3134,6 +3148,7 @@
       msg.hidden=true;
       try{ rbox.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(e){}
     }
+    window.__setEstCover=function(du){ estPhotos=[{before:du, after:null}]; selectPhoto(0); };
     input.addEventListener('change',function(){
       var files=[].slice.call(this.files||[]); if(!files.length) return;
       var pending=files.length, firstNew=estPhotos.length;
