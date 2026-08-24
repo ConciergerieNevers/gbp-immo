@@ -2261,6 +2261,30 @@
       dl.innerHTML=contactsData.map(function(c){ return '<option value="'+esc(c.nom)+'">'+esc((c.role||'')+(c.detail?(' \u00b7 '+c.detail):''))+'</option>'; }).join('');
     });
   })();
+  /* ---------- création automatique de contact (si introuvable) ---------- */
+  async function ensureContact(nom, role, detail, statut){
+    nom=(nom||'').trim(); if(!nom) return null;
+    var found=contactsData.find(function(c){ return (c.nom||'').trim().toLowerCase()===nom.toLowerCase(); });
+    if(found) return found;
+    var couleurs=['#6a9','#b78','#7aa','#a87','#8c7f9b','#5f7a97'];
+    var row={ role:role||'prospect', nom:nom, detail:detail||'', statut:statut||'',
+      prochaine_action:(role==='vendeur'?'Suivi post-vente':'\u00c0 recontacter'),
+      couleur:couleurs[Math.floor(nom.length%couleurs.length)] };
+    try{
+      if(sb){
+        var res=await sb.from('contacts').insert(row).select().single();
+        if(res.error) throw res.error;
+        contactsData.push({id:res.data.id, role:row.role, nom:row.nom, detail:row.detail,
+          statut:row.statut, budget:null, relance:'', action:row.prochaine_action, couleur:row.couleur});
+      } else {
+        contactsData.push({id:'c'+Date.now(), role:row.role, nom:row.nom, detail:row.detail,
+          statut:row.statut, budget:null, relance:'', action:row.prochaine_action, couleur:row.couleur});
+      }
+      renderCrm();
+      toast('Contact \u00ab '+nom+' \u00bb cr\u00e9\u00e9 dans le CRM \u2713');
+      return contactsData[contactsData.length-1];
+    }catch(e){ console.warn('[ESTIMAKE] ensureContact', e); return null; }
+  }
   /* ---------- VENTES & COMMISSIONS (25 % rentrée + 25 % sortie) ---------- */
   var ventesData=[];
   function partVente(v){ return Math.round((v.honoraires||0)*(((v.rentree)?0.25:0)+((v.sortie)?0.25:0))); }
@@ -2340,6 +2364,7 @@
       if(res.error) throw res.error;
       venteModal.hidden=true;
       toast(editingVenteId?'Vente modifi\u00e9e \u2713':'Vente enregistr\u00e9e \u2713 \u00b7 ma part : '+partVente(row).toLocaleString('fr-FR')+' \u20ac');
+      if(row.client) ensureContact(row.client, 'vendeur', row.bien, 'Client');
       syncVentes();
     }catch(err){ var el=document.getElementById('venteErr'); el.textContent='Erreur : '+((err&&err.message)||err); el.classList.add('show'); }
   });
@@ -2595,6 +2620,7 @@
       b.disabled=true; var old=b.innerHTML; b.innerHTML='Enregistrement…';
       var ok=await saveEstimation();
       if(ok && typeof loadEstimations==='function') loadEstimations();
+      if(ok){ var cn=document.getElementById('cliNom'); if(cn&&cn.value.trim()) ensureContact(cn.value,'prospect',(document.querySelector('#estimation .addrbox .a')||{}).textContent||'','Estimation en cours'); }
       toast(ok?'Estimation enregistrée ✓':'Enregistrement impossible — réessaie.');
       b.disabled=false; b.innerHTML=old;
     });
