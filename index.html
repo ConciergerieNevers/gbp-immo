@@ -438,6 +438,32 @@
   .restyle-notes:focus{outline:none;border-color:var(--accent)}
   .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
   @media (max-width:640px){ .clifields{grid-template-columns:1fr} }
+  /* Ajustements manuels */
+  .cadjlist{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
+  .cadjrow{display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:9px;padding:9px 12px;font-size:13.5px}
+  .cadjrow b{margin-left:auto;font-variant-numeric:tabular-nums}
+  .cadjrow b.pos{color:var(--good)} .cadjrow b.neg{color:var(--crit)}
+  .cadjrow .cadjdel{border:0;background:none;color:var(--ink-3);cursor:pointer;padding:2px 4px;font-size:15px;line-height:1}
+  .cadjform{display:grid;grid-template-columns:1fr 110px auto;gap:8px}
+  .cadjform input{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 12px;font:inherit;color:var(--ink);min-width:0}
+  .cadjform input:focus{outline:none;border-color:var(--accent)}
+  @media (max-width:640px){ .cadjform{grid-template-columns:1fr 96px auto} }
+  /* Prix final ajustable */
+  .recoedit{border:0;background:none;color:var(--accent);font:inherit;font-size:12px;font-weight:640;cursor:pointer;padding:2px 6px}
+  .recoflag{font-size:12px;color:var(--warn);margin-top:5px}
+  .recoflag button{border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
+  .recoflag[hidden]{display:none}
+  /* Bandeau prix toujours visible (mobile) */
+  .stickyprice{display:none}
+  @media (max-width:900px){
+    .stickyprice{position:fixed;left:10px;right:10px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:49;
+      display:none;align-items:center;justify-content:space-between;gap:10px;background:var(--rail);color:#EBDFC2;
+      border-radius:13px;padding:10px 15px;box-shadow:var(--shadow-lg)}
+    .stickyprice.show{display:flex}
+    .stickyprice small{display:block;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--rail-ink-2)}
+    .stickyprice b{font-size:15px;font-variant-numeric:tabular-nums;color:#fff}
+    .stickyprice .sp-reco b{color:var(--accent)}
+  }
   /* Raccourcis Immo-Facile (cockpit) */
   .ifedit{border:0;background:none;color:var(--accent);font:inherit;font-size:13px;font-weight:640;cursor:pointer;padding:4px 6px}
   .iflinks{display:flex;flex-wrap:wrap;gap:9px}
@@ -664,7 +690,7 @@
     .topbar{gap:8px}
     .topbar h1{font-size:18px}
     .btntext{display:none}
-    #newEstBtn{padding:9px 11px}
+    #ifTopBtn{padding:9px 11px}
     .content{padding-left:14px;padding-right:14px}
     .specrow{grid-template-columns:repeat(2,1fr)}
     .risks{grid-template-columns:1fr}
@@ -842,10 +868,10 @@
       <button class="iconbtn" id="themeBtn" title="Thème clair / sombre">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
-      <button class="btn pri" data-go="estimation" id="newEstBtn" title="Nouvelle estimation">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-        <span class="btntext">Nouvelle estimation</span>
-      </button>
+      <a class="btn pri" id="ifTopBtn" href="https://v2.immo-facile.com/catalog/admin-v2/home.php" target="_blank" rel="noopener" title="Ouvrir Immo-Facile" style="text-decoration:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <span class="btntext">Immo-Facile</span>
+      </a>
       <div class="menuwrap">
         <button class="avatarbtn" id="menuBtn" aria-label="Mon profil" aria-haspopup="true" aria-expanded="false"><span id="menuAv">JG</span></button>
         <div class="menu" id="userMenu" hidden role="menu">
@@ -982,12 +1008,18 @@
               <div class="addrsearch" id="addrSearch" hidden>
                 <div class="search" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>
                   <input id="addrInput" placeholder="Tape une adresse réelle (n°, rue, ville)…" autocomplete="off"></div>
+                <button type="button" class="btn" id="geolocBtn" style="width:100%;justify-content:center;margin-top:9px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+                  Me géolocaliser (je suis devant le bien)
+                </button>
                 <div class="addrsug" id="addrSug"></div>
               </div>
               <div class="compnote" style="background:var(--good-bg);color:var(--good);margin-top:12px">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
                 Cadastre &amp; DVF chargés automatiquement pour cette adresse
               </div>
+              <label class="mf" style="margin-top:12px"><span>Complément d’adresse (étage, bât., lot…)</span>
+                <input type="text" id="fCompl" placeholder="ex : Bât. B · 3e étage · porte gauche"></label>
               <div class="staging-lab">📷 Photos du bien <small>galerie ou appareil · plusieurs possibles · reprises dans le dossier</small></div>
               <input type="file" accept="image/*" multiple id="estPhotoInput" hidden>
               <div class="staging-grid" id="estGallery"></div>
@@ -1035,7 +1067,7 @@
               <h3><span class="stepnum">2</span> Caractéristiques</h3>
               <div class="fields">
                 <div class="field"><label>Type de bien</label>
-                  <select id="fType"><option>Maison</option><option>Appartement</option></select></div>
+                  <select id="fType"><option>Maison</option><option>Appartement</option><option>Immeuble</option><option>Terrain</option><option>Local commercial</option><option>Bureaux</option><option>Fonds de commerce</option><option>Garage / Parking</option><option>Cave</option><option>Grange / Dépendance</option><option>Propriété / Château</option><option>Autre</option></select></div>
                 <div class="field"><label>Surface habitable (m²)</label>
                   <input class="inp" id="fSurf" type="number" value="127"></div>
                 <div class="field"><label>Terrain (m²)</label>
@@ -1105,6 +1137,13 @@
                   <div class="tgl" data-eur="16000"><span class="bx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span>Piscine · +16 000 €</div>
                   <div class="tgl" data-pct="-5"><span class="bx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span>Rue passante · −5 %</div>
                 </div>
+                <div class="restyle-sub" style="margin-top:14px">Mes ajustements (montant libre, + ou −)</div>
+                <div id="customAdjList" class="cadjlist"></div>
+                <div class="cadjform">
+                  <input type="text" id="cadjName" placeholder="Élément (ex : Piscine, Véranda…)" maxlength="40">
+                  <input type="number" id="cadjVal" placeholder="+ / − €" step="500">
+                  <button type="button" class="btn" id="cadjAdd">Ajouter</button>
+                </div>
               </div>
             </div>
 
@@ -1126,9 +1165,10 @@
               <div class="fourchette"><b id="rLow">185 000 €</b> — <b id="rHigh">200 000 €</b></div>
             </div>
             <div class="reco">
-              <div class="eyebrow">Prix de mise en vente conseillé</div>
+              <div class="eyebrow">Prix de mise en vente conseillé <button type="button" class="recoedit" id="recoEdit" title="Ajuster le prix final">✎ ajuster</button></div>
               <div class="big tnum" id="rReco">199 000 €</div>
               <div class="pm2 tnum" id="rPm2">soit 1 567 €/m² · marché stable</div>
+              <div class="recoflag" id="recoFlag" hidden>Prix ajusté manuellement · <button type="button" id="recoReset">revenir au calcul</button></div>
             </div>
             <div class="gauge">
               <div class="track"><div class="mk" id="gaugeMk" style="left:66%"></div></div>
@@ -1139,6 +1179,16 @@
               <label class="mf"><span>Client (M. / Mme…)</span><input type="text" id="cliNom" placeholder="MR et Mme RICHARD André"></label>
               <label class="mf"><span>E-mail du client</span><input type="email" id="cliMail" placeholder="client@mail.fr"></label>
             </div>
+            <label class="mf" style="margin-top:12px"><span>Description du bien (reprise dans l’avis)</span>
+              <textarea id="fDesc" class="restyle-notes" rows="4" maxlength="1500" placeholder="Décris le bien avec tes mots — l’IA corrigera les fautes et le style…"></textarea></label>
+            <button type="button" class="btn" id="descFixBtn" style="width:100%;justify-content:center;margin-top:8px">
+              ✨ Corriger &amp; améliorer le texte (IA)
+            </button>
+            <div class="restyle-msg" id="descMsg" hidden></div>
+            <button type="button" class="btn" id="saveEstimBtn" style="width:100%;justify-content:center;margin-top:12px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+              Enregistrer l’estimation
+            </button>
             <div class="foot">
               <button class="btn gold" id="genBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg>
@@ -1175,6 +1225,10 @@
     </div>
 
     <!-- MOBILE NAV -->
+    <div class="stickyprice" id="stickyPrice">
+      <div><small>Valeur de marché</small><b id="spRange">185 – 200 k€</b></div>
+      <div class="sp-reco" style="text-align:right"><small>Prix conseillé</small><b id="spReco">199 000 €</b></div>
+    </div>
     <nav class="mobnav" id="mobnav">
       <button class="active" data-go="cockpit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Cockpit</button>
       <button data-go="estimation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V9l6-4 6 4v11M9.5 13h5"/></svg>Estimer</button>
@@ -1393,6 +1447,7 @@
     document.querySelectorAll('.mobnav button').forEach(function(b){b.classList.toggle('active',b.dataset.go===navId);});
     document.getElementById('pgTitle').textContent=titles[id][0];
     document.getElementById('pgSub').textContent=titles[id][1];
+    var sp=document.getElementById('stickyPrice'); if(sp) sp.classList.toggle('show', id==='estimation');
     window.scrollTo(0,0);
   }
   document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
@@ -1895,7 +1950,7 @@
       ['9 rue de Charleville','avr. 2026',150,255000,false],['4 quai de Médine','fév. 2026',72,158000,false],
       ['loft atelier, r. Bovet','jan. 2026',210,196000,true],['grange, Coulanges','juil. 2025',300,145000,true]]
   };
-  var state={loc:0,rayon:500,etat:3,dpe:2,terr:2,trav:0,tgls:{}};
+  var state={loc:0,rayon:500,etat:3,dpe:2,terr:2,trav:0,tgls:{},custom:[],override:null};
   function median(arr){arr=arr.slice().sort(function(a,b){return a-b;});var m=Math.floor(arr.length/2);
     return arr.length%2?arr[m]:(arr[m-1]+arr[m])/2;}
   function renderComps(){
@@ -1919,9 +1974,12 @@
     for(var k in state.tgls){if(state.tgls[k]){var el=state.tgls[k];
       if(el.pct)toggPct+=parseFloat(el.pct);if(el.eur)toggEur+=parseFloat(el.eur);}}
     pct+=toggPct;
-    var adjusted=base*(1+pct/100)+toggEur+parseFloat(state.trav);
+    var customEur=0; state.custom.forEach(function(c){ customEur+=c.e; });
+    var adjusted=base*(1+pct/100)+toggEur+customEur+parseFloat(state.trav);
     var low=adjusted*0.955, high=adjusted*1.045;
     var reco=Math.round(adjusted*1.02/1000)*1000;
+    if(state.override){ reco=state.override; }
+    var flag=document.getElementById('recoFlag'); if(flag) flag.hidden=!state.override;
     document.getElementById('rLow').textContent=euro(Math.round(low/1000)*1000);
     document.getElementById('rHigh').textContent=euro(Math.round(high/1000)*1000);
     document.getElementById('rReco').textContent=euro(reco);
@@ -1934,13 +1992,134 @@
       ['Emplacement',base*pctLoc/100,pctLoc>=0],
       ['État · DPE · terrain',base*(state.etat+state.dpe+state.terr)/100,(state.etat+state.dpe+state.terr)>=0]];
     if(toggEur||toggPct)bd.push(['Équipements & environnement',base*toggPct/100+toggEur,(base*toggPct/100+toggEur)>=0]);
+    state.custom.forEach(function(c){ bd.push([c.n, c.e, c.e>=0]); });
     if(parseFloat(state.trav))bd.push(['Travaux à prévoir',parseFloat(state.trav),false]);
+    if(state.override)bd.push(['Prix final ajusté (plafond retenu)', state.override-Math.round(adjusted*1.02/1000)*1000, (state.override-Math.round(adjusted*1.02/1000)*1000)>=0]);
     document.getElementById('rBreak').innerHTML=bd.map(function(x,i){
       var v=Math.round(x[1]);var sign=i===0?'':(v>0?'+':'');
       var cls=i===0?'':(v>=0?'pos':'neg');
       return '<div class="li"><span>'+x[0]+'</span><b class="'+cls+' tnum">'+sign+v.toLocaleString('fr-FR')+' €</b></div>';
     }).join('');
+    // bandeau prix mobile toujours visible
+    var spR=document.getElementById('spRange'), spP=document.getElementById('spReco');
+    if(spR){ spR.textContent=Math.round(low/1000)+' – '+Math.round(high/1000)+' k€'; spP.textContent=euro(reco); }
   }
+  /* ---------- ajustements manuels (montants libres) ---------- */
+  (function(){
+    var list=document.getElementById('customAdjList'); if(!list) return;
+    function render(){
+      list.innerHTML=state.custom.map(function(c,i){
+        var v=c.e; return '<div class="cadjrow"><span>'+c.n+'</span><b class="'+(v>=0?'pos':'neg')+'">'+(v>0?'+':'')+v.toLocaleString('fr-FR')+' €</b><button type="button" class="cadjdel" data-i="'+i+'" title="Retirer">✕</button></div>';
+      }).join('');
+    }
+    list.addEventListener('click',function(e){ var d=e.target.closest('.cadjdel'); if(!d) return;
+      state.custom.splice(parseInt(d.dataset.i,10),1); render(); compute(); });
+    document.getElementById('cadjAdd').addEventListener('click',function(){
+      var n=document.getElementById('cadjName').value.trim();
+      var v=parseFloat(document.getElementById('cadjVal').value);
+      if(!n||isNaN(v)||!v){ toast('Renseigne l\u2019élément et son montant (+ ou −).'); return; }
+      state.custom.push({n:n,e:Math.round(v)});
+      document.getElementById('cadjName').value=''; document.getElementById('cadjVal').value='';
+      render(); compute();
+    });
+  })();
+  /* ---------- prix final ajustable (plafond psychologique) ---------- */
+  (function(){
+    var btn=document.getElementById('recoEdit'); if(!btn) return;
+    btn.addEventListener('click',function(){
+      var cur=(document.getElementById('rReco').textContent||'').replace(/[^0-9]/g,'');
+      var v=prompt('Prix de mise en vente final (\u20ac) :', cur);
+      if(v===null) return;
+      v=parseInt(String(v).replace(/[^0-9]/g,''),10);
+      if(!v){ toast('Prix invalide.'); return; }
+      state.override=v; compute(); toast('Prix final ajusté \u2713');
+    });
+    document.getElementById('recoReset').addEventListener('click',function(){ state.override=null; compute(); toast('Retour au prix calculé'); });
+  })();
+  /* ---------- géolocalisation (je suis devant le bien) ---------- */
+  (function(){
+    var b=document.getElementById('geolocBtn'); if(!b) return;
+    b.addEventListener('click',function(){
+      if(!navigator.geolocation){ toast('Géolocalisation indisponible sur cet appareil.'); return; }
+      b.disabled=true; var old=b.textContent; b.textContent='Localisation en cours…';
+      navigator.geolocation.getCurrentPosition(async function(pos){
+        try{
+          var la=pos.coords.latitude, lo=pos.coords.longitude;
+          var r=await fetch('https://api-adresse.data.gouv.fr/reverse/?lon='+lo+'&lat='+la);
+          var j=await r.json(); var f=(j.features||[])[0];
+          if(!f){ toast('Adresse introuvable ici — tape-la manuellement.'); return; }
+          var p=f.properties, c=f.geometry.coordinates;
+          document.getElementById('addrA').textContent=p.name||p.label;
+          document.getElementById('addrS').textContent=(p.postcode||'')+' '+(p.city||'')+' · géolocalisé ✓';
+          estCoord={lat:c[1], lon:c[0], insee:p.citycode, label:p.label};
+          document.getElementById('addrSearch').hidden=true; document.getElementById('addrDisplay').hidden=false;
+          document.getElementById('pgSub').textContent=p.label+' · en cours';
+          if(typeof updateRisks==='function') updateRisks(estCoord.lat, estCoord.lon, estCoord.insee);
+          if(typeof resetDVF==='function') resetDVF();
+          toast('Position trouvée : '+(p.label||''));
+        }catch(e){ toast('Géolocalisation impossible — vérifie l\u2019autorisation.'); }
+        finally{ b.disabled=false; b.textContent=old; }
+      }, function(err){ b.disabled=false; b.textContent=old;
+        toast(err.code===1?'Autorise la localisation dans les réglages du navigateur.':'Position introuvable — réessaie dehors.');
+      }, {enableHighAccuracy:true, timeout:12000});
+    });
+  })();
+  /* ---------- correction IA de la description ---------- */
+  (function(){
+    var b=document.getElementById('descFixBtn'); if(!b) return;
+    var ta=document.getElementById('fDesc'), msg=document.getElementById('descMsg');
+    b.addEventListener('click',async function(){
+      var t=ta.value.trim();
+      if(t.length<10){ toast('Écris d\u2019abord quelques phrases sur le bien.'); return; }
+      b.disabled=true; var old=b.textContent; b.textContent='Correction en cours…'; msg.hidden=true;
+      try{
+        var r=await fetch('/api/texte',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text:t})});
+        var j=await r.json().catch(function(){return {};});
+        if(!r.ok || !j.text){ throw new Error(j.error||('Erreur '+r.status)); }
+        ta.value=j.text; toast('Texte corrigé ✓');
+      }catch(e){ msg.textContent='⚠️ '+(e.message||e); msg.hidden=false; }
+      finally{ b.disabled=false; b.textContent=old; }
+    });
+  })();
+  /* ---------- enregistrement de l'estimation ---------- */
+  async function saveEstimation(){
+    if(!sb) { toast('Base non connectée.'); return false; }
+    var g=function(id){return document.getElementById(id);};
+    var num=function(id){return parseInt((g(id).textContent||'').replace(/[^0-9]/g,''),10)||null;};
+    var row={
+      adresse:(document.querySelector('#estimation .addrbox .a')||{}).textContent||'',
+      type:g('fType').value,
+      surface:parseInt(g('fSurf').value,10)||null,
+      valeur_basse:num('rLow'), valeur_haute:num('rHigh'), prix_conseille:num('rReco'),
+      complement:(g('fCompl')&&g('fCompl').value.trim())||null,
+      client:(g('cliNom')&&g('cliNom').value.trim())||null,
+      client_email:(g('cliMail')&&g('cliMail').value.trim())||null,
+      description:(g('fDesc')&&g('fDesc').value.trim())||null,
+      prix_final: state.override||null,
+      data:{ terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, annee:g('fAnnee').value,
+             custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav }
+    };
+    try{
+      var res=await sb.from('estimations').insert(row);
+      if(res.error) throw res.error;
+      return true;
+    }catch(e){
+      // repli : colonnes étendues absentes → enregistrement minimal
+      try{ var res2=await sb.from('estimations').insert({adresse:row.adresse,type:row.type,surface:row.surface,
+        valeur_basse:row.valeur_basse,valeur_haute:row.valeur_haute,prix_conseille:row.prix_conseille});
+        if(res2.error) throw res2.error; return true;
+      }catch(e2){ console.warn('[ESTIMAKE] save estimation',e2); return false; }
+    }
+  }
+  (function(){
+    var b=document.getElementById('saveEstimBtn'); if(!b) return;
+    b.addEventListener('click',async function(){
+      b.disabled=true; var old=b.innerHTML; b.innerHTML='Enregistrement…';
+      var ok=await saveEstimation();
+      toast(ok?'Estimation enregistrée ✓':'Enregistrement impossible — réessaie.');
+      b.disabled=false; b.innerHTML=old;
+    });
+  })();
   // rayon
   document.getElementById('rayonBar').addEventListener('click',function(e){
     var b=e.target.closest('button');if(!b)return;
@@ -2213,7 +2392,7 @@
             '<div class="av-cell"><div class="t">Fait \u00e0</div><b>Nevers</b><small>Le '+dateStr+'</small></div>'+
             '<div class="av-cell"><div class="t">\u00c0 l\'attention de</div><b>'+cliN+'</b>'+(cliM?'<small>'+cliM+'</small>':'')+'</div>'+
           '</div>'+
-          '<div class="av-band"><b>\u00c0 '+villeAff+' \u2014 '+adresse+'</b>'+
+          '<div class="av-band"><b>\u00c0 '+villeAff+' \u2014 '+adresse+((g('fCompl')&&g('fCompl').value.trim())?(' \u00b7 '+g('fCompl').value.trim()):'')+'</b>'+
             '<small>Pour donner suite \u00e0 votre demande, nous sommes en mesure de vous donner un avis de valeur concernant ce bien.</small></div>'+
           '<div class="av-cols">'+
             '<div class="av-col">'+
@@ -2250,6 +2429,7 @@
         '<div class="av-topbar"></div>'+
         '<div class="av-endbody">'+
           '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>Conclusion</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+
+          ((g('fDesc')&&g('fDesc').value.trim())?('<h2>Description du bien</h2><p class="darg">'+g('fDesc').value.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</p>'):'')+
           '<h2>Argumentaire</h2><p class="darg">'+arg+'</p>'+
         '</div>'+
         '<footer class="av-ft">'+
@@ -2263,17 +2443,7 @@
   }
   document.getElementById('genBtn').addEventListener('click',function(){
     var b=this;var old=b.innerHTML;
-    if(sb){
-      try{
-        var num=function(id){return parseInt(document.getElementById(id).textContent.replace(/[^0-9]/g,''),10)||null;};
-        sb.from('estimations').insert({
-          adresse:(document.querySelector('#estimation .addrbox .a')||{}).textContent||'12 rue des Récollets, Nevers',
-          type:document.getElementById('fType').value,
-          surface:parseInt(document.getElementById('fSurf').value,10)||null,
-          valeur_basse:num('rLow'), valeur_haute:num('rHigh'), prix_conseille:num('rReco')
-        });
-      }catch(e){ console.warn('[ESTIMAKE] enregistrement estimation impossible', e); }
-    }
+    saveEstimation().then(function(ok){ if(ok) toast('Estimation enregistrée ✓'); });
     buildDossier();
     b.disabled=true; b.innerHTML='G\u00e9n\u00e9ration du PDF\u2026';
     exportPDF().then(function(){
