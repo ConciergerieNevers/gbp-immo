@@ -504,7 +504,9 @@
   .mkclient{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:20px;
     padding:6px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none}
   /* Mes estimations (écran Biens) */
-  .estimlist{display:flex;flex-direction:column;gap:9px;margin-bottom:6px}
+  .estimcard .estdel{width:24px;height:24px;border:0;border-radius:50%;background:rgba(20,17,10,.55);color:#fff;
+    cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+  #estimList{margin-bottom:6px}
   .estimempty{font-size:13px;color:var(--ink-3);background:var(--surface);border:1px dashed var(--line-2);border-radius:12px;padding:16px;text-align:center}
   .estitem{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px;cursor:pointer;box-shadow:var(--shadow)}
   .estitem .l1{display:flex;align-items:center;gap:9px}
@@ -1041,7 +1043,7 @@
           <button class="subtab on" type="button">Mes biens</button>
         </div>
         <div class="sectitle"><h2>Mes estimations</h2><div class="grow"></div><span class="eyebrow" id="estimCount"></span></div>
-        <div class="estimlist" id="estimList"><div class="estimempty">Aucune estimation enregistrée pour l'instant — elles apparaîtront ici dès que tu enregistres depuis l'écran Estimer.</div></div>
+        <div class="grid bienscol" id="estimList"><div class="estimempty">Aucune estimation enregistrée pour l'instant — elles apparaîtront ici dès que tu enregistres depuis l'écran Estimer.</div></div>
         <div class="sectitle" style="margin-top:22px"><h2>Portefeuille</h2></div>
         <div class="toolbar">
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="bienSearch" placeholder="Rechercher une adresse, une réf., un propriétaire…"></div>
@@ -2560,13 +2562,16 @@
       window.__estims=rows;
       list.innerHTML=rows.map(function(r,i){
         var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
-        var prix=(r.prix_final||r.prix_conseille); 
-        return '<div class="estitem" data-i="'+i+'">'+
-          '<div class="l1"><b>'+(r.adresse||'\u2014')+'</b><span class="prix">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</span>'+
-          '<button type="button" class="cadjdel estdel" data-del="'+r.id+'" title="Supprimer">\u2715</button></div>'+
-          '<div class="l2"><span>'+(r.type||'')+'</span>'+(r.surface?'<span>'+r.surface+' m\u00b2</span>':'')+
-          (r.valeur_basse?'<span>'+Math.round(r.valeur_basse/1000)+' \u2013 '+Math.round((r.valeur_haute||0)/1000)+' k\u20ac</span>':'')+
-          (r.client?'<span>'+r.client+'</span>':'')+'<span>'+d+'</span></div></div>';
+        var prix=(r.prix_final||r.prix_conseille);
+        return '<div class="card bien estimcard" data-i="'+i+'">'+
+          '<div class="ph" style="background:'+facades[i%facades.length]+'">'+houseSVG+
+            '<div class="top"><span class="pill" style="background:rgba(20,17,10,.55);color:#EFE3C2">Estimation</span>'+
+            '<button type="button" class="estdel" data-del="'+r.id+'" title="Supprimer">\u2715</button></div>'+
+            '<div class="price tnum">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</div></div>'+
+          '<div class="body"><div><div class="addr">'+(r.adresse||'\u2014')+'</div>'+
+            '<div class="town">'+(r.valeur_basse?(Math.round(r.valeur_basse/1000)+' \u2013 '+Math.round((r.valeur_haute||0)/1000)+' k\u20ac'):'')+(r.client?' \u00b7 '+r.client:'')+'</div></div>'+
+            '<div class="specs"><span>'+(r.type||'')+'</span>'+(r.surface?'<span>'+r.surface+' m\u00b2</span>':'')+'<span>'+d+'</span></div></div>'+
+        '</div>';
       }).join('');
     }catch(e){ console.warn('[ESTIMAKE] estimations', e); }
   }
@@ -2575,7 +2580,7 @@
     if(del){ e.stopPropagation();
       if(sb){ try{ var r=await sb.from('estimations').update({deleted:true}).eq('id',del.dataset.del); if(r.error) throw r.error; }catch(err){ toast('Suppression impossible.'); return; } }
       toast('Estimation d\u00e9plac\u00e9e dans la corbeille \u2713'); loadEstimations(); return; }
-    var it=e.target.closest('.estitem'); if(!it||!window.__estims) return;
+    var it=e.target.closest('.estimcard'); if(!it||!window.__estims) return;
     var r=window.__estims[parseInt(it.dataset.i,10)]; if(!r) return;
     // recharge les données dans l'écran Estimer
     var g=function(id){return document.getElementById(id);};
