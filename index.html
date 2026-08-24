@@ -485,6 +485,8 @@
     .stickyprice b{font-size:15px;font-variant-numeric:tabular-nums;color:#fff}
     .stickyprice .sp-reco b{color:var(--accent)}
   }
+  .mkclient{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:20px;
+    padding:6px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none}
   /* Mes estimations (écran Biens) */
   .estimlist{display:flex;flex-direction:column;gap:9px;margin-bottom:6px}
   .estimempty{font-size:13px;color:var(--ink-3);background:var(--surface);border:1px dashed var(--line-2);border-radius:12px;padding:16px;text-align:center}
@@ -1239,7 +1241,7 @@
             </div>
             <div class="rbreak" id="rBreak"></div>
             <div class="clifields">
-              <label class="mf"><span>Client (M. / Mme…)</span><input type="text" id="cliNom" placeholder="MR et Mme RICHARD André"></label>
+              <label class="mf"><span>Client (M. / Mme…) — tape pour lier un contact</span><input type="text" id="cliNom" list="cliOptions" placeholder="MR et Mme RICHARD André"><datalist id="cliOptions"></datalist></label>
               <label class="mf"><span>E-mail du client</span><input type="email" id="cliMail" placeholder="client@mail.fr"></label>
             </div>
             <label class="mf" style="margin-top:12px"><span>Description du bien (reprise dans l’avis)</span>
@@ -1743,6 +1745,7 @@
       var initials=(c.nom||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       return '<div class="crow" data-id="'+c.id+'"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+initials+'</div>'+
         '<div class="cmain"><b>'+(c.nom||'')+'</b><small>'+(c.detail||'')+'</small></div>'+
+        (c.role==='prospect'?'<button type="button" class="mkclient" data-mk="'+c.id+'">\u2192 Client</button>':'')+
         '<div class="cmeta">'+contactTag(c)+'<small class="cnext">'+((c.action||'')+' →')+'</small></div></div>';
     }).join('') : '<div style="color:var(--ink-3);padding:18px 4px;font-size:14px">Aucun contact ici — clique « Ajouter ».</div>';
   }
@@ -1751,9 +1754,19 @@
     this.querySelectorAll('.subtab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
     renderCrm(t.dataset.t);
   });
-  document.getElementById('crmList').addEventListener('click',function(e){
+  document.getElementById('crmList').addEventListener('click',async function(e){
+    var mk=e.target.closest('.mkclient');
+    if(mk){
+      e.stopPropagation();
+      var c=contactsData.find(function(x){return x.id===mk.dataset.mk;}); if(!c) return;
+      c.role='vendeur';
+      if(sb){ try{ await sb.from('contacts').update({role:'vendeur'}).eq('id',c.id); }catch(err){ console.warn('[ESTIMAKE] promote',err); } }
+      renderCrm();
+      toast((c.nom||'Prospect')+' transform\u00e9 en client \u2713 (onglet Vendeurs)');
+      return;
+    }
     var row=e.target.closest('.crow'); if(!row) return;
-    var c=contactsData.find(function(x){return x.id===row.dataset.id;}); if(c) openContactForm(c);
+    var c2=contactsData.find(function(x){return x.id===row.dataset.id;}); if(c2) openContactForm(c2);
   });
   renderCrm('vendeurs');
   async function syncContacts(){
@@ -2142,6 +2155,15 @@
         ta.value=j.text; toast('Texte corrigé ✓');
       }catch(e){ msg.textContent='⚠️ '+(e.message||e); msg.hidden=false; }
       finally{ b.disabled=false; b.textContent=old; }
+    });
+  })();
+  /* ---------- lier le client de l'estimation aux contacts CRM ---------- */
+  (function(){
+    var inp=document.getElementById('cliNom'); if(!inp) return;
+    inp.addEventListener('focus',function(){
+      var dl=document.getElementById('cliOptions'); if(!dl) return;
+      var esc=function(x){return String(x||'').replace(/"/g,'&quot;');};
+      dl.innerHTML=contactsData.map(function(c){ return '<option value="'+esc(c.nom)+'">'+esc((c.role||'')+(c.detail?(' \u00b7 '+c.detail):''))+'</option>'; }).join('');
     });
   })();
   /* ---------- mes estimations (écran Biens) ---------- */
