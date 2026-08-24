@@ -1532,6 +1532,7 @@
           <label class="mf mf-wide"><span>Notes de découverte</span><textarea name="r_notes" class="restyle-notes" rows="2" placeholder="Contexte, visites déjà faites, remarques…"></textarea></label>
         </div>
       </div>
+      <div id="cliEstims"></div>
       <div class="autherr" id="contactErr"></div>
       <div class="modal-ft">
         <button type="button" class="btn danger-o" id="contactDelete" style="margin-right:auto" hidden>Supprimer</button>
@@ -2048,6 +2049,10 @@
         if(bits.length) sub=bits.join(' \u00b7 ');
       }
       if(c.tel) sub+=(sub?' \u00b7 ':'')+'\ud83d\udcde '+c.tel;
+      if(c.role!=='acquereur' && window.__estimsAll){
+        var nEst=window.__estimsAll.filter(function(r){ return (r.client||'').trim().toLowerCase()===(c.nom||'').trim().toLowerCase(); }).length;
+        if(nEst) sub+=(sub?' \u00b7 ':'')+'\ud83d\udcc4 '+nEst+' estim.';
+      }
       return '<div class="crow" data-id="'+c.id+'"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+initials+'</div>'+
         '<div class="cmain"><b>'+(c.nom||'')+'</b><small>'+sub+'</small></div>'+
         (c.role==='prospect'?'<button type="button" class="mkclient" data-mk="'+c.id+'">\u2192 Client</button>':'')+
@@ -2167,7 +2172,29 @@
       b.classList.toggle('on', Array.isArray(r.must)&&r.must.indexOf(b.dataset.m)>-1);
     });
     toggleAcqSection();
+    renderCliEstims(c);
     contactErr.classList.remove('show'); contactErr.textContent=''; contactModal.hidden=false;
+  }
+  async function renderCliEstims(c){
+    var box=document.getElementById('cliEstims'); if(!box) return;
+    box.innerHTML='';
+    if(!c || !c.nom || c.role==='acquereur') return;
+    var all=window.__estimsAll;
+    if(!all && sb){ try{ var rr=await sb.from('estimations').select('id,adresse,type,prix_conseille,prix_final,client,created_at').eq('deleted',false).limit(60); all=rr.data||[]; }catch(e){ all=[]; } }
+    var nom=c.nom.trim().toLowerCase();
+    var linked=(all||[]).filter(function(r){ return (r.client||'').trim().toLowerCase()===nom; });
+    if(!linked.length){ box.innerHTML='<div class="restyle-sub">Estimations li\u00e9es</div><div class="estimempty" style="padding:10px">Aucune estimation li\u00e9e \u00e0 ce contact \u2014 renseigne son nom dans le champ \u00ab Client \u00bb d\u2019une estimation.</div>'; return; }
+    box.innerHTML='<div class="restyle-sub">Estimations li\u00e9es ('+linked.length+')</div>'+linked.map(function(r){
+      var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
+      var prix=(r.prix_final||r.prix_conseille);
+      return '<div class="cadjrow cliestim" data-eid="'+r.id+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+(r.adresse||'\u2014')+' \u00b7 '+(r.type||'')+' \u00b7 '+d+'</span><b class="tnum" style="color:var(--accent)">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</b></div>';
+    }).join('');
+    box.querySelectorAll('.cliestim').forEach(function(row){
+      row.addEventListener('click',function(){
+        var r=(all||[]).find(function(x){ return x.id===row.dataset.eid; });
+        if(r){ contactModal.hidden=true; hydrateEstimation(r); }
+      });
+    });
   }
   contactForm.elements.role.addEventListener('change',toggleAcqSection);
   document.getElementById('acqMust').addEventListener('click',function(ev){
@@ -2897,6 +2924,9 @@
       toast('Estimation d\u00e9plac\u00e9e dans la corbeille \u2713'); loadEstimations(); return; }
     var it=e.target.closest('.estimcard'); if(!it||!window.__estims) return;
     var r=window.__estims[parseInt(it.dataset.i,10)]; if(!r) return;
+    hydrateEstimation(r);
+  });
+  async function hydrateEstimation(r){
     // charger la fiche complète (photos, lots…) avant hydratation
     if(sb){ try{ var full=await sb.from('estimations').select('*').eq('id',r.id).single(); if(!full.error&&full.data) r=full.data; }catch(err){} }
     // recharge les données dans l'écran Estimer
@@ -2924,7 +2954,7 @@
     compute();
     go('estimation');
     toast('Estimation rechargée \u2014 '+(r.adresse||''));
-  });
+  }
   loadEstimations();
   /* ---------- enregistrement de l'estimation ---------- */
   function makeThumb(dataURL){ return new Promise(function(res){
