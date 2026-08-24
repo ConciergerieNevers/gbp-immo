@@ -86,8 +86,9 @@ export default async function handler(req, res){
     }
     var dept = insee.slice(0,2);
 
-    // Récupère 2 années de données pour élargir l'échantillon
-    var years = ['2024','2023'];
+    // Récupère les 3 derniers millésimes publiés pour élargir l'échantillon
+    var nowY = new Date().getFullYear();
+    var years = [String(nowY-1), String(nowY-2), String(nowY-3)];
     var rows = [];
     for(var y=0; y<years.length; y++){
       var url = 'https://files.data.gouv.fr/geo-dvf/latest/csv/'+years[y]+'/communes/'+dept+'/'+insee+'.csv';

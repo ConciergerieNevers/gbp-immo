@@ -1128,6 +1128,7 @@
                 <button class="on" data-r="500">500 m</button>
                 <button data-r="1000">1 km</button>
               </div>
+              <div class="chips" id="yearBar" style="margin:9px 0 4px" hidden></div>
               <div style="overflow-x:auto">
                 <table class="comptable"><thead>
                   <tr><th>Adresse · date</th><th>Surface</th><th>Prix vendu</th><th>€/m²</th></tr>
@@ -2183,11 +2184,29 @@
   /* ---------- ventes réelles DVF (via /api/dvf) + risques réels (Géorisques) ---------- */
   var dvfActive=false;
   function dvfMsg(m){ var el=document.getElementById('dvfMsg'); el.textContent='⚠️ '+m; el.hidden=false; }
-  function resetDVF(){ dvfActive=false; dvfComps=null; var b=document.getElementById('dvfBtn'); if(b){ b.disabled=false;
+  function resetDVF(){ dvfActive=false; dvfComps=null; dvfYearsOff={}; var yb=document.getElementById('yearBar'); if(yb) yb.hidden=true; var b=document.getElementById('dvfBtn'); if(b){ b.disabled=false;
     b.querySelector('svg')||0; b.lastChild.textContent=' Charger les ventes réelles (DVF)'; } document.getElementById('dvfMsg').hidden=true; renderComps(); }
   function fmtDate(d){ if(!d) return ''; var p=String(d).split('-'); return p.length===3 ? (p[2]+'/'+p[1]+'/'+p[0]) : d; }
   var dvfComps=null;   // ventes DVF sélectionnables (tap = inclure/écarter)
+  var dvfYearsOff={};  // années décochées
+  function renderYearBar(){
+    var bar=document.getElementById('yearBar'); if(!bar) return;
+    if(!dvfComps){ bar.hidden=true; return; }
+    var years={}; dvfComps.forEach(function(c){ var y=String(c.date||'').slice(0,4); if(y) years[y]=1; });
+    var ks=Object.keys(years).sort();
+    if(ks.length<2){ bar.hidden=true; return; }
+    bar.hidden=false;
+    bar.innerHTML='<span style="font-size:12px;color:var(--ink-3);align-self:center;margin-right:2px">Années :</span>'+
+      ks.map(function(y){ return '<button type="button" class="chip'+(dvfYearsOff[y]?'':' on')+'" data-y="'+y+'">'+y+'</button>'; }).join('');
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('#yearBar .chip'); if(!b||!dvfComps) return;
+    var y=b.dataset.y; dvfYearsOff[y]=!dvfYearsOff[y];
+    dvfComps.forEach(function(c){ if(String(c.date||'').slice(0,4)===y){ c.sel=!dvfYearsOff[y]; } });
+    renderDvfComps();
+  });
   function renderDvfComps(){
+    renderYearBar();
     if(!dvfComps) return;
     var body=document.getElementById('compBody');
     body.innerHTML=dvfComps.map(function(c,i){
@@ -2215,7 +2234,7 @@
       var r=await fetch(url); var j=await r.json().catch(function(){ return { error:'Réponse invalide du serveur.' }; });
       if(!r.ok) throw new Error(j.error||('Erreur '+r.status));
       if(!j.comparables || !j.comparables.length){ dvfMsg(j.note||'Aucune vente réelle trouvée à proximité.'); btn.lastChild.textContent=' Charger les ventes réelles (DVF)'; return; }
-      dvfComps=j.comparables.map(function(c){ c.sel=true; return c; });
+      dvfComps=j.comparables.map(function(c){ c.sel=true; return c; }); dvfYearsOff={};
       dvfActive=true; renderDvfComps();
       document.getElementById('dvfMsg').hidden=true; btn.lastChild.textContent=' Ventes réelles chargées ✓';
     }catch(e){ dvfMsg((e.message||e)+' — le DVF réel fonctionne une fois le site déployé sur Vercel.'); btn.lastChild.textContent=' Réessayer'; }
