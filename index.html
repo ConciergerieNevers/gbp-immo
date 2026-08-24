@@ -489,6 +489,18 @@
     .stickyprice b{font-size:15px;font-variant-numeric:tabular-nums;color:#fff}
     .stickyprice .sp-reco b{color:var(--accent)}
   }
+  .kpi-click{cursor:pointer}
+  .kpi-click:active{transform:scale(.985)}
+  .ventepart{background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:11px 14px;font-size:14px;margin-top:12px;text-align:center}
+  .ventepart b{font-size:17px}
+  .statsnav{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:11px}
+  .statsnav b{min-width:150px;text-align:center;font-size:14.5px}
+  .statsperso{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:11px}
+  .statsperso input{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 10px;font:inherit;color:var(--ink)}
+  .stattiles{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:12px}
+  .stattile{background:var(--surface-2);border-radius:11px;padding:11px 13px;text-align:center}
+  .stattile small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:660;margin-bottom:3px}
+  .stattile b{font-size:17px;font-variant-numeric:tabular-nums}
   .mkclient{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:20px;
     padding:6px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none}
   /* Mes estimations (écran Biens) */
@@ -933,28 +945,30 @@
 
       <!-- ============ COCKPIT ============ -->
       <section class="screen active" id="cockpit">
+        <div class="sectitle"><h2>Mon activité</h2><div class="grow"></div>
+          <button class="btn pri" id="addVenteBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Vente</span></button></div>
         <div class="grid kpigrid">
-          <div class="card kpi">
-            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 2.5L21 6"/></svg> CA réalisé · 2026</div>
-            <div class="val tnum">218 400 <span class="unit">€</span></div>
-            <div class="meta"><span class="trend up">▲ 14 %</span> vs 2025</div>
+          <div class="card kpi kpi-click" data-stat="ca">
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 2.5L21 6"/></svg> CA réalisé · <span id="kCaYear">2026</span></div>
+            <div class="val tnum" id="kCaVal">218 400 <span class="unit">€</span></div>
+            <div class="meta" id="kCaMeta"><span class="trend up">▲ 14 %</span> vs 2025</div>
             <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 28 20 26 40 24 60 22 80 18 100 20 120 14 140 12 160 9 180 6 200 4" fill="none" stroke="var(--brand)" stroke-width="2"/><path d="M0 28 20 26 40 24 60 22 80 18 100 20 120 14 140 12 160 9 180 6 200 4 200 34 0 34Z" fill="var(--brand-soft)" opacity=".5"/></svg>
           </div>
-          <div class="card kpi">
+          <div class="card kpi kpi-click" data-stat="prev">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> CA prévisionnel</div>
-            <div class="val tnum">96 800 <span class="unit">€</span></div>
-            <div class="meta">7 compromis en cours · signés d'ici déc.</div>
+            <div class="val tnum" id="kPrevVal">96 800 <span class="unit">€</span></div>
+            <div class="meta" id="kPrevMeta">7 compromis en cours · signés d'ici déc.</div>
             <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 24 25 25 50 20 75 22 100 16 125 18 150 11 175 13 200 7" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/></svg>
           </div>
-          <div class="card kpi">
+          <div class="card kpi kpi-click" data-stat="com">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg> Commissions</div>
-            <div class="val tnum">21 840 <span class="unit">€</span></div>
-            <div class="meta"><span class="pill good dot">encaissées</span> <span style="color:var(--ink-3)">+ 9 680 € à venir</span></div>
+            <div class="val tnum" id="kComVal">21 840 <span class="unit">€</span></div>
+            <div class="meta" id="kComMeta"><span class="pill good dot">encaissées</span> <span style="color:var(--ink-3)">+ 9 680 € à venir</span></div>
           </div>
-          <div class="card kpi">
+          <div class="card kpi kpi-click" data-stat="mand">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16v4H4zM4 12h10M4 17h7"/></svg> Mandats actifs</div>
-            <div class="val tnum">18</div>
-            <div class="meta"><span class="pill info">11 exclusifs</span> <span class="pill">7 simples</span></div>
+            <div class="val tnum" id="kMandVal">18</div>
+            <div class="meta" id="kMandMeta"><span class="pill info">11 exclusifs</span> <span class="pill">7 simples</span></div>
           </div>
         </div>
 
@@ -1370,6 +1384,56 @@
         <button type="submit" class="btn pri" id="contactSave">Enregistrer</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ======== FORMULAIRE VENTE ======== -->
+<div class="modal" id="venteModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b id="venteModalTitle">Nouvelle vente</b>
+      <button class="modal-x" id="venteX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form id="venteForm">
+      <div class="mform">
+        <label class="mf mf-wide"><span>Bien (adresse)</span><input name="bien" list="venteBienOptions" placeholder="12 rue des Récollets…" required><datalist id="venteBienOptions"></datalist></label>
+        <label class="mf mf-wide"><span>Client</span><input name="client" list="venteCliOptions" placeholder="M. et Mme…"><datalist id="venteCliOptions"></datalist></label>
+        <label class="mf"><span>Prix de vente (€)</span><input name="prix" type="number" required></label>
+        <label class="mf"><span>Honoraires d'agence (€)</span><input name="honoraires" type="number" required></label>
+        <label class="mf"><span>Date</span><input name="date_vente" type="date"></label>
+        <label class="mf"><span>Statut</span><select name="statut"><option value="compromis">Compromis signé</option><option value="acte">Vente actée</option></select></label>
+        <label class="mf mf-check"><input type="checkbox" name="rentree" checked><span>J'ai rentré le mandat <b style="color:var(--accent)">+25 %</b></span></label>
+        <label class="mf mf-check"><input type="checkbox" name="sortie" checked><span>J'ai fait la vente <b style="color:var(--accent)">+25 %</b></span></label>
+      </div>
+      <div class="ventepart" id="ventePart">Ma commission : <b>—</b></div>
+      <div class="autherr" id="venteErr"></div>
+      <div class="modal-ft">
+        <button type="button" class="btn danger-o" id="venteDelete" style="margin-right:auto" hidden>Supprimer</button>
+        <button type="button" class="btn" id="venteCancel">Annuler</button>
+        <button type="submit" class="btn pri">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======== STATISTIQUES (KPI cliquables) ======== -->
+<div class="modal" id="statsModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b id="statsTitle">Statistiques</b>
+      <button class="modal-x" id="statsX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="ag-seg" id="statsMode" style="margin-bottom:11px">
+      <button type="button" data-m="semaine">Semaine</button>
+      <button type="button" class="on" data-m="mois">Mois</button>
+      <button type="button" data-m="annee">Année</button>
+      <button type="button" data-m="perso">Période</button>
+    </div>
+    <div class="statsnav">
+      <button type="button" class="iconbtn" id="statsPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <b id="statsLabel"></b>
+      <button type="button" class="iconbtn" id="statsNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="statsperso" id="statsPerso" hidden>
+      <input type="date" id="statsFrom"> <span>→</span> <input type="date" id="statsTo">
+    </div>
+    <div id="statsBody" style="max-height:52vh;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -2189,6 +2253,184 @@
       dl.innerHTML=contactsData.map(function(c){ return '<option value="'+esc(c.nom)+'">'+esc((c.role||'')+(c.detail?(' \u00b7 '+c.detail):''))+'</option>'; }).join('');
     });
   })();
+  /* ---------- VENTES & COMMISSIONS (25 % rentrée + 25 % sortie) ---------- */
+  var ventesData=[];
+  function partVente(v){ return Math.round((v.honoraires||0)*(((v.rentree)?0.25:0)+((v.sortie)?0.25:0))); }
+  async function syncVentes(){
+    if(!sb) return;
+    try{
+      var res=await sb.from('ventes').select('*').eq('deleted',false).order('date_vente',{ascending:false});
+      if(res.error) throw res.error;
+      ventesData=res.data||[];
+      updateKpis();
+    }catch(e){ console.warn('[ESTIMAKE] ventes', e); }
+  }
+  function updateKpis(){
+    if(!ventesData.length && !(biens&&biens.length&&biens[0].id)) return;   // aucune vraie donnée → démo
+    var y=new Date().getFullYear();
+    document.getElementById('kCaYear').textContent=y;
+    var actees=ventesData.filter(function(v){ return v.statut==='acte' && String(v.date_vente||v.created_at||'').slice(0,4)==String(y); });
+    var compromis=ventesData.filter(function(v){ return v.statut!=='acte'; });
+    var ca=actees.reduce(function(a,v){return a+(v.prix||0);},0);
+    var caPrev=compromis.reduce(function(a,v){return a+(v.prix||0);},0);
+    var com=actees.reduce(function(a,v){return a+partVente(v);},0);
+    var comPrev=compromis.reduce(function(a,v){return a+partVente(v);},0);
+    document.getElementById('kCaVal').innerHTML=ca.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
+    document.getElementById('kCaMeta').textContent=actees.length+' vente'+(actees.length>1?'s':'')+' act\u00e9e'+(actees.length>1?'s':'')+' \u00b7 '+y;
+    document.getElementById('kPrevVal').innerHTML=caPrev.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
+    document.getElementById('kPrevMeta').textContent=compromis.length+' compromis en cours';
+    document.getElementById('kComVal').innerHTML=com.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
+    document.getElementById('kComMeta').innerHTML='<span class="pill good dot">act\u00e9es</span> <span style="color:var(--ink-3)">+ '+comPrev.toLocaleString('fr-FR')+' \u20ac \u00e0 venir</span>';
+    var actifs=(biens||[]).filter(function(b){ return b.st!=='Vendu'; });
+    var excl=actifs.filter(function(b){ return b.st==='Exclusif'; }).length;
+    document.getElementById('kMandVal').textContent=actifs.length;
+    document.getElementById('kMandMeta').innerHTML='<span class="pill info">'+excl+' exclusif'+(excl>1?'s':'')+'</span> <span class="pill">'+(actifs.length-excl)+' autres</span>';
+  }
+  /* --- formulaire vente --- */
+  var venteModal=document.getElementById('venteModal'), venteForm=document.getElementById('venteForm'), editingVenteId=null;
+  function ventePartPreview(){
+    var e=venteForm.elements;
+    var h=parseFloat(e.honoraires.value)||0;
+    var p=Math.round(h*((e.rentree.checked?0.25:0)+(e.sortie.checked?0.25:0)));
+    var pct=((e.rentree.checked?25:0)+(e.sortie.checked?25:0));
+    document.getElementById('ventePart').innerHTML='Ma commission ('+pct+' %) : <b>'+p.toLocaleString('fr-FR')+' \u20ac</b>';
+  }
+  venteForm.addEventListener('input',ventePartPreview);
+  function openVenteForm(v){
+    editingVenteId=(v&&v.id)||null;
+    document.getElementById('venteModalTitle').textContent=v?'Modifier la vente':'Nouvelle vente';
+    document.getElementById('venteDelete').hidden=!editingVenteId;
+    var e=venteForm.elements;
+    e.bien.value=v?(v.bien||''):''; e.client.value=v?(v.client||''):'';
+    e.prix.value=v?(v.prix||''):''; e.honoraires.value=v?(v.honoraires||''):'';
+    e.date_vente.value=v?(v.date_vente||''):new Date().toISOString().slice(0,10);
+    e.statut.value=v?(v.statut||'compromis'):'compromis';
+    e.rentree.checked=v?!!v.rentree:true; e.sortie.checked=v?!!v.sortie:true;
+    var esc=function(x){return String(x||'').replace(/"/g,'&quot;');}, ob='', oc='';
+    (biens||[]).forEach(function(b){ if(b.ad) ob+='<option value="'+esc(b.ad)+'">'; });
+    (contactsData||[]).forEach(function(c){ if(c.nom) oc+='<option value="'+esc(c.nom)+'">'; });
+    document.getElementById('venteBienOptions').innerHTML=ob;
+    document.getElementById('venteCliOptions').innerHTML=oc;
+    document.getElementById('venteErr').classList.remove('show');
+    ventePartPreview();
+    venteModal.hidden=false;
+  }
+  document.getElementById('addVenteBtn').addEventListener('click',function(){ openVenteForm(null); });
+  document.getElementById('venteX').addEventListener('click',function(){ venteModal.hidden=true; });
+  document.getElementById('venteCancel').addEventListener('click',function(){ venteModal.hidden=true; });
+  venteModal.addEventListener('click',function(e){ if(e.target===venteModal) venteModal.hidden=true; });
+  venteForm.addEventListener('submit',async function(ev){
+    ev.preventDefault();
+    var e=venteForm.elements;
+    var row={ bien:e.bien.value.trim(), client:e.client.value.trim(),
+      prix:parseInt(e.prix.value,10)||null, honoraires:parseInt(e.honoraires.value,10)||null,
+      date_vente:e.date_vente.value||null, statut:e.statut.value,
+      rentree:e.rentree.checked, sortie:e.sortie.checked };
+    try{
+      if(!sb) throw new Error('Base non connect\u00e9e');
+      var res=editingVenteId ? await sb.from('ventes').update(row).eq('id',editingVenteId) : await sb.from('ventes').insert(row);
+      if(res.error) throw res.error;
+      venteModal.hidden=true;
+      toast(editingVenteId?'Vente modifi\u00e9e \u2713':'Vente enregistr\u00e9e \u2713 \u00b7 ma part : '+partVente(row).toLocaleString('fr-FR')+' \u20ac');
+      syncVentes();
+    }catch(err){ var el=document.getElementById('venteErr'); el.textContent='Erreur : '+((err&&err.message)||err); el.classList.add('show'); }
+  });
+  document.getElementById('venteDelete').addEventListener('click',async function(){
+    if(!editingVenteId||!sb) return;
+    try{ var r=await sb.from('ventes').update({deleted:true}).eq('id',editingVenteId); if(r.error) throw r.error;
+      venteModal.hidden=true; toast('Vente d\u00e9plac\u00e9e dans la corbeille \u2713'); syncVentes();
+    }catch(e){ toast('Suppression impossible.'); }
+  });
+  /* --- statistiques par période (KPI cliquables) --- */
+  var statState={mode:'mois', ref:new Date(), tab:'ca'};
+  var STAT_TITLES={ca:'CA r\u00e9alis\u00e9', prev:'CA pr\u00e9visionnel', com:'Mes commissions', mand:'Mandats'};
+  function statRange(){
+    var r=new Date(statState.ref), from, to;
+    if(statState.mode==='semaine'){ var d=(r.getDay()+6)%7; from=new Date(r); from.setDate(r.getDate()-d); to=new Date(from); to.setDate(from.getDate()+6); }
+    else if(statState.mode==='annee'){ from=new Date(r.getFullYear(),0,1); to=new Date(r.getFullYear(),11,31); }
+    else if(statState.mode==='perso'){
+      var f=document.getElementById('statsFrom').value, t=document.getElementById('statsTo').value;
+      from=f?new Date(f):new Date(2000,0,1); to=t?new Date(t):new Date(2099,11,31);
+    }
+    else { from=new Date(r.getFullYear(),r.getMonth(),1); to=new Date(r.getFullYear(),r.getMonth()+1,0); }
+    from.setHours(0,0,0,0); to.setHours(23,59,59,999);
+    return {from:from, to:to};
+  }
+  function statLabel(rg){
+    if(statState.mode==='semaine') return rg.from.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' \u2013 '+rg.to.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+    if(statState.mode==='annee') return String(statState.ref.getFullYear());
+    if(statState.mode==='perso') return 'P\u00e9riode libre';
+    return statState.ref.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  }
+  function inRange(dstr, rg){ if(!dstr) return false; var d=new Date(dstr); return d>=rg.from && d<=rg.to; }
+  function renderStats(){
+    var rg=statRange();
+    document.getElementById('statsLabel').textContent=statLabel(rg);
+    document.getElementById('statsPerso').hidden=(statState.mode!=='perso');
+    document.getElementById('statsTitle').textContent=STAT_TITLES[statState.tab]||'Statistiques';
+    var body=document.getElementById('statsBody');
+    var inP=ventesData.filter(function(v){ return inRange(v.date_vente||v.created_at, rg); });
+    var eu=function(n){ return (n||0).toLocaleString('fr-FR')+' \u20ac'; };
+    function tiles(arr){ return '<div class="stattiles">'+arr.map(function(t){ return '<div class="stattile"><small>'+t[0]+'</small><b>'+t[1]+'</b></div>'; }).join('')+'</div>'; }
+    function lignes(vs){
+      if(!vs.length) return '<div class="estimempty">Rien sur cette p\u00e9riode.</div>';
+      return vs.map(function(v){
+        return '<div class="cadjrow" data-vid="'+v.id+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+(v.bien||'\u2014')+(v.client?' \u00b7 '+v.client:'')+' \u00b7 '+(v.date_vente||'')+'</span>'+
+          '<b class="'+(v.statut==='acte'?'pos':'')+'">'+eu(partVente(v))+'</b></div>';
+      }).join('');
+    }
+    if(statState.tab==='ca'){
+      var a=inP.filter(function(v){return v.statut==='acte';});
+      body.innerHTML=tiles([['Ventes act\u00e9es',a.length],['CA ventes',eu(a.reduce(function(x,v){return x+(v.prix||0);},0))],['Honoraires agence',eu(a.reduce(function(x,v){return x+(v.honoraires||0);},0))],['Mes commissions',eu(a.reduce(function(x,v){return x+partVente(v);},0))]])+lignes(a);
+    } else if(statState.tab==='prev'){
+      var c=inP.filter(function(v){return v.statut!=='acte';});
+      body.innerHTML=tiles([['Compromis',c.length],['CA attendu',eu(c.reduce(function(x,v){return x+(v.prix||0);},0))],['Honoraires attendus',eu(c.reduce(function(x,v){return x+(v.honoraires||0);},0))],['Commissions \u00e0 venir',eu(c.reduce(function(x,v){return x+partVente(v);},0))]])+lignes(c);
+    } else if(statState.tab==='com'){
+      var rent=inP.reduce(function(x,v){return x+((v.rentree)?(v.honoraires||0)*0.25:0);},0);
+      var sor=inP.reduce(function(x,v){return x+((v.sortie)?(v.honoraires||0)*0.25:0);},0);
+      body.innerHTML=tiles([['Part rentr\u00e9es (25 %)',eu(Math.round(rent))],['Part sorties (25 %)',eu(Math.round(sor))],['Total commissions',eu(Math.round(rent+sor))],['Ventes concern\u00e9es',inP.length]])+lignes(inP);
+    } else {
+      var actifs=(biens||[]).filter(function(b){ return b.st!=='Vendu'; });
+      var rentres=(biens||[]).filter(function(b){ return b.crea && inRange(b.crea, rg); });
+      body.innerHTML=tiles([['Mandats actifs',actifs.length],['Exclusifs',actifs.filter(function(b){return b.st==='Exclusif';}).length],['Rentr\u00e9s sur la p\u00e9riode',rentres.length],['Sous compromis',actifs.filter(function(b){return b.st==='Compromis';}).length]])+
+        (actifs.length?actifs.map(function(b){ return '<div class="cadjrow"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+(b.ad||'')+' \u00b7 '+(b.st||'')+'</span><b>'+((b.px||0).toLocaleString('fr-FR'))+' \u20ac</b></div>'; }).join(''):'<div class="estimempty">Aucun mandat actif.</div>');
+    }
+  }
+  (function(){
+    var modal=document.getElementById('statsModal');
+    document.querySelectorAll('.kpi-click').forEach(function(k){
+      k.addEventListener('click',function(){ statState.tab=k.dataset.stat; statState.ref=new Date(); modal.hidden=false; renderStats(); });
+    });
+    document.getElementById('statsX').addEventListener('click',function(){ modal.hidden=true; });
+    modal.addEventListener('click',function(e){ if(e.target===modal) modal.hidden=true; });
+    document.getElementById('statsMode').addEventListener('click',function(e){
+      var b=e.target.closest('button'); if(!b) return;
+      this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on');
+      statState.mode=b.dataset.m; renderStats();
+    });
+    document.getElementById('statsPrev').addEventListener('click',function(){
+      var r=statState.ref;
+      if(statState.mode==='semaine') r.setDate(r.getDate()-7);
+      else if(statState.mode==='annee') r.setFullYear(r.getFullYear()-1);
+      else r.setMonth(r.getMonth()-1);
+      renderStats();
+    });
+    document.getElementById('statsNext').addEventListener('click',function(){
+      var r=statState.ref;
+      if(statState.mode==='semaine') r.setDate(r.getDate()+7);
+      else if(statState.mode==='annee') r.setFullYear(r.getFullYear()+1);
+      else r.setMonth(r.getMonth()+1);
+      renderStats();
+    });
+    document.getElementById('statsFrom').addEventListener('change',renderStats);
+    document.getElementById('statsTo').addEventListener('change',renderStats);
+    document.getElementById('statsBody').addEventListener('click',function(e){
+      var row=e.target.closest('[data-vid]'); if(!row) return;
+      var v=ventesData.find(function(x){return x.id===row.dataset.vid;});
+      if(v){ document.getElementById('statsModal').hidden=true; openVenteForm(v); }
+    });
+  })();
+  syncVentes();
   /* ---------- suppression (corbeille) : biens & contacts ---------- */
   (function(){
     var bd=document.getElementById('bienDelete');
@@ -2220,7 +2462,8 @@
           sb.from('biens').select('id,adresse,prix').eq('deleted',true),
           sb.from('contacts').select('id,nom,role,detail').eq('deleted',true),
           sb.from('estimations').select('id,adresse,prix_conseille,created_at').eq('deleted',true).order('created_at',{ascending:false}),
-          sb.from('rdv').select('id,titre,date,heure').eq('deleted',true).order('date',{ascending:false})
+          sb.from('rdv').select('id,titre,date,heure').eq('deleted',true).order('date',{ascending:false}),
+          sb.from('ventes').select('id,bien,client,prix').eq('deleted',true)
         ]);
         var html='';
         function grp(titre, rows, fmt, table){
@@ -2233,6 +2476,7 @@
         grp('Contacts', qs[1].data, function(r){ return (r.nom||'\u2014')+' \u00b7 '+(r.role||'')+(r.detail?' \u00b7 '+r.detail:''); }, 'contacts');
         grp('Estimations', qs[2].data, function(r){ return (r.adresse||'\u2014')+(r.prix_conseille?' \u00b7 '+r.prix_conseille.toLocaleString('fr-FR')+' \u20ac':''); }, 'estimations');
         grp('Rendez-vous', qs[3].data, function(r){ return (r.titre||'\u2014')+' \u00b7 '+(r.date||'')+(r.heure?' '+r.heure:''); }, 'rdv');
+        grp('Ventes', qs[4].data, function(r){ return (r.bien||'\u2014')+(r.client?' \u00b7 '+r.client:'')+(r.prix?' \u00b7 '+r.prix.toLocaleString('fr-FR')+' \u20ac':''); }, 'ventes');
         body.innerHTML=html||'<div class="estimempty">La corbeille est vide.</div>';
       }catch(e){ body.innerHTML='<div class="estimempty">Erreur de chargement de la corbeille.</div>'; }
     }
@@ -2247,6 +2491,7 @@
         if(b.dataset.rt==='contacts') syncContacts();
         if(b.dataset.rt==='estimations') loadEstimations();
         if(b.dataset.rt==='rdv'){ syncAgenda(); gPush('save',{id:b.dataset.rid}); }
+        if(b.dataset.rt==='ventes') syncVentes();
         openTrash();
       }catch(err){ toast('Restauration impossible.'); b.disabled=false; }
     });
@@ -2904,7 +3149,7 @@
   function mapBien(r){
     return {ad:r.adresse, tw:r.secteur, px:r.prix, m2:r.surface, ch:r.chambres, ty:r.type,
       st:r.statut, dpe:r.dpe, ref:r.reference, owner:r.proprietaire, terr:r.terrain,
-      an:r.annee, gar:!!r.garage, acq:r.nb_acquereurs||0, hist:r.historique||[], photo:r.photo_url||'', id:r.id};
+      an:r.annee, gar:!!r.garage, acq:r.nb_acquereurs||0, hist:r.historique||[], photo:r.photo_url||'', id:r.id, crea:r.created_at};
   }
   async function syncBiens(){
     if(!sb) return;                       // pas de config → on reste sur la démo
@@ -2915,6 +3160,7 @@
         biens=res.data.map(mapBien);
         var f=document.querySelector('#bienChips .chip.on');
         renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
+        if(typeof updateKpis==='function') updateKpis();
       }
     }catch(e){ console.warn('[ESTIMAKE] Supabase indisponible → données de démonstration', e); }
   }
