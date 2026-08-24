@@ -2800,11 +2800,11 @@
   function makeThumb(dataURL){ return new Promise(function(res){
     if(!dataURL){ res(null); return; }
     var im=new Image();
-    im.onload=function(){ var w=520, h=Math.round(im.height*w/im.width);
+    im.onload=function(){ var w=1100, h=Math.round(im.height*w/im.width);
       if(im.width<w){ w=im.width; h=im.height; }
       var c=document.createElement('canvas'); c.width=w; c.height=h;
       c.getContext('2d').drawImage(im,0,0,w,h);
-      try{ res(c.toDataURL('image/jpeg',0.72)); }catch(e){ res(null); } };
+      try{ res(c.toDataURL('image/jpeg',0.82)); }catch(e){ res(null); } };
     im.onerror=function(){ res(null); }; im.src=dataURL; }); }
   var editingEstimId=null;   // estimation rechargée → enregistrer = mettre à jour
   async function saveEstimation(){
@@ -3458,7 +3458,7 @@
       var slot=el.querySelector('#dMapSlot'), mapEl=document.getElementById('miniMap');
       if(slot && mapEl && mapEl.classList.contains('show')){
         try{ var mcv=await html2canvas(mapEl,{scale:2,useCORS:true,logging:false});
-          slot.innerHTML='<div class="dmapimg" style="background-image:url('+mcv.toDataURL('image/jpeg',0.88)+')"></div>'; }catch(e){ console.warn('map shot',e); }
+          slot.innerHTML='<div class="dmapimg" style="background-image:url('+mcv.toDataURL('image/jpeg',0.92)+')"></div>'; }catch(e){ console.warn('map shot',e); }
       }
       var sheets=el.querySelectorAll('.dsheet');
       var pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4',compress:true});
@@ -3466,7 +3466,7 @@
         var cv=await html2canvas(sheets[i],{scale:2.6,useCORS:true,backgroundColor:'#ffffff',logging:false});
         if(i>0) pdf.addPage();
         var h=Math.min(297, cv.height*210/cv.width);
-        pdf.addImage(cv.toDataURL('image/jpeg',0.93),'JPEG',0,0,210,h);
+        pdf.addImage(cv.toDataURL('image/jpeg',0.95),'JPEG',0,0,210,h);
       }
       var adr=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'bien').trim().replace(/[^\w\u00c0-\u017f -]/g,'').slice(0,40);
       pdf.save('Avis de valeur - '+adr+'.pdf');
