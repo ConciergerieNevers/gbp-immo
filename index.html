@@ -1595,7 +1595,20 @@
     <form class="modal-body" id="lotForm">
       <div class="mfields">
         <label class="mf"><span>Type de lot</span><select name="l_type"><option>Appartement</option><option>Studio</option><option>Maison</option><option>Local commercial</option><option>Bureau</option><option>Garage / Parking</option><option>Cave</option><option>Autre</option></select></label>
-        <label class="mf"><span>Étage / niveau</span><input name="l_etage" placeholder="RDC, 1er, 2e…"></label>
+        <label class="mf"><span>Étage / niveau</span><select name="l_etage">
+          <option value="">—</option>
+          <option>Sous-sol</option>
+          <option>Rez-de-chaussée</option>
+          <option>1er étage</option>
+          <option>2e étage</option>
+          <option>3e étage</option>
+          <option>4e étage</option>
+          <option>5e étage</option>
+          <option>6e étage et +</option>
+          <option>Duplex</option>
+          <option>Combles</option>
+          <option>Dépendance / cour</option>
+        </select></label>
         <label class="mf"><span>Surface (m²)</span><input name="l_surf" type="number" required></label>
         <label class="mf"><span>État</span><select name="l_etat"><option>Bon état</option><option>À rafraîchir</option><option>Travaux</option><option>Refait à neuf</option></select></label>
         <label class="mf lot-hab"><span>Pièces</span><input name="l_pieces" type="number" placeholder="3"></label>
