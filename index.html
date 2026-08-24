@@ -1624,8 +1624,13 @@
         <label class="mf lot-com"><span>Vitrine (m linéaire)</span><input name="l_vitrine" type="number" placeholder="6"></label>
         <label class="mf"><span>Loyer (€/mois)</span><input name="l_loyer" type="number" placeholder="520"></label>
         <label class="mf"><span>Occupation</span><select name="l_occ"><option>Loué</option><option>Vacant</option><option>Occupé propriétaire</option></select></label>
+        <label class="mf mf-wide"><span>État intérieur — ajustement fin <b id="lotEtatLb" style="color:var(--accent)">0 %</b></span>
+          <input name="l_etatpct" type="range" min="-50" max="50" value="0" style="width:100%"></label>
+        <label class="mf"><span>Ajustement manuel (€ ±)</span><input name="l_adj" type="number" step="500" placeholder="+3000 / −5000"></label>
+        <label class="mf"><span>Motif de l'ajustement</span><input name="l_adjmotif" placeholder="Balcon, cave, vis-à-vis…"></label>
         <label class="mf mf-wide"><span>Note</span><input name="l_note" placeholder="Bail 3/6/9 en cours, compteurs séparés…"></label>
       </div>
+      <div class="ventepart" id="lotPreview" style="text-align:left;font-size:12.5px">—</div>
       <div class="restyle-sub">Photos du lot</div>
       <input type="file" accept="image/*" multiple id="lotPhotoInput" hidden>
       <div class="staging-grid" id="lotGallery"></div>
@@ -3088,7 +3093,8 @@
     return tot;
   }
   var LOT_DVF_TYPE={'Appartement':'Appartement','Studio':'Appartement','Maison':'Maison','Local commercial':'Local','Bureau':'Local'};
-  var LOT_ETAT_ADJ={'Refait à neuf':1.05,'Bon état':1,'À rafraîchir':0.92,'Travaux':0.82};
+  var LOT_ETAT_DEF={'Refait à neuf':5,'Bon état':0,'À rafraîchir':-8,'Travaux':-18};
+  var LOT_DPE_PCT={'A':3,'B':2,'C':0,'D':0,'E':-3,'F':-8,'G':-12,'':0};
   window.__lotMed=window.__lotMed||{};
   async function loadLotMedians(){
     if(!estCoord||!estCoord.insee) return;
@@ -3103,16 +3109,56 @@
     });
     await Promise.all(jobs);
   }
+  function lotPcts(l){
+    var etatPct=(l.etatPct!==undefined&&l.etatPct!==null&&l.etatPct!=='')?parseFloat(l.etatPct):(LOT_ETAT_DEF[l.etat]||0);
+    var dpePct=LOT_DPE_PCT[l.dpe||'']||0;
+    var adjEur=parseFloat(l.adjEur)||0;
+    return {etat:etatPct, dpe:dpePct, adj:adjEur};
+  }
   function lotValue(l){
     var t=LOT_DVF_TYPE[l.type];
-    var adj=LOT_ETAT_ADJ[l.etat]||1;
+    var p=lotPcts(l);
     if(t && estCoord && estCoord.insee){
       var m=window.__lotMed[estCoord.insee+'_'+t+'_'+state.rayon];
-      if(m && m.median){ return {v:Math.round(l.surf*m.median*adj/1000)*1000, src:m.median.toLocaleString('fr-FR')+' \u20ac/m\u00b2 ('+m.count+' ventes '+(t==='Local'?'locaux':t.toLowerCase()+'s')+')'}; }
+      if(m && m.median){
+        var base=l.surf*m.median;
+        var v=Math.round((base*(1+(p.etat+p.dpe)/100)+p.adj)/1000)*1000;
+        return {v:v, base:Math.round(base), med:m.median, count:m.count, t:t, p:p,
+          src:m.median.toLocaleString('fr-FR')+' \u20ac/m\u00b2 ('+m.count+' ventes '+(t==='Local'?'locaux':t.toLowerCase()+'s')+')'};
+      }
     }
-    if(l.loyer){ return {v:Math.round(l.loyer*12/0.10/1000)*1000, src:'capitalisation 10 %'}; }
+    if(l.loyer){ return {v:Math.round((l.loyer*12/0.10+p.adj)/1000)*1000, src:'capitalisation 10 %', p:p}; }
     return null;
   }
+  /* aperçu du calcul en direct dans la fiche lot — comme une estimation individuelle */
+  function lotPreviewCalc(){
+    var box=document.getElementById('lotPreview'); if(!box) return;
+    var e=lotForm.elements;
+    document.getElementById('lotEtatLb').textContent=(e.l_etatpct.value>0?'+':'')+e.l_etatpct.value+' %';
+    var l={ type:e.l_type.value, surf:parseFloat(e.l_surf.value)||0, etat:e.l_etat.value, dpe:e.l_dpe.value,
+      loyer:parseFloat(e.l_loyer.value)||0, etatPct:e.l_etatpct.value, adjEur:e.l_adj.value };
+    if(!l.surf){ box.innerHTML='Renseigne la surface pour voir le calcul du lot.'; return; }
+    var lv=lotValue(l);
+    if(!lv){ box.innerHTML='Choisis une adresse (\u00e9tape 1) pour charger les ventes comparables du type \u00ab '+l.type+' \u00bb.'; return; }
+    var p=lv.p||{etat:0,dpe:0,adj:0};
+    var lines=[];
+    if(lv.base){ lines.push('Base : '+l.surf+' m\u00b2 \u00d7 '+lv.med.toLocaleString('fr-FR')+' \u20ac/m\u00b2 <small>('+lv.count+' ventes '+(lv.t==='Local'?'locaux':lv.t.toLowerCase()+'s')+' du secteur)</small> = <b>'+lv.base.toLocaleString('fr-FR')+' \u20ac</b>'); }
+    else { lines.push('Base : capitalisation du loyer \u00e0 10 %'); }
+    if(p.etat) lines.push('\u00c9tat int\u00e9rieur : <b>'+(p.etat>0?'+':'')+p.etat+' %</b>');
+    if(p.dpe) lines.push('DPE '+l.dpe+' : <b>'+(p.dpe>0?'+':'')+p.dpe+' %</b>');
+    if(p.adj) lines.push('Ajustement : <b>'+(p.adj>0?'+':'')+p.adj.toLocaleString('fr-FR')+' \u20ac</b>');
+    var out='<div style="line-height:1.8">'+lines.join('<br>')+'</div>'+
+      '<div style="margin-top:6px;font-size:15px">Valeur du lot : <b>'+lv.v.toLocaleString('fr-FR')+' \u20ac</b>';
+    if(l.loyer){ out+=' \u00b7 rendement <b>'+((l.loyer*12/lv.v)*100).toFixed(1).replace('.',',')+' %</b>'; }
+    out+='</div>';
+    box.innerHTML=out;
+  }
+  lotForm.addEventListener('input',lotPreviewCalc);
+  lotForm.elements.l_etat.addEventListener('change',function(){
+    // choisir l'état prérègle le curseur (affinable ensuite)
+    lotForm.elements.l_etatpct.value=LOT_ETAT_DEF[this.value]||0;
+    lotPreviewCalc();
+  });
   async function updateLotVals(){
     var box=document.getElementById('lotVals'); if(!box) return;
     if(document.getElementById('fType').value!=='Immeuble' || !estLots.length){ box.innerHTML=''; return; }
@@ -3209,9 +3255,12 @@
     e.l_pieces.value=l?(l.pieces||''):''; e.l_ch.value=l?(l.ch||''):''; e.l_sdb.value=l?(l.sdb||''):'';
     e.l_dpe.value=l?(l.dpe||''):''; e.l_activite.value=l?(l.activite||''):''; e.l_vitrine.value=l?(l.vitrine||''):'';
     e.l_loyer.value=l?(l.loyer||''):''; e.l_occ.value=l?(l.occ||'Loué'):'Loué'; e.l_note.value=l?(l.note||''):'';
+    e.l_etatpct.value=(l&&l.etatPct!==undefined&&l.etatPct!=='')?l.etatPct:(LOT_ETAT_DEF[(l&&l.etat)||'Bon état']||0);
+    e.l_adj.value=l?(l.adjEur||''):''; e.l_adjmotif.value=l?(l.adjMotif||''):'';
     lotPhotosTmp=(l&&Array.isArray(l.photos))?l.photos.slice():[];
     renderLotGallery();
     lotFieldsToggle();
+    lotPreviewCalc();
     document.getElementById('lotErr').classList.remove('show');
     lotModal.hidden=false;
   }
@@ -3229,7 +3278,8 @@
     var l={ type:e.l_type.value, etage:e.l_etage.value, surf:parseFloat(e.l_surf.value)||0,
       etat:e.l_etat.value, pieces:e.l_pieces.value, ch:e.l_ch.value, sdb:e.l_sdb.value, dpe:e.l_dpe.value,
       activite:e.l_activite.value.trim(), vitrine:e.l_vitrine.value, loyer:parseFloat(e.l_loyer.value)||0,
-      occ:e.l_occ.value, note:e.l_note.value.trim(), photos:lotPhotosTmp.slice() };
+      occ:e.l_occ.value, note:e.l_note.value.trim(), photos:lotPhotosTmp.slice(),
+      etatPct:e.l_etatpct.value, adjEur:e.l_adj.value, adjMotif:e.l_adjmotif.value.trim() };
     if(editingLotIdx!==null){ estLots[editingLotIdx]=l; } else { estLots.push(l); }
     lotModal.hidden=true; renderLots(); toast('Lot enregistr\u00e9 \u2713');
   });
@@ -3693,6 +3743,10 @@
         var lotRows=estLots.map(function(l,i){
           var det=[]; if(lotIsHab(l.type)){ if(l.pieces) det.push(l.pieces+' p.'); if(l.ch) det.push(l.ch+' ch.'); if(l.sdb) det.push(l.sdb+' sdb'); if(l.dpe) det.push('DPE '+l.dpe); }
           if(lotIsCom(l.type)&&l.activite) det.push(l.activite);
+          var pcts=(typeof lotPcts==='function')?lotPcts(l):{etat:0,dpe:0,adj:0};
+          if(pcts.etat) det.push('\u00e9tat '+(pcts.etat>0?'+':'')+pcts.etat+' %');
+          if(pcts.dpe) det.push('DPE '+(pcts.dpe>0?'+':'')+pcts.dpe+' %');
+          if(pcts.adj) det.push((pcts.adj>0?'+':'')+pcts.adj.toLocaleString('fr-FR')+' \u20ac'+(l.adjMotif?' ('+l.adjMotif+')':''));
           if(l.note) det.push(l.note);
           var lv=(typeof lotValue==='function')?lotValue(l):null;
           var loyA=(parseFloat(l.loyer)||0)*12; totLL+=loyA;
