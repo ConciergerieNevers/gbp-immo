@@ -3232,7 +3232,18 @@
     var el=document.getElementById('dossier');
     el.classList.add('rendering');
     try{
-      try{ await document.fonts.ready; }catch(e){}
+      try{
+        await Promise.all([
+          document.fonts.load('500 31px "Cormorant Garamond"'),
+          document.fonts.load('600 16px "Cormorant Garamond"'),
+          document.fonts.load('italic 400 16px "Cormorant Garamond"'),
+          document.fonts.load('400 33px "Great Vibes"'),
+          document.fonts.load('400 12px "Montserrat"'),
+          document.fonts.load('600 12px "Montserrat"'),
+          document.fonts.load('700 12px "Montserrat"')
+        ]);
+        await document.fonts.ready;
+      }catch(e){}
       // attendre le chargement des images (logo, photos)
       var imgs=[].slice.call(el.querySelectorAll('img'));
       await Promise.all(imgs.map(function(im){ return (im.complete&&im.naturalWidth)?null:new Promise(function(res){ im.onload=im.onerror=res; }); }));
