@@ -2020,7 +2020,7 @@
   function compute(){
     var surf=parseFloat(document.getElementById('fSurf').value)||127;
     var base=state.baseM2*surf;
-    var pctLoc=state.loc*4;            // -4 / 0 / +4 %
+    var pctLoc=state.loc*10;           // quartier moyen −10 % / bon secteur 0 / recherché +10 %
     var pct=state.etat+state.dpe+state.terr+pctLoc;
     var toggPct=0,toggEur=0;
     for(var k in state.tgls){if(state.tgls[k]){var el=state.tgls[k];
