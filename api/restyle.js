@@ -148,17 +148,17 @@ export default async function handler(req, res){
     if(ANTH){ try{ var p = await claudePrompt(ANTH, b64, mediaType, style, room, notes); if(p) prompt = p; }catch(e){} }
 
     // 2) Rendu — FLUX.1 Kontext en priorité, Stability en repli
-    var dataUrl, engine;
+    var dataUrl, engine, fallbackReason = BFL ? null : 'BFL_API_KEY absente';
     if(BFL){
       try{ var sample = await fluxKontext(BFL, prompt, b64); dataUrl = await urlToDataURL(sample); engine = 'flux-kontext-max'; }
-      catch(e){ if(!STAB) throw e; }
+      catch(e){ fallbackReason = String((e && e.message) || e); if(!STAB) throw e; }
     }
     if(!dataUrl && STAB){
       dataUrl = await stability(STAB, prompt, Buffer.from(b64, 'base64'), mediaType); engine = 'stability-structure';
     }
     if(!dataUrl){ res.status(502).json({ error: 'Génération impossible.' }); return; }
 
-    res.status(200).json({ image: dataUrl, prompt: prompt, engine: engine });
+    res.status(200).json({ image: dataUrl, prompt: prompt, engine: engine, fallback_reason: fallbackReason });
   }catch(e){
     res.status(500).json({ error: String((e && e.message) || e) });
   }
