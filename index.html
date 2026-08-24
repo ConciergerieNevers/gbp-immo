@@ -3195,7 +3195,6 @@
           (last?FOOTER_HTML:'<div class="pgnum">GB Immobilier \u2014 Avis de valeur \u00b7 page '+(i+2)+'</div>')+
         '</div>';
       }).join('');
-    g('dossier').innerHTML=
       /* ============ PAGE 1 — AVIS DE VALEUR (V5, orientée client) ============ */
       var compl1=(g('fCompl')&&g('fCompl').value.trim())?(' \u00b7 '+g('fCompl').value.trim()):'';
       var infosCle=[g('fType').value, (g('fSurf').value?g('fSurf').value+' m\u00b2 habitables':''), (g('fTerr').value&&g('fTerr').value!=='0'?g('fTerr').value+' m\u00b2 de terrain':''), (g('fPieces').value?g('fPieces').value+' pi\u00e8ces':''), (g('fChambres').value?g('fChambres').value+' chambres':'')].filter(Boolean).join('  \u00b7  ');
