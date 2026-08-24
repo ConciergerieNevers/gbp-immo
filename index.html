@@ -2232,24 +2232,15 @@
     if(!estCoord) return;
     var box=document.getElementById('poiChips');
     box.innerHTML='<span class="poi muted">Analyse du quartier\u2026</span>';
-    var la=estCoord.lat, lo=estCoord.lon;
-    var qy='[out:json][timeout:12];(node(around:1300,'+la+','+lo+')[amenity~"school|kindergarten|pharmacy|doctors|hospital|post_office"];node(around:1300,'+la+','+lo+')[shop~"supermarket|bakery|convenience"];node(around:3000,'+la+','+lo+')[railway=station];node(around:900,'+la+','+lo+')[highway=bus_stop];);out body 80;';
     try{
-      var r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(qy),headers:{'Content-Type':'application/x-www-form-urlencoded'}});
-      var j=await r.json();
-      var CAT=[['school','\u00c9cole'],['kindergarten','Cr\u00e8che/maternelle'],['supermarket','Supermarch\u00e9'],['bakery','Boulangerie'],['convenience','Sup\u00e9rette'],['pharmacy','Pharmacie'],['doctors','M\u00e9decin'],['hospital','H\u00f4pital'],['post_office','Poste'],['station','Gare'],['bus_stop','Arr\u00eat de bus']];
-      function hv(a1,o1,a2,o2){var d=Math.PI/180,R=6371000;var x=Math.sin((a2-a1)*d/2),y=Math.sin((o2-o1)*d/2);return 2*R*Math.asin(Math.sqrt(x*x+Math.cos(a1*d)*Math.cos(a2*d)*y*y));}
-      var best={};
-      (j.elements||[]).forEach(function(el){
-        var t=el.tags||{}; var key=t.amenity||t.shop||(t.railway==='station'?'station':(t.highway==='bus_stop'?'bus_stop':null));
-        if(!key) return; var dist=hv(la,lo,el.lat,el.lon);
-        if(!best[key]||dist<best[key]) best[key]=dist;
+      var r=await fetch('/api/poi?lat='+estCoord.lat+'&lon='+estCoord.lon);
+      var j=await r.json(); if(!r.ok) throw new Error(j.error||('Erreur '+r.status));
+      var chips=(j.poi||[]).map(function(p){
+        var d=(p.m>=1000)?((p.m/1000).toFixed(1).replace('.',',')+' km'):(p.m+' m');
+        return '<span class="poi">'+p.label+' <b>'+d+'</b></span>';
       });
-      var chips=[];
-      CAT.forEach(function(c){ if(best[c[0]]!==undefined){ var m=Math.round(best[c[0]]/10)*10;
-        chips.push('<span class="poi">'+c[1]+' <b>'+(m>=1000?((m/1000).toFixed(1).replace('.',',')+' km'):(m+' m'))+'</b></span>'); } });
       box.innerHTML=chips.length?chips.join(''):'<span class="poi muted">Aucune commodit\u00e9 trouv\u00e9e \u00e0 proximit\u00e9.</span>';
-      window.__poi=box.innerHTML;
+      window.__poi=chips.length?box.innerHTML:null;
     }catch(e){ box.innerHTML='<span class="poi muted">Analyse du quartier indisponible.</span>'; }
   }
   function updateMap(){
