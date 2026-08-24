@@ -818,7 +818,7 @@
   .av-body{padding:9mm 16mm 0;flex:1;overflow:hidden;min-width:0}
   /* ---- en-tête ---- */
   .av-hd{display:flex;align-items:flex-end;gap:6mm;margin-bottom:6mm;border-bottom:.3mm solid #111;padding-bottom:4.5mm}
-  .av-logo{width:42mm;height:9.5mm;object-fit:contain;object-position:left center;flex:none;display:block}
+  .av-logo{width:15mm;height:15mm;object-fit:contain;flex:none;display:block;border-radius:3mm}
   .av-ttl{flex:1;min-width:0}
   .av-ttl h1{font-family:var(--sansP);font-size:23px;font-weight:400;letter-spacing:.42em;margin:0;color:#111;white-space:nowrap;text-transform:uppercase}
   .av-script{font-family:var(--sansP);font-size:7.6px;color:var(--gris);margin-top:1.6mm;letter-spacing:.34em;text-transform:uppercase;font-weight:500}
@@ -895,7 +895,7 @@
   /* ---- annexes ---- */
   .pageF .p2hd,.avend .p2hd{display:flex;align-items:flex-end;gap:5mm;border-bottom:.3mm solid #111;padding-bottom:3mm;margin-bottom:5mm;position:relative}
   .pageF .p2hd:after,.avend .p2hd:after{display:none}
-  .pageF .p2hd img,.avend .p2hd img{width:30mm;height:6.5mm;object-fit:contain;object-position:left center}
+  .pageF .p2hd img,.avend .p2hd img{width:10.5mm;height:10.5mm;object-fit:contain;border-radius:2mm}
   .pageF .p2hd b,.avend .p2hd b{font-family:var(--sansP);font-size:12px;font-weight:500;letter-spacing:.3em;color:#111;display:block;text-transform:uppercase}
   .pageF .p2hd span,.avend .p2hd span{display:block;font-size:6.8px;color:var(--gris);letter-spacing:.22em;text-transform:uppercase;margin-top:1.2mm}
   #dossier h2{font-family:var(--sansP);font-size:8.6px;text-transform:uppercase;letter-spacing:.3em;color:#111;
@@ -3731,7 +3731,7 @@
     var villeAff=vNom+(vCp?' ('+vCp+')':'');
     var villeMaj=vNom.toUpperCase()||'NEVERS';
     function pf(titre, corps){ return '<div class="dsheet pageF"><div class="av-topbar"></div><div class="pf-body">'+
-      '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>'+titre+'</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+corps+'</div></div>'; }
+      '<div class="p2hd"><img src="/logo-gb-app.png" alt=""><div><b>'+titre+'</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+corps+'</div></div>'; }
     function pairHtml(list){ return list.map(function(p){ return '<div class="dpair"><figure><figcaption>Avant</figcaption><div class="dimg" style="background-image:url('+p.before+')"></div></figure><figure><figcaption>Apr\u00e8s (home staging)</figcaption><div class="dimg" style="background-image:url('+p.after+')"></div></figure></div>'; }).join(''); }
     var stagingExtra=''; for(var sx=2; sx<pairs.length; sx+=3){ stagingExtra+=pf('Home staging \u2014 avant / apr\u00e8s', '<div class="dstaging">'+pairHtml(pairs.slice(sx,sx+3))+'</div>'); }
     var ic=function(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>'; };
@@ -3841,7 +3841,7 @@
         blk(22,'<div class="pmtiles">'+
           '<div class="pmtile"><small>Loyers mensuels</small><b>'+loyM.toLocaleString('fr-FR')+' \u20ac</b></div>'+
           '<div class="pmtile"><small>Loyers annuels</small><b>'+loyA.toLocaleString('fr-FR')+' \u20ac</b></div>'+
-          '<div class="pmtile"><small>Rendement brut</small><b>'+(rdt?rdt.toFixed(1).replace('.',',')+' %':'\u2014')+'</b></div>'+
+          '<div class="pmtile"><small>Rendement brut</small><b style="color:#2F6E4F">'+(rdt?rdt.toFixed(1).replace('.',',')+' %':'\u2014')+'</b></div>'+
           '<div class="pmtile"><small>Prix pour 9 %</small><b>'+Math.round(loyA/0.09/1000)+' k\u20ac</b></div></div>');
         blk(12,'<p class="dnote">Au prix de pr\u00e9sentation conseill\u00e9, le bien offre un rendement locatif brut de <b>'+rdt.toFixed(1).replace('.',',')+' %</b>. Plus le rendement est \u00e9lev\u00e9, plus le prix est attractif pour un investisseur.</p>');
       }
@@ -3878,7 +3878,7 @@
       var annexHtml=sheetsArr.map(function(parts,i){
         var last=(i===sheetsArr.length-1);
         return '<div class="dsheet pageF"><div class="av-topbar"></div><div class="pf-body">'+
-          '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>'+(i===0?'Analyse &amp; annexes':'Annexes \u2014 suite')+'</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+
+          '<div class="p2hd"><img src="/logo-gb-app.png" alt=""><div><b>'+(i===0?'Analyse &amp; annexes':'Annexes \u2014 suite')+'</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+
           parts.join('')+'</div>'+
           (last?FOOTER_HTML:'<div class="pgnum">GB Immobilier \u2014 Avis de valeur \u00b7 page '+(i+2)+'</div>')+
         '</div>';
@@ -3898,7 +3898,7 @@
         '<div class="av-topbar"></div>'+
         '<div class="av-body">'+
           '<header class="av-hd">'+
-            '<img class="av-logo" src="/logo-gb.png" alt="GB Immobilier">'+
+            '<img class="av-logo" src="/logo-gb-app.png" alt="GB Immobilier">'+
             '<div class="av-ttl"><h1>AVIS DE VALEUR</h1><div class="av-script">Estimation immobili\u00e8re</div></div>'+
             '<div class="av-agence"><b>GB Immobilier \u2014 Nevers</b><span>26 Avenue Pierre B\u00e9r\u00e9govoy \u00b7 58000 Nevers</span><span>03 86 61 14 15 \u00b7 nevers@gbinimmobilier.net</span></div>'+
           '</header>'+
