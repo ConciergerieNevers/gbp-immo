@@ -145,6 +145,7 @@
     background:linear-gradient(135deg,#C79A4E,#9c6f22);color:#1b1608;font-weight:700;font-size:13px;
     display:grid;place-items:center;font-variant-numeric:tabular-nums}
   .avatarbtn:hover{filter:brightness(1.06)}
+  .avatarbtn.hasphoto,#menuAvBig.hasphoto{background-size:cover!important;background-position:center!important;color:transparent!important}
   .menu{position:absolute;top:47px;right:0;width:250px;background:var(--surface);border:1px solid var(--line);
     border-radius:14px;box-shadow:var(--shadow-lg);padding:7px;z-index:60}
   .menu[hidden]{display:none}
@@ -1026,6 +1027,8 @@
           <div class="menu-hd"><div class="av" id="menuAvBig">JG</div><div style="min-width:0"><b id="menuName">Jimmy Garcia</b><small id="menuEmail">—</small></div></div>
           <a class="menu-item" href="https://v2.immo-facile.com/catalog/admin-v2/home.php" target="_blank" rel="noopener" role="menuitem" style="text-decoration:none;color:inherit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> Ouvrir Immo-Facile</a>
           <button class="menu-item" id="trashBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg> Corbeille</button>
+          <button class="menu-item" id="avatarBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg> Photo de profil</button>
+          <input type="file" accept="image/*" id="avatarInput" hidden>
           <button class="menu-item" id="pwdBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Changer le mot de passe</button>
           <button class="menu-item danger" id="logoutMenu" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg> Se déconnecter</button>
         </div>
@@ -4158,15 +4161,49 @@
   }
   /* =================== AUTHENTIFICATION (Supabase Auth) =================== */
   var authgate=document.getElementById('authgate');
+  function applyAvatar(du){
+    if(!du) return;
+    var b=document.getElementById('menuBtn'), big=document.getElementById('menuAvBig');
+    [b,big].forEach(function(el){ if(el){ el.style.backgroundImage='url('+du+')'; el.classList.add('hasphoto'); } });
+    try{ localStorage.setItem('estimake_avatar',du); }catch(e){}
+  }
   function showApp(session){
     authgate.classList.remove('show');
     if(session && session.user){
       var email=session.user.email||'';
       document.getElementById('rurole').textContent=email;   // e-mail sous le nom (rail)
       document.getElementById('menuEmail').textContent=email; // e-mail dans le menu profil
+      var av=(session.user.user_metadata&&session.user.user_metadata.avatar)||null;
+      if(av) applyAvatar(av);
     }
     syncBiens();  // recharge les données une fois connecté
   }
+  try{ var _av=localStorage.getItem('estimake_avatar'); if(_av) applyAvatar(_av); }catch(e){}
+  (function(){
+    var btn=document.getElementById('avatarBtn'), inp=document.getElementById('avatarInput');
+    if(!btn) return;
+    btn.addEventListener('click',function(){ closeMenu(); inp.click(); });
+    inp.addEventListener('change',function(){
+      var f=this.files&&this.files[0]; if(!f) return;
+      var rd=new FileReader();
+      rd.onload=function(ev){
+        var im=new Image();
+        im.onload=function(){
+          var side=Math.min(im.width,im.height), c=document.createElement('canvas');
+          c.width=280; c.height=280;
+          c.getContext('2d').drawImage(im,(im.width-side)/2,(im.height-side)/2,side,side,0,0,280,280);
+          var du=c.toDataURL('image/jpeg',0.85);
+          applyAvatar(du);
+          if(sb){ sb.auth.updateUser({data:{avatar:du}}).then(function(r){
+            toast(r.error?'Photo enregistr\u00e9e sur cet appareil.':'Photo de profil enregistr\u00e9e \u2713');
+          }); } else { toast('Photo enregistr\u00e9e \u2713'); }
+        };
+        im.src=ev.target.result;
+      };
+      rd.readAsDataURL(f);
+      this.value='';
+    });
+  })();
   async function initAuth(){
     if(!sb){ authgate.classList.remove('show'); syncBiens(); return; }
     try{
