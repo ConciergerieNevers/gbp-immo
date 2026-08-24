@@ -3153,12 +3153,7 @@
     out+='</div>';
     box.innerHTML=out;
   }
-  lotForm.addEventListener('input',lotPreviewCalc);
-  lotForm.elements.l_etat.addEventListener('change',function(){
-    // choisir l'état prérègle le curseur (affinable ensuite)
-    lotForm.elements.l_etatpct.value=LOT_ETAT_DEF[this.value]||0;
-    lotPreviewCalc();
-  });
+
   async function updateLotVals(){
     var box=document.getElementById('lotVals'); if(!box) return;
     if(document.getElementById('fType').value!=='Immeuble' || !estLots.length){ box.innerHTML=''; return; }
@@ -3216,6 +3211,11 @@
       }).join('')+'</div>';
   }
   var lotModal=document.getElementById('lotModal'), lotForm=document.getElementById('lotForm'), editingLotIdx=null;
+  lotForm.addEventListener('input',lotPreviewCalc);
+  lotForm.elements.l_etat.addEventListener('change',function(){
+    lotForm.elements.l_etatpct.value=LOT_ETAT_DEF[this.value]||0;
+    lotPreviewCalc();
+  });
   var lotPhotosTmp=[];
   function renderLotGallery(){
     var g=document.getElementById('lotGallery'); if(!g) return;
