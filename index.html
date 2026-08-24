@@ -677,7 +677,9 @@
   #dossier{color:#1A1710;font-family:var(--sans);-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;
     --or:#C99B3F; --or-2:#B08A2E; --or-pale:#E8D9B4; --noir:#131108; --gris:#6E675A; --filet:#E6DFCE;}
   .dsheet{max-width:210mm;margin:0 auto;position:relative;padding:0 0 6mm}
-  .dsheet.av{height:295mm;padding:0;display:flex;flex-direction:column;overflow:hidden;page-break-after:always}
+  .dsheet.av{height:292mm;padding:0;display:flex;flex-direction:column;overflow:hidden;page-break-after:always}
+  .dsheet.avend{height:292mm;padding:0;display:flex;flex-direction:column;overflow:hidden;page-break-before:always}
+  .avend .av-endbody{padding:9mm 14mm 0;flex:1;min-height:0}
   .dsheet.pageN{padding:9mm 14mm 5mm;page-break-before:always}
   .av-topbar{height:5mm;background:linear-gradient(90deg,#D9AC55,#C08A2E);flex:none}
   .av-body{padding:6mm 12mm 0;flex:1;overflow:hidden;min-width:0}
@@ -2160,12 +2162,6 @@
             '</div>'+
           '</div>'+
         '</div>'+
-        '<footer class="av-ft">'+
-          '<span class="ic">'+icMail+'</span>'+
-          '<p>Vous remerciant de la confiance que vous voulez bien nous t\u00e9moigner et restant \u00e0 votre disposition pour participer \u00e0 la n\u00e9gociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments d\u00e9vou\u00e9s.</p>'+
-          '<div class="who"><b style="display:block">Jimmy Garcia</b><span style="display:block">Conseiller Immobilier</span><small style="display:block">06.78.86.56.12</small><small style="display:block">garciaj@gbimmobilier.net</small></div>'+
-          '<div class="av-sign">Jimmy Garcia</div>'+
-        '</footer>'+
         '<div class="av-bottom">Cet avis de valeur est \u00e9tabli \u00e0 titre indicatif&nbsp;&nbsp;\u2014&nbsp;&nbsp;Il ne peut en aucun cas se substituer \u00e0 une expertise</div>'+
       '</div>'+
       /* ============ PAGE 2 — ANALYSE & ANNEXES ============ */
@@ -2177,7 +2173,21 @@
         '<p class="dnote">Prix de mise en vente conseillé : <b>'+reco+'</b> · '+pm2+'</p>'+
         '<h2>Environnement &amp; risques · Géorisques</h2><div class="drisks">'+risks+'</div>'+
         stagingHtml+
-        '<h2>Argumentaire</h2><p class="darg">'+arg+'</p>'+
+      '</div>'+
+      /* ============ PAGE FINALE — CONCLUSION & SIGNATURE (en bas) ============ */
+      '<div class="dsheet avend">'+
+        '<div class="av-topbar"></div>'+
+        '<div class="av-endbody">'+
+          '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>Conclusion</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+
+          '<h2>Argumentaire</h2><p class="darg">'+arg+'</p>'+
+        '</div>'+
+        '<footer class="av-ft">'+
+          '<span class="ic">'+icMail+'</span>'+
+          '<p>Vous remerciant de la confiance que vous voulez bien nous t\u00e9moigner et restant \u00e0 votre disposition pour participer \u00e0 la n\u00e9gociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments d\u00e9vou\u00e9s.</p>'+
+          '<div class="who"><b style="display:block">Jimmy Garcia</b><span style="display:block">Conseiller Immobilier</span><small style="display:block">06.78.86.56.12</small><small style="display:block">garciaj@gbimmobilier.net</small></div>'+
+          '<div class="av-sign">Jimmy Garcia</div>'+
+        '</footer>'+
+        '<div class="av-bottom">Cet avis de valeur est \u00e9tabli \u00e0 titre indicatif&nbsp;&nbsp;\u2014&nbsp;&nbsp;Il ne peut en aucun cas se substituer \u00e0 une expertise</div>'+
       '</div>';
   }
   document.getElementById('genBtn').addEventListener('click',function(){
