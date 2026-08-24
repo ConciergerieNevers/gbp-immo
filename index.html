@@ -454,6 +454,8 @@
   .comptable tr.selrow .ck{color:var(--accent);font-size:14px}
   .comptable tr.selrow.out{opacity:.42}
   .comptable tr.selrow.out td{text-decoration:line-through}
+  .field[hidden]{display:none}
+  .field input[readonly]{background:var(--surface-2);color:var(--ink-2)}
   /* Lots immeuble */
   #lotsCard[hidden]{display:none}
   .lotrow{display:flex;align-items:center;gap:11px;background:var(--surface-2);border-radius:10px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
@@ -3121,7 +3123,24 @@
     if(editingLotIdx===null) return;
     estLots.splice(editingLotIdx,1); lotModal.hidden=true; renderLots(); toast('Lot retir\u00e9');
   });
-  document.getElementById('fType').addEventListener('change',function(){ renderLots(); compute(); });
+  function adaptFields(){
+    var t=document.getElementById('fType').value;
+    var show={ surf:true, terr:true, pieces:true, ch:true, sdb:true, annee:true, loyer:true };
+    var surfLabel='Surface habitable (m\u00b2)', surfRO=false;
+    if(t==='Immeuble'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:true,loyer:false};
+      surfLabel='Surface cumul\u00e9e (auto \u00b7 somme des lots)'; surfRO=true; }
+    else if(t==='Terrain'){ show={surf:false,terr:true,pieces:false,ch:false,sdb:false,annee:false,loyer:false}; }
+    else if(t==='Local commercial'||t==='Bureaux'||t==='Fonds de commerce'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:true,loyer:true}; }
+    else if(t==='Garage / Parking'||t==='Cave'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:false,loyer:true}; }
+    else if(t==='Appartement'){ show.terr=false; }
+    var map={surf:'fSurf',terr:'fTerr',pieces:'fPieces',ch:'fChambres',sdb:'fSdb',annee:'fAnnee',loyer:'fLoyer'};
+    for(var k in map){ var el=document.getElementById(map[k]); if(!el) continue;
+      var fd=el.closest('.field'); if(fd) fd.hidden=!show[k]; }
+    var sEl=document.getElementById('fSurf');
+    if(sEl){ sEl.readOnly=surfRO; var lb=sEl.closest('.field').querySelector('label'); if(lb) lb.textContent=surfLabel; }
+  }
+  document.getElementById('fType').addEventListener('change',function(){ adaptFields(); renderLots(); compute(); });
+  adaptFields();
   document.getElementById('fLoyer').addEventListener('input',compute);
   /* ---------- Marché & quartier (stats DVF 5 ans + POI + carte) ---------- */
   var miniMap=null, miniMarker=null;
@@ -3500,14 +3519,28 @@
     var icHome=ic('<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>');
     var icCheck=ic('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16 9.5"/>');
     var icMail=ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>');
-    var specs='<div class="av-specs">'+
-      '<span><b>'+(g('fType').value||'—')+'</b></span>'+
-      '<span>Surface : <b>'+(g('fSurf').value||'—')+' m²</b></span>'+
-      '<span>Terrain : <b>'+(g('fTerr').value||'—')+' m²</b></span>'+
-      '<span>Pièces : <b>'+(g('fPieces').value||'—')+'</b></span>'+
-      '<span>Chambres : <b>'+(g('fChambres').value||'—')+'</b></span>'+
-      '<span>Salles de bain : <b>'+((g('fSdb')&&g('fSdb').value)||'—')+'</b></span>'+
-      '<span>Année : <b>'+(g('fAnnee').value||'—')+'</b></span></div>';
+    var tpb=g('fType').value, specArr=[['','<b>'+(tpb||'—')+'</b>']];
+    function spx(lbl,val){ if(val) specArr.push([lbl,val]); }
+    if(tpb==='Immeuble'){
+      spx('Lots','<b>'+estLots.length+'</b>');
+      spx('Surface cumulée','<b>'+(g('fSurf').value||'—')+' m²</b>');
+      spx('Année','<b>'+(g('fAnnee').value||'—')+'</b>');
+      var occ=estLots.filter(function(l){return l.occ==='Loué';}).length;
+      if(estLots.length) spx('Occupation','<b>'+occ+'/'+estLots.length+' loué'+(occ>1?'s':'')+'</b>');
+    } else if(tpb==='Terrain'){
+      spx('Terrain','<b>'+(g('fTerr').value||'—')+' m²</b>');
+    } else if(['Local commercial','Bureaux','Fonds de commerce','Garage / Parking','Cave'].indexOf(tpb)>-1){
+      spx('Surface','<b>'+(g('fSurf').value||'—')+' m²</b>');
+      if(['Garage / Parking','Cave'].indexOf(tpb)<0) spx('Année','<b>'+(g('fAnnee').value||'—')+'</b>');
+    } else {
+      spx('Surface','<b>'+(g('fSurf').value||'—')+' m²</b>');
+      if(tpb!=='Appartement') spx('Terrain','<b>'+(g('fTerr').value||'—')+' m²</b>');
+      spx('Pièces','<b>'+(g('fPieces').value||'—')+'</b>');
+      spx('Chambres','<b>'+(g('fChambres').value||'—')+'</b>');
+      spx('Salles de bain','<b>'+((g('fSdb')&&g('fSdb').value)||'—')+'</b>');
+      spx('Année','<b>'+(g('fAnnee').value||'—')+'</b>');
+    }
+    var specs='<div class="av-specs">'+specArr.map(function(x){ return '<span>'+(x[0]?x[0]+' : ':'')+x[1]+'</span>'; }).join('')+'</div>';
     var arg='Au regard des ventes réellement enregistrées autour du bien (données DVF de la DGFiP) et de leur médiane au m², corrigée de l\'état intérieur, du DPE, de la qualité de l\'emplacement et des équipements, la valeur de marché de ce bien s\'établit dans une fourchette de '+low+' à '+high+'. Compte tenu du positionnement retenu et d\'un marché local stable, nous recommandons un prix de mise en vente de '+reco+', cohérent avec les biens comparables du secteur tout en préservant une marge de négociation raisonnable.';
       /* ============ ANNEXES — flux continu, sans blancs ============ */
       var FOOTER_HTML='<footer class="av-ft">'+
