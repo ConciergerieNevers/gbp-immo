@@ -450,8 +450,9 @@
   .mtile small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:660;margin-bottom:4px}
   .mtile b{font-size:17px;font-variant-numeric:tabular-nums}
   .mtile b.pos{color:var(--good)} .mtile b.neg{color:var(--crit)}
-  .mchart{margin-bottom:13px}
-  .mchart svg{width:100%;height:110px;display:block}
+  .mtrend{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:9px;padding:10px 13px;margin-bottom:13px}
+  .mtrend b{color:var(--ink)}
+  .mtrend[hidden]{display:none}
   .poichips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
   .poi{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:20px;padding:7px 12px;font-size:12.5px;font-weight:560}
   .poi b{color:var(--accent);font-weight:700}
@@ -1154,7 +1155,7 @@
                 <div class="mtile"><small>Évolution 5 ans</small><b id="mEvo5">—</b></div>
                 <div class="mtile"><small>Ventes / an</small><b id="mVol">—</b></div>
               </div>
-              <div class="mchart" id="mChart"></div>
+              <div class="mtrend" id="mTrend" hidden></div>
               <div class="restyle-sub">À proximité</div>
               <div class="poichips" id="poiChips"><span class="poi muted">Choisis une adresse pour analyser le quartier…</span></div>
               <div id="miniMap" class="minimap"></div>
@@ -2258,32 +2259,50 @@
       var e5=document.getElementById('mEvo5'); e5.textContent=pctTxt(j.evo5); e5.className=(j.evo5>0?'pos':(j.evo5<0?'neg':''));
       var volMoy=Math.round(j.annees.reduce(function(a,x){return a+x.ventes;},0)/j.annees.length);
       document.getElementById('mVol').textContent=volMoy;
-      // graphe barres médiane par année (SVG)
-      var max=Math.max.apply(null,j.annees.map(function(x){return x.median;}));
-      var W=100/j.annees.length;
-      var bars=j.annees.map(function(x,i){
-        var h=Math.max(8, x.median/max*72);
-        return '<rect x="'+(i*W+W*0.18)+'" y="'+(86-h)+'" width="'+(W*0.64)+'" height="'+h+'" rx="1.5" fill="var(--accent)" opacity="'+(i===j.annees.length-1?'1':'0.55')+'"/>'+
-          '<text x="'+(i*W+W/2)+'" y="97" text-anchor="middle" font-size="6.5" fill="var(--ink-3)">'+x.annee+'</text>'+
-          '<text x="'+(i*W+W/2)+'" y="'+(82-h)+'" text-anchor="middle" font-size="6" font-weight="700" fill="var(--ink-2)">'+Math.round(x.median/10)*10+'</text>';
-      }).join('');
-      document.getElementById('mChart').innerHTML='<svg viewBox="0 0 100 100" preserveAspectRatio="none">'+bars+'</svg>';
+      // tendance en une phrase claire
+      var first=j.annees[0], tr=document.getElementById('mTrend');
+      if(tr && j.annees.length>=2){
+        tr.hidden=false;
+        tr.innerHTML='Le prix m\u00e9dian de la commune est pass\u00e9 de <b>'+Math.round(first.median).toLocaleString('fr-FR')+' \u20ac/m\u00b2</b> en '+first.annee+' \u00e0 <b>'+Math.round(last.median).toLocaleString('fr-FR')+' \u20ac/m\u00b2</b> en '+last.annee+' \u00b7 march\u00e9 '+(j.evo1>2?'dynamique':(j.evo1<-2?'en repli':'stable'))+'.';
+        window.__trend=tr.textContent;
+      }
     }catch(e){ console.warn('[ESTIMAKE] market', e); }
   }
   async function loadPOI(){
     if(!estCoord) return;
     var box=document.getElementById('poiChips');
     box.innerHTML='<span class="poi muted">Analyse du quartier\u2026</span>';
-    try{
-      var r=await fetch('/api/poi?lat='+estCoord.lat+'&lon='+estCoord.lon);
-      var j=await r.json(); if(!r.ok) throw new Error(j.error||('Erreur '+r.status));
-      var chips=(j.poi||[]).map(function(p){
+    var la=estCoord.lat, lo=estCoord.lon;
+    function chips(list){
+      var cs=(list||[]).map(function(p){
         var d=(p.m>=1000)?((p.m/1000).toFixed(1).replace('.',',')+' km'):(p.m+' m');
-        return '<span class="poi">'+p.label+' <b>'+d+'</b></span>';
-      });
-      box.innerHTML=chips.length?chips.join(''):'<span class="poi muted">Aucune commodit\u00e9 trouv\u00e9e \u00e0 proximit\u00e9.</span>';
-      window.__poi=chips.length?box.innerHTML:null;
-    }catch(e){ box.innerHTML='<span class="poi muted">Analyse du quartier indisponible.</span>'; }
+        return '<span class="poi">'+p.label+' <b>'+d+'</b></span>'; });
+      box.innerHTML=cs.length?cs.join(''):'<span class="poi muted">Aucune commodit\u00e9 trouv\u00e9e \u00e0 proximit\u00e9.</span>';
+      window.__poi=cs.length?box.innerHTML:null;
+    }
+    // 1) appel DIRECT depuis l'appareil (non bloqué par Overpass, CORS ouvert)
+    try{
+      var qy='[out:json][timeout:12];(node(around:1300,'+la+','+lo+')[amenity~"school|kindergarten|pharmacy|doctors|hospital|post_office"];node(around:1300,'+la+','+lo+')[shop~"supermarket|bakery|convenience"];node(around:3000,'+la+','+lo+')[railway=station];node(around:900,'+la+','+lo+')[highway=bus_stop];);out body 100;';
+      var r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(qy)});
+      if(r.ok){
+        var j=await r.json();
+        var CAT=[['school','\u00c9cole'],['kindergarten','Cr\u00e8che / maternelle'],['supermarket','Supermarch\u00e9'],['bakery','Boulangerie'],['convenience','Sup\u00e9rette'],['pharmacy','Pharmacie'],['doctors','M\u00e9decin'],['hospital','H\u00f4pital'],['post_office','Poste'],['station','Gare'],['bus_stop','Arr\u00eat de bus']];
+        function hv(a1,o1,a2,o2){var d=Math.PI/180,R=6371000;var x=Math.sin((a2-a1)*d/2),y=Math.sin((o2-o1)*d/2);return 2*R*Math.asin(Math.sqrt(x*x+Math.cos(a1*d)*Math.cos(a2*d)*y*y));}
+        var best={};
+        (j.elements||[]).forEach(function(el){ var t=el.tags||{};
+          var key=t.amenity||t.shop||(t.railway==='station'?'station':(t.highway==='bus_stop'?'bus_stop':null));
+          if(!key||el.lat===undefined) return; var dist=hv(la,lo,el.lat,el.lon);
+          if(best[key]===undefined||dist<best[key]) best[key]=dist; });
+        var out=[]; CAT.forEach(function(c){ if(best[c[0]]!==undefined) out.push({label:c[1], m:Math.round(best[c[0]]/10)*10}); });
+        chips(out); return;
+      }
+    }catch(e){ /* on tente le serveur */ }
+    // 2) secours : proxy serveur
+    try{
+      var r2=await fetch('/api/poi?lat='+la+'&lon='+lo);
+      var j2=await r2.json(); if(!r2.ok) throw new Error(j2.error||r2.status);
+      chips(j2.poi);
+    }catch(e){ box.innerHTML='<span class="poi muted">Analyse du quartier indisponible pour le moment \u2014 \u2buo Actualiser pour r\u00e9essayer.</span>'.replace('\u2buo','\u21bb'); }
   }
   function updateMap(){
     if(!estCoord || !window.L) return;
@@ -2583,7 +2602,7 @@
           '<div class="pmtile"><small>\u00c9volution 5 ans</small><b>'+((window.__market.evo5>0?'+':'')+(window.__market.evo5!==null?String(window.__market.evo5).replace('.',','):'\u2014'))+' %</b></div>'+
           '<div class="pmtile"><small>Ventes / an</small><b>'+Math.round(window.__market.annees.reduce(function(a,x){return a+x.ventes;},0)/window.__market.annees.length)+'</b></div>'+
         '</div>'+
-        '<div class="pmchart">'+document.getElementById('mChart').innerHTML+'</div>'+
+        (window.__trend?('<p class="dnote">'+window.__trend+'</p>'):'')+
         (window.__poi?('<h2>Commodit\u00e9s \u00e0 proximit\u00e9</h2><div class="poichips pmpoi">'+window.__poi+'</div>'):'')+
         '<div id="dMapSlot"></div>') : '')+
       pf('Environnement &amp; annexes',
