@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('estimake_theme')||'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}</script>
-<meta name="theme-color" content="#1B342D">
+<meta name="theme-color" content="#12100C">
 <meta name="description" content="ESTIMAKE — pilotage d'activité et estimation immobilière terrain (Nevers).">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%8F%A1%3C/text%3E%3C/svg%3E">
@@ -17,55 +17,55 @@
 <style>
   /* ============ TOKENS ============ */
   :root{
-    --ground:#F1F2EF; --surface:#FBFBF9; --surface-2:#E9EBE4; --surface-3:#E1E4DC;
-    --ink:#17201C; --ink-2:#55605A; --ink-3:#8A938C;
-    --brand:#23433B; --brand-2:#2E594E; --brand-soft:#DCE6E1;
-    --accent:#A9741F; --accent-soft:#F1E4CC;
-    --line:#DBDED6; --line-2:#CBCFC5;
-    --good:#2F7D5B; --good-bg:#E0EFE7;
-    --warn:#B07C1E; --warn-bg:#F3E7CE;
+    --ground:#F4F2ED; --surface:#FCFBF8; --surface-2:#EDEAE2; --surface-3:#E4E0D6;
+    --ink:#171512; --ink-2:#5C574D; --ink-3:#928C7F;
+    --brand:#171512; --brand-2:#2B2822; --brand-soft:#EAE6DA;
+    --accent:#B08A2E; --accent-soft:#F3E9CF;
+    --line:#E0DCD2; --line-2:#CFC9BB;
+    --good:#2F7D5B; --good-bg:#E4EFE7;
+    --warn:#B08A2E; --warn-bg:#F3E9CF;
     --crit:#B4462F; --crit-bg:#F3DED8;
     --info:#3C6E8F; --info-bg:#DDE8EF;
-    --rail:#1B342D; --rail-ink:#C9D6CF; --rail-ink-2:#7C978C; --rail-active:#2E574B;
-    --shadow:0 1px 2px rgba(20,32,26,.05), 0 8px 24px -12px rgba(20,32,26,.18);
-    --shadow-lg:0 24px 60px -20px rgba(20,32,26,.35);
+    --rail:#12100C; --rail-ink:#D9D0BC; --rail-ink-2:#8C8471; --rail-active:#2C2514;
+    --shadow:0 1px 2px rgba(23,21,18,.05), 0 8px 24px -12px rgba(23,21,18,.18);
+    --shadow-lg:0 24px 60px -20px rgba(23,21,18,.35);
     --sans:-apple-system,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif;
     --serif:"New York","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
     --r:14px; --r-sm:10px; --r-lg:20px;
   }
   @media (prefers-color-scheme:dark){
     :root{
-      --ground:#0F1512; --surface:#171E1A; --surface-2:#1E271F; --surface-3:#26312A;
-      --ink:#ECEFE9; --ink-2:#A4AEA6; --ink-3:#6C766E;
-      --brand:#6BA08E; --brand-2:#7FB4A1; --brand-soft:#1E2F29;
-      --accent:#D6A652; --accent-soft:#2E2716;
-      --line:#2A332C; --line-2:#374139;
-      --good:#54B183; --good-bg:#16271F; --warn:#D6A652; --warn-bg:#2A2413;
+      --ground:#0E0D0A; --surface:#16140F; --surface-2:#1E1B14; --surface-3:#282418;
+      --ink:#EFECE3; --ink-2:#ABA492; --ink-3:#6F695C;
+      --brand:#D4AF37; --brand-2:#E2C25A; --brand-soft:#2A2410;
+      --accent:#D4AF37; --accent-soft:#2E2710;
+      --line:#2C2820; --line-2:#3B362A;
+      --good:#54B183; --good-bg:#16271F; --warn:#D4AF37; --warn-bg:#2A2410;
       --crit:#D97759; --crit-bg:#2C1913; --info:#6FA6C6; --info-bg:#132430;
-      --rail:#0C120F; --rail-ink:#B7C6BD; --rail-ink-2:#6A8478; --rail-active:#1B302A;
+      --rail:#0A0906; --rail-ink:#CBC1A6; --rail-ink-2:#736C58; --rail-active:#292213;
       --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6);
       --shadow-lg:0 30px 70px -24px rgba(0,0,0,.7);
     }
   }
   :root[data-theme="light"]{
-    --ground:#F1F2EF; --surface:#FBFBF9; --surface-2:#E9EBE4; --surface-3:#E1E4DC;
-    --ink:#17201C; --ink-2:#55605A; --ink-3:#8A938C;
-    --brand:#23433B; --brand-2:#2E594E; --brand-soft:#DCE6E1;
-    --accent:#A9741F; --accent-soft:#F1E4CC;
-    --line:#DBDED6; --line-2:#CBCFC5;
-    --good:#2F7D5B; --good-bg:#E0EFE7; --warn:#B07C1E; --warn-bg:#F3E7CE;
+    --ground:#F4F2ED; --surface:#FCFBF8; --surface-2:#EDEAE2; --surface-3:#E4E0D6;
+    --ink:#171512; --ink-2:#5C574D; --ink-3:#928C7F;
+    --brand:#171512; --brand-2:#2B2822; --brand-soft:#EAE6DA;
+    --accent:#B08A2E; --accent-soft:#F3E9CF;
+    --line:#E0DCD2; --line-2:#CFC9BB;
+    --good:#2F7D5B; --good-bg:#E4EFE7; --warn:#B08A2E; --warn-bg:#F3E9CF;
     --crit:#B4462F; --crit-bg:#F3DED8; --info:#3C6E8F; --info-bg:#DDE8EF;
-    --rail:#1B342D; --rail-ink:#C9D6CF; --rail-ink-2:#7C978C; --rail-active:#2E574B;
+    --rail:#12100C; --rail-ink:#D9D0BC; --rail-ink-2:#8C8471; --rail-active:#2C2514;
   }
   :root[data-theme="dark"]{
-    --ground:#0F1512; --surface:#171E1A; --surface-2:#1E271F; --surface-3:#26312A;
-    --ink:#ECEFE9; --ink-2:#A4AEA6; --ink-3:#6C766E;
-    --brand:#6BA08E; --brand-2:#7FB4A1; --brand-soft:#1E2F29;
-    --accent:#D6A652; --accent-soft:#2E2716;
-    --line:#2A332C; --line-2:#374139;
-    --good:#54B183; --good-bg:#16271F; --warn:#D6A652; --warn-bg:#2A2413;
+    --ground:#0E0D0A; --surface:#16140F; --surface-2:#1E1B14; --surface-3:#282418;
+    --ink:#EFECE3; --ink-2:#ABA492; --ink-3:#6F695C;
+    --brand:#D4AF37; --brand-2:#E2C25A; --brand-soft:#2A2410;
+    --accent:#D4AF37; --accent-soft:#2E2710;
+    --line:#2C2820; --line-2:#3B362A;
+    --good:#54B183; --good-bg:#16271F; --warn:#D4AF37; --warn-bg:#2A2410;
     --crit:#D97759; --crit-bg:#2C1913; --info:#6FA6C6; --info-bg:#132430;
-    --rail:#0C120F; --rail-ink:#B7C6BD; --rail-ink-2:#6A8478; --rail-active:#1B302A;
+    --rail:#0A0906; --rail-ink:#CBC1A6; --rail-ink-2:#736C58; --rail-active:#292213;
   }
 
   *{box-sizing:border-box}
@@ -93,9 +93,10 @@
   .brandmark{display:flex; align-items:center; gap:11px; padding:6px 8px 20px}
   .brandmark .logo{
     width:38px;height:38px;border-radius:11px;flex:none;
-    background:linear-gradient(145deg,#3E6E5E,#213f37);
+    background:linear-gradient(145deg,#2B2822,#12100C);
     display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
   }
+  .logo-gb{width:40px;height:40px;border-radius:10px;flex:none;object-fit:contain;display:block}
   .brandmark .wm{line-height:1.05}
   .brandmark .wm b{color:#fff;font-size:16px;font-weight:680;letter-spacing:-.02em;display:block}
   .brandmark .wm span{color:var(--rail-ink-2);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
@@ -435,6 +436,8 @@
   .restyle-notes{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;
     font:inherit;font-size:13px;color:var(--ink);resize:vertical;min-height:40px}
   .restyle-notes:focus{outline:none;border-color:var(--accent)}
+  .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  @media (max-width:640px){ .clifields{grid-template-columns:1fr} }
   .restyle-styles{display:flex;gap:6px;flex-wrap:wrap}
   .rst{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:7px 13px;font-size:13px;
     color:var(--ink-2);font-weight:540;cursor:pointer}
@@ -670,50 +673,95 @@
     .app,.authgate,.mobnav,.topbar,.scrim,.drawer,.iconbtn,.btn{display:none!important}
     #dossier{display:block!important}
   }
-  #dossier{color:#16211d;font-family:var(--sans);-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff}
-  .dsheet{padding:15mm 15mm 12mm;max-width:210mm;margin:0 auto}
-  .dhd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #23433B;padding-bottom:13px;margin-bottom:20px}
-  .dbrand{display:flex;align-items:center;gap:11px}
-  .dbrand .dlogo{width:40px;height:40px;border-radius:10px;background:#23433B;display:grid;place-items:center}
-  .dbrand b{font-size:17px;letter-spacing:-.02em;display:block;color:#16211d}
-  .dbrand span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7a857e}
-  .dhd .dmeta{text-align:right;font-size:12px;color:#23433B;font-weight:640;text-transform:uppercase;letter-spacing:.08em}
-  .dhd .dmeta small{display:block;color:#8a938c;font-weight:500;text-transform:none;letter-spacing:0;margin-top:3px;font-size:12px}
-  .dtitle{font-size:24px;letter-spacing:-.02em;margin:0 0 2px;color:#16211d}
-  .dsub{color:#56605a;font-size:13.5px;margin-bottom:14px}
-  .dcover{width:100%;height:62mm;object-fit:cover;border-radius:12px;margin:2px 0 18px;border:1px solid #dbded6;display:block}
+  /* Charte AVIS DE VALEUR — noir & or (modèle GB Immobilier) */
+  #dossier{color:#1A1710;font-family:var(--sans);-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;
+    --or:#C99B3F; --or-2:#B08A2E; --or-pale:#E8D9B4; --noir:#131108; --gris:#6E675A; --filet:#E6DFCE;}
+  .dsheet{max-width:210mm;margin:0 auto;position:relative;padding:0 0 6mm}
+  .dsheet.pageN{padding:10mm 14mm;page-break-before:always}
+  .av-topbar{height:7mm;background:linear-gradient(90deg,#D9AC55,#C08A2E)}
+  .av-body{padding:6mm 14mm 0}
+  .av-hd{display:grid;grid-template-columns:36mm 1fr 52mm;gap:6mm;align-items:start;margin-bottom:4mm}
+  .av-logo{width:34mm;height:34mm;object-fit:contain;display:block;margin-top:2mm}
+  .av-title{text-align:center;padding-top:7mm}
+  .av-title h1{font-size:30px;letter-spacing:.06em;margin:0;color:#131108;font-weight:800}
+  .av-script{font-family:"Snell Roundhand","Savoye LET","Brush Script MT",cursive;font-size:26px;color:var(--or);margin-top:1mm}
+  .av-strike{height:3px;background:#131108;border-radius:3px;width:70%;margin:2.5mm auto 0;transform:rotate(-1.6deg)}
+  .av-photo{height:44mm;background:linear-gradient(135deg,#D9AC55,#C08A2E);clip-path:polygon(18% 0,100% 0,100% 100%,0 100%);
+    display:block;position:relative;overflow:hidden}
+  .av-photo img{position:absolute;inset:2.5mm 0 2.5mm 6mm;width:calc(100% - 6mm);height:calc(100% - 5mm);object-fit:cover;
+    clip-path:polygon(15% 0,100% 0,100% 100%,0 100%)}
+  .av-agency{font-size:10.5px;font-weight:700;color:#1A1710;line-height:1.75;margin:0 0 4mm}
+  .av-inforow{display:grid;grid-template-columns:1.3fr 1fr 1.3fr;gap:5mm;align-items:center;margin-bottom:4mm}
+  .av-legal{font-size:8.5px;color:#3C382E;line-height:1.65;font-weight:600}
+  .av-chip{display:flex;align-items:center;gap:3.5mm;font-size:11px}
+  .av-chip .ic{width:12mm;height:12mm;border-radius:50%;background:linear-gradient(145deg,#D9AC55,#BE8F33);flex:none;display:grid;place-items:center}
+  .av-chip .ic svg{width:6mm;height:6mm;stroke:#fff}
+  .av-chip b{display:block;font-size:12px;color:#131108}
+  .av-chip small{color:#57503F;font-size:10.5px}
+  .av-rule{height:2.5px;background:#131108;margin:0 0 4mm}
+  .av-rule.or{height:1.5px;background:var(--or);margin-top:4mm}
+  .av-loc{display:flex;gap:4mm;align-items:flex-start;margin-bottom:1mm}
+  .av-loc .ic{width:11mm;height:11mm;border-radius:50%;background:linear-gradient(145deg,#D9AC55,#BE8F33);flex:none;display:grid;place-items:center}
+  .av-loc .ic svg{width:5.5mm;height:5.5mm;stroke:#fff}
+  .av-loc b{font-size:14px;color:#131108;display:block;margin-bottom:1mm}
+  .av-loc p{font-size:11px;color:#3C382E;margin:0}
+  .av-cols{display:grid;grid-template-columns:1fr 1.15fr;gap:0;margin-top:4mm}
+  .av-col{padding-right:6mm}
+  .av-col+.av-col{border-left:1.5px solid var(--or-pale);padding-left:6mm;padding-right:0}
+  .av-sec{display:flex;gap:4mm;margin-bottom:6mm;break-inside:avoid}
+  .av-sec .ic{width:12mm;height:12mm;border-radius:50%;background:#131108;flex:none;display:grid;place-items:center}
+  .av-sec .ic svg{width:6mm;height:6mm;stroke:#fff}
+  .av-sec h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--or-2);margin:0 0 1.5mm;font-weight:800}
+  .av-sec p{font-size:10.8px;line-height:1.6;color:#2A261C;margin:0;text-align:justify}
+  .av-specs{display:grid;grid-template-columns:1fr 1fr;gap:2mm;margin-top:1.5mm}
+  .av-specs span{font-size:10.5px;color:#2A261C}
+  .av-specs span b{color:#131108}
+  .av-between{font-size:13.5px;font-weight:800;color:var(--or-2);text-align:center;margin:4mm 0 8mm}
+  .av-pricewrap{position:relative;margin:0 2mm 6mm;break-inside:avoid}
+  .av-priceic{width:15mm;height:15mm;border-radius:50%;background:#131108;border:2.5px solid #fff;display:grid;place-items:center;
+    position:absolute;top:-8mm;left:50%;transform:translateX(-50%);z-index:2}
+  .av-priceic svg{width:7mm;height:7mm;stroke:#fff}
+  .av-pricebox{background:#17150E;border:2.5px solid transparent;border-radius:20px;padding:12mm 6mm 8mm;text-align:center;
+    background-clip:padding-box;box-shadow:0 0 0 2.5px #C99B3F, inset 0 0 24px rgba(201,155,63,.12)}
+  .av-pricebox .p{font-family:var(--serif);font-size:35px;font-weight:700;color:#D9AC55;letter-spacing:.01em}
+  .av-pricebox .et{color:#fff;font-size:13px;margin:1.5mm 0}
+  .av-crit{margin-top:2mm}
+  .av-crit .qo{font-family:Georgia,serif;font-size:34px;color:var(--or);line-height:.6}
+  .av-crit h3{display:inline-block;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--or-2);margin:0 0 2mm 2mm;font-weight:800}
+  .av-crit p{font-size:10.5px;line-height:1.65;color:#2A261C;text-align:justify;margin:0}
+  .av-crit .qc{text-align:right;font-family:Georgia,serif;font-size:34px;color:var(--or);line-height:.6;margin-top:1mm}
+  .av-ft{background:linear-gradient(90deg,#D9AC55,#C08A2E);display:grid;grid-template-columns:auto 1fr auto auto;gap:6mm;
+    align-items:center;padding:5mm 10mm;margin-top:6mm}
+  .av-ft .ic{width:13mm;height:13mm;border-radius:50%;background:#131108;display:grid;place-items:center;flex:none}
+  .av-ft .ic svg{width:6.5mm;height:6.5mm;stroke:#D9AC55}
+  .av-ft p{font-size:9.8px;line-height:1.55;color:#131108;margin:0;max-width:70mm}
+  .av-ft .who b{display:block;font-size:13px;color:#131108}
+  .av-ft .who span{font-size:10.5px;font-weight:700;color:#131108;display:block}
+  .av-ft .who small{display:block;font-size:10px;color:#2A2415;margin-top:.6mm}
+  .av-sign{font-family:"Snell Roundhand","Savoye LET","Brush Script MT",cursive;font-size:24px;color:#131108}
+  .av-bottom{background:#131108;color:#E8D9B4;text-align:center;font-size:9.5px;padding:3mm 6mm}
+  /* Pages suivantes (analyse, risques, home staging) */
+  #dossier h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--or-2);border-bottom:1.5px solid var(--or-pale);padding-bottom:6px;margin:22px 0 11px;break-after:avoid;font-weight:800}
+  .pageN .p2hd{display:flex;align-items:center;gap:4mm;border-bottom:2.5px solid #131108;padding-bottom:3mm;margin-bottom:2mm}
+  .pageN .p2hd img{width:15mm;height:15mm;object-fit:contain}
+  .pageN .p2hd b{font-size:15px;letter-spacing:.04em;color:#131108}
+  .pageN .p2hd span{display:block;font-size:10px;color:#6E675A;letter-spacing:.1em;text-transform:uppercase}
+  .dtable{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+  .dtable th{text-align:right;color:#8E8672;font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:0 6px 7px;font-weight:700}
+  .dtable th:first-child,.dtable td:first-child{text-align:left}
+  .dtable td{text-align:right;padding:7px 6px;border-top:1px solid #EEE8D8}
+  .dtable .tot td{border-top:2px solid #131108;font-weight:700;color:#131108}
+  .dpos b{color:#2f7d5b} .dneg b{color:#b4462f}
+  .dnote{font-size:11.5px;color:#57503F;background:#F6F1E3;border-radius:8px;padding:8px 11px;margin-top:9px}
+  .drisks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .drisk{border:1px solid var(--filet);border-radius:9px;padding:9px 10px}
+  .drisk b{display:block;font-size:11.5px;color:#131108} .drisk small{font-size:10.5px;color:#8E8672}
+  .darg{font-size:12.5px;line-height:1.55;color:#3C382E;margin:4px 0 0}
   .dstaging{display:flex;flex-direction:column;gap:11px}
   .dpair{display:grid;grid-template-columns:1fr 1fr;gap:9px;break-inside:avoid}
   .dpair figure{margin:0}
-  .dpair figcaption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6b7a72;margin-bottom:3px;font-weight:700}
-  .dpair img{width:100%;height:46mm;object-fit:cover;border-radius:8px;border:1px solid #dbded6;display:block}
-  .dspecs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
-  .dspec{border:1px solid #dbded6;border-radius:9px;padding:10px 6px;text-align:center}
-  .dspec b{display:block;font-size:16px;color:#16211d;font-variant-numeric:tabular-nums}
-  .dspec small{color:#8a938c;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
-  .dprice{display:grid;grid-template-columns:1fr 1.15fr;gap:14px;margin-bottom:22px;break-inside:avoid}
-  .dprice>div{border-radius:12px;padding:16px 18px}
-  .dprice-l{background:#eef2ef;border:1px solid #dbded6}
-  .dprice-r{background:#23433B;color:#fff;text-align:center}
-  .dprice span{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;font-weight:640;color:#7a857e}
-  .dprice-r span{color:#a9c3b8}
-  .dprice-l b{display:block;font-family:var(--serif);font-size:21px;margin-top:8px;color:#16211d}
-  .dprice-r .big{display:block;font-family:var(--serif);font-size:33px;margin:5px 0 2px;letter-spacing:-.01em}
-  .dprice-r small{font-size:11.5px;color:#cfe0d8}
-  #dossier h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#23433B;border-bottom:1px solid #dbded6;padding-bottom:6px;margin:22px 0 11px;break-after:avoid}
-  .dtable{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
-  .dtable th{text-align:right;color:#8a938c;font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:0 6px 7px;font-weight:640}
-  .dtable th:first-child,.dtable td:first-child{text-align:left}
-  .dtable td{text-align:right;padding:7px 6px;border-top:1px solid #e6e9e2}
-  .dtable .tot td{border-top:2px solid #23433B;font-weight:700;color:#16211d}
-  .dpos b{color:#2f7d5b} .dneg b{color:#b4462f}
-  .dnote{font-size:11.5px;color:#56605a;background:#eef2ef;border-radius:8px;padding:8px 11px;margin-top:9px}
-  .drisks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-  .drisk{border:1px solid #dbded6;border-radius:9px;padding:9px 10px}
-  .drisk b{display:block;font-size:11.5px;color:#16211d} .drisk small{font-size:10.5px;color:#8a938c}
-  .darg{font-size:12.5px;line-height:1.55;color:#3a433d;margin:4px 0 0}
-  .dft{display:flex;justify-content:space-between;gap:20px;border-top:1px solid #dbded6;margin-top:22px;padding-top:12px;font-size:10.5px;color:#8a938c}
-  .dft b{color:#16211d;font-size:12px}
+  .dpair figcaption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8E8672;margin-bottom:3px;font-weight:700}
+  .dpair img{width:100%;height:46mm;object-fit:cover;border-radius:8px;border:1px solid var(--filet);display:block}
 </style>
 </head>
 <body>
@@ -722,8 +770,8 @@
 <div class="authgate show" id="authgate">
   <form class="authcard" id="authform">
     <div class="authlogo">
-      <div class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
-      <div><b>ESTIMAKE</b><span>Agence GBP · Nevers</span></div>
+      <img class="logo-gb" src="/logo-gb.png" alt="GB Immobilier">
+      <div><b>ESTIMAKE</b><span>GB Immobilier · Nevers</span></div>
     </div>
     <h2>Connexion</h2>
     <div class="sub">Accède à ton cockpit, ton portefeuille et tes estimations.</div>
@@ -741,10 +789,8 @@
   <!-- ======== NAV RAIL ======== -->
   <nav class="rail">
     <div class="brandmark">
-      <div class="logo">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
-      </div>
-      <div class="wm"><b>ESTIMAKE</b><span>Agence GBP · Nevers</span></div>
+      <img class="logo-gb" src="/logo-gb.png" alt="GB Immobilier">
+      <div class="wm"><b>ESTIMAKE</b><span>GB Immobilier · Nevers</span></div>
     </div>
     <button class="navitem active" data-go="cockpit">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
@@ -1064,12 +1110,16 @@
               <div class="lbls"><span>Vendre vite</span><span>Marché</span><span>Optimiser</span></div>
             </div>
             <div class="rbreak" id="rBreak"></div>
+            <div class="clifields">
+              <label class="mf"><span>Client (M. / Mme…)</span><input type="text" id="cliNom" placeholder="MR et Mme RICHARD André"></label>
+              <label class="mf"><span>E-mail du client</span><input type="email" id="cliMail" placeholder="client@mail.fr"></label>
+            </div>
             <div class="foot">
               <button class="btn gold" id="genBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg>
-                Générer mon dossier d'estimation
+                Générer l'avis de valeur
               </button>
-              <small>Dossier PDF · comparables, carte, analyse &amp; argumentaire</small>
+              <small>Avis de valeur PDF · modèle GB Immobilier + comparables, analyse &amp; home staging</small>
             </div>
           </div>
         </div>
@@ -2056,26 +2106,84 @@
     var stagingHtml = pairs.length ? ('<h2>Home staging — avant / après</h2><div class="dstaging">'+
       pairs.map(function(p){ return '<div class="dpair"><figure><figcaption>Avant</figcaption><img src="'+p.before+'"></figure><figure><figcaption>Après (home staging)</figcaption><img src="'+p.after+'"></figure></div>'; }).join('')+'</div>') : '';
     var reco=txt('rReco'), low=txt('rLow'), high=txt('rHigh'), pm2=txt('rPm2');
-    var agent=txt('runame')||'Jimmy Garcia'; var agentEmail=txt('rurole'); if(agentEmail.indexOf('@')<0) agentEmail='';
     var dd=new Date(); var dateStr=dd.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+    var cliN=(g('cliNom')&&g('cliNom').value.trim())||'Madame, Monsieur';
+    var cliM=(g('cliMail')&&g('cliMail').value.trim())||'';
+    var villeMaj=(ville.split('(')[0]||'').trim().toUpperCase()||'NEVERS';
+    var ic=function(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>'; };
+    var icCal=ic('<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>');
+    var icUser=ic('<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.5-3.4 4.2-5 7.5-5s6 1.6 7.5 5"/>');
+    var icPin=ic('<path d="M12 21s-7-5.4-7-11a7 7 0 0 1 14 0c0 5.6-7 11-7 11Z"/><circle cx="12" cy="10" r="2.6"/>');
+    var icClip=ic('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h4"/>');
+    var icHome=ic('<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>');
+    var icCheck=ic('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16 9.5"/>');
+    var icMail=ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>');
+    var specs='<div class="av-specs">'+
+      '<span><b>'+(g('fType').value||'—')+'</b></span>'+
+      '<span>Surface : <b>'+(g('fSurf').value||'—')+' m²</b></span>'+
+      '<span>Terrain : <b>'+(g('fTerr').value||'—')+' m²</b></span>'+
+      '<span>Pièces : <b>'+(g('fPieces').value||'—')+'</b></span>'+
+      '<span>Chambres : <b>'+(g('fChambres').value||'—')+'</b></span>'+
+      '<span>Année : <b>'+(g('fAnnee').value||'—')+'</b></span></div>';
     var arg='Au regard des ventes réellement enregistrées autour du bien (données DVF de la DGFiP) et de leur médiane au m², corrigée de l\'état intérieur, du DPE, de la qualité de l\'emplacement et des équipements, la valeur de marché de ce bien s\'établit dans une fourchette de '+low+' à '+high+'. Compte tenu du positionnement retenu et d\'un marché local stable, nous recommandons un prix de mise en vente de '+reco+', cohérent avec les biens comparables du secteur tout en préservant une marge de négociation raisonnable.';
     g('dossier').innerHTML=
+      /* ============ PAGE 1 — AVIS DE VALEUR (modèle GB Immobilier) ============ */
       '<div class="dsheet">'+
-        '<header class="dhd"><div class="dbrand"><div class="dlogo">'+dLogoSVG+'</div><div><b>ESTIMAKE</b><span>Agence GBP · Nevers</span></div></div>'+
-          '<div class="dmeta">Dossier d\'estimation<small>'+dateStr+'</small></div></header>'+
-        '<h1 class="dtitle">'+adresse+'</h1><div class="dsub">'+ville+' · '+type+'</div>'+
-        (cover?'<img class="dcover" src="'+cover+'" alt="Photo du bien">':'')+
-        '<div class="dspecs">'+spec(g('fSurf').value,'m² habitables')+spec(g('fTerr').value,'m² terrain')+spec(g('fPieces').value,'pièces')+spec(g('fChambres').value,'chambres')+spec(g('fAnnee').value,'année')+'</div>'+
-        '<div class="dprice"><div class="dprice-l"><span>Valeur de marché estimée</span><b>'+low+' – '+high+'</b></div>'+
-          '<div class="dprice-r"><span>Prix de mise en vente conseillé</span><span class="big">'+reco+'</span><small>'+pm2+'</small></div></div>'+
+        '<div class="av-topbar"></div>'+
+        '<div class="av-body">'+
+          '<header class="av-hd">'+
+            '<img class="av-logo" src="/logo-gb.png" alt="GB Immobilier">'+
+            '<div class="av-title"><h1>AVIS DE VALEUR</h1><div class="av-script">Estimation immobilière</div><div class="av-strike"></div></div>'+
+            '<div class="av-photo">'+(cover?'<img src="'+cover+'" alt="">':'')+'</div>'+
+          '</header>'+
+          '<div class="av-agency">26 Avenue Pierre Bérégovoy - 58000 NEVERS<br>03 86 61 14 15<br>nevers@gbinimmobilier.net</div>'+
+          '<div class="av-inforow">'+
+            '<div class="av-legal">Siren 6718 417 RCS Nevers<br>Cartes Transaction N°113 et Gestion N°112<br>Caisse de Garantie de l\'Immobilier FNAIM<br>89 rue de la Boétie - 75008 Paris</div>'+
+            '<div class="av-chip"><span class="ic">'+icCal+'</span><div><b>À Nevers,</b><small>Le '+dateStr+'</small></div></div>'+
+            '<div class="av-chip"><span class="ic">'+icUser+'</span><div><b>'+cliN+'</b>'+(cliM?'<small>'+cliM+'</small>':'')+'</div></div>'+
+          '</div>'+
+          '<div class="av-rule"></div>'+
+          '<div class="av-loc"><span class="ic">'+icPin+'</span><div><b>À '+ville+', '+adresse+'</b>'+
+            '<p>Pour donner suite à votre demande, nous sommes en mesure de vous donner un avis de valeur concernant ce bien.</p></div></div>'+
+          '<div class="av-rule or"></div>'+
+          '<div class="av-cols">'+
+            '<div class="av-col">'+
+              '<div class="av-sec"><span class="ic">'+icClip+'</span><div><h3>Mission</h3>'+
+                '<p>Cet avis de valeur est réalisé à la demande de '+cliN+' afin de déterminer la valeur vénale de ce bien. Cette indication de prix ne peut être assimilée à une expertise et ne peut engager la responsabilité de l\'agence.</p></div></div>'+
+              '<div class="av-sec"><span class="ic">'+icHome+'</span><div><h3>Visite des lieux</h3>'+
+                '<p>La visite des lieux a été effectuée le '+dateStr+' par Jimmy Garcia.</p></div></div>'+
+              '<div class="av-sec"><span class="ic">'+icClip+'</span><div><h3>Descriptif du bien</h3>'+specs+'</div></div>'+
+            '</div>'+
+            '<div class="av-col">'+
+              '<div class="av-sec"><span class="ic">'+icCheck+'</span><div><h3>Conclusions</h3>'+
+                '<p>Compte tenu du marché immobilier actuel et sous réserve du résultat des diagnostics obligatoires ou des examens plus approfondis (certificat d\'urbanisme, titre de propriété, etc.) permettant de déceler servitude ou engagement contractuel :</p></div></div>'+
+              '<div class="av-between">La valeur vénale de votre bien est comprise entre :</div>'+
+              '<div class="av-pricewrap"><span class="av-priceic">'+icHome+'</span>'+
+                '<div class="av-pricebox"><div class="p">'+low+'</div><div class="et">et</div><div class="p">'+high+'</div></div></div>'+
+              '<div class="av-crit"><span class="qo">“</span><h3>Critères pris en compte</h3>'+
+                '<p>Il y a lieu de noter que cette estimation tient compte de divers critères relatifs à la situation géographique et à l\'environnement, à l\'ancienneté, la vétusté et l\'état des différents corps d\'état composant le bâtiment, aux éléments de confort et d\'équipement, à la situation et la valeur locale ainsi qu\'aux tendances du Marché Immobilier de la ville de '+villeMaj+' et du département de la Nièvre.</p>'+
+                '<div class="qc">”</div></div>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        '<footer class="av-ft">'+
+          '<span class="ic">'+icMail+'</span>'+
+          '<p>Vous remerciant de la confiance que vous voulez bien nous témoigner et restant à votre disposition pour participer à la négociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments dévoués.</p>'+
+          '<div class="who"><b>Jimmy Garcia</b><span>Conseiller Immobilier</span><small>06.78.86.56.12</small><small>garciaj@gbimmobilier.net</small></div>'+
+          '<div class="av-sign">Jimmy Garcia</div>'+
+        '</footer>'+
+        '<div class="av-bottom">Cet avis de valeur est établi à titre indicatif&nbsp;&nbsp;—&nbsp;&nbsp;Il ne peut en aucun cas se substituer à une expertise</div>'+
+      '</div>'+
+      /* ============ PAGE 2 — ANALYSE & ANNEXES ============ */
+      '<div class="dsheet pageN">'+
+        '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>Analyse de marché &amp; annexes</b><span>'+adresse+' · '+ville+' · '+dateStr+'</span></div></div>'+
         '<h2>Ventes comparables · DVF</h2><table class="dtable"><thead><tr><th>Adresse · date</th><th>Surface</th><th>Prix vendu</th><th>€/m²</th></tr></thead><tbody>'+compRows+'</tbody></table>'+
         '<p class="dnote">'+txt('compSummary')+'</p>'+
         '<h2>Analyse &amp; positionnement du prix</h2><table class="dtable"><tbody>'+breakRows+'</tbody></table>'+
+        '<p class="dnote">Prix de mise en vente conseillé : <b>'+reco+'</b> · '+pm2+'</p>'+
         '<h2>Environnement &amp; risques · Géorisques</h2><div class="drisks">'+risks+'</div>'+
         stagingHtml+
         '<h2>Argumentaire</h2><p class="darg">'+arg+'</p>'+
-        '<footer class="dft"><div><b>'+agent+'</b> · Agence GBP · Nevers'+(agentEmail?'<br>'+agentEmail:'')+'</div>'+
-          '<div>Estimation à titre indicatif — ne constitue pas une expertise réglementée.<br>Généré par ESTIMAKE le '+dateStr+'.</div></footer>'+
       '</div>';
   }
   document.getElementById('genBtn').addEventListener('click',function(){
