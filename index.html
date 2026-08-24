@@ -1114,13 +1114,14 @@
       <section class="screen" id="biens">
         <div class="subtabs">
           <button class="subtab" data-go="estimation" type="button">Estimation</button>
-          <button class="subtab on" type="button">Mes biens</button>
+          <button class="subtab on" type="button">Mes estimations</button>
         </div>
-        <div class="sectitle"><h2>Mes estimations</h2><div class="grow"></div><span class="eyebrow" id="estimCount"></span></div>
+        <div class="sectitle"><h2>Mes estimations</h2><div class="grow"></div><span class="eyebrow" id="estimCount"></span>
+          <button class="btn pri" id="newEstimBtn" type="button" style="margin-left:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Nouvelle estimation</span></button></div>
         <div class="search" style="margin-bottom:13px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="estimSearch" placeholder="Rechercher une adresse, un client, un type…"></div>
         <div class="grid bienscol" id="estimList"><div class="estimempty">Aucune estimation enregistrée pour l'instant — elles apparaîtront ici dès que tu enregistres depuis l'écran Estimer.</div></div>
-        <div class="sectitle" style="margin-top:22px"><h2>Portefeuille</h2></div>
-        <div class="toolbar">
+        <div class="sectitle" style="margin-top:22px" hidden><h2>Portefeuille</h2></div>
+        <div class="toolbar" hidden>
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="bienSearch" placeholder="Rechercher une adresse, une réf., un propriétaire…"></div>
           <button class="btn pri" id="addBienBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Ajouter un bien</span></button>
           <div class="chips" id="bienChips">
@@ -1131,7 +1132,7 @@
             <button class="chip" data-f="Vendu">Vendus <span class="c">3</span></button>
           </div>
         </div>
-        <div class="grid bienscol" id="bienGrid"></div>
+        <div class="grid bienscol" id="bienGrid" hidden></div>
       </section>
 
       <!-- ============ CRM ============ -->
@@ -1163,7 +1164,7 @@
       <section class="screen active" id="estimation">
         <div class="subtabs">
           <button class="subtab on" type="button">Estimation</button>
-          <button class="subtab" data-go="biens" type="button">Mes biens</button>
+          <button class="subtab" data-go="biens" type="button">Mes estimations</button>
         </div>
         <div class="estwrap">
           <div class="steps">
@@ -1841,7 +1842,7 @@
 
   /* ---------- navigation ---------- */
   var titles={cockpit:['Cockpit','Lundi 11 août 2026 · vue du mois'],
-    biens:['Portefeuille de biens','18 biens · Nevers et agglomération'],
+    biens:['Mes estimations','Historique, recherche & reprise'],
     crm:['Contacts','Vendeurs, acquéreurs & prospects'],
     estimation:['Estimation','12 rue des Récollets, Nevers · en cours'],
     agenda:['Agenda','RDV, visites & signatures']};
@@ -3021,6 +3022,22 @@
       }).join('');
   }
   (function(){ var se=document.getElementById('estimSearch'); if(se) se.addEventListener('input',renderEstimList); })();
+  function resetEstimation(){
+    editingEstimId=null;
+    estPhotos=[]; estLots=[]; state.custom=[]; state.override=null; state.overLow=null; state.overHigh=null;
+    ['cliNom','cliMail','fDesc','fCompl','fLoyer'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+    if(typeof window.__setEstCover==='function'){ /* vide la galerie proprement */ }
+    var gal=document.getElementById('estGallery');
+    if(gal){ var evt=new Event('reset'); }
+    // re-render photo gallery & lots
+    try{ document.querySelectorAll('#estGallery .sthumb').forEach(function(t){ t.remove(); }); }catch(e){}
+    if(typeof renderLots==='function') renderLots();
+    if(typeof renderAllGallery==='function') renderAllGallery();
+    compute();
+    go('estimation');
+    toast('Nouvelle estimation \u2014 choisis l\u2019adresse.');
+  }
+  (function(){ var nb=document.getElementById('newEstimBtn'); if(nb) nb.addEventListener('click',resetEstimation); })();
   document.getElementById('estimList').addEventListener('click',async function(e){
     var del=e.target.closest('.estdel');
     if(del){ e.stopPropagation();
