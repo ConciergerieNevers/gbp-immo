@@ -779,7 +779,7 @@
   .av-script{font-family:"Snell Roundhand","Savoye LET","Brush Script MT",cursive;font-size:20px;color:var(--or);margin-top:.5mm}
   .av-photo{width:52mm;height:32mm;border-radius:12px;flex:none;background:linear-gradient(135deg,#D9AC55,#C08A2E);
     box-shadow:0 0 0 1.5px #fff,0 0 0 3px var(--or);overflow:hidden;position:relative}
-  .av-photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .av-photo{background-size:cover;background-position:center}
   .av-info{display:grid;grid-template-columns:1.3fr 1fr 1.15fr;gap:4mm;margin-bottom:4.5mm}
   .av-cell{background:#F8F4EA;border-radius:9px;border-top:2.5px solid var(--or);padding:3mm 3.5mm;min-width:0}
   .av-cell .t{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--or-2);font-weight:800;margin-bottom:1.2mm}
@@ -849,12 +849,12 @@
   .pmchart svg rect{fill:#C99B3F}
   .pmpoi .poi{background:#F6F1E3;color:#2A261C;font-size:10px;padding:2mm 3mm}
   .pmpoi .poi b{color:#B08A2E}
-  #dMapSlot img{width:100%;height:60mm;object-fit:cover;border-radius:9px;border:1px solid var(--filet);margin-top:4mm;display:block}
+  #dMapSlot .dmapimg{width:100%;height:60mm;border-radius:9px;border:1px solid var(--filet);margin-top:4mm;background-size:cover;background-position:center}
   .dstaging{display:flex;flex-direction:column;gap:11px}
   .dpair{display:grid;grid-template-columns:1fr 1fr;gap:9px;break-inside:avoid}
   .dpair figure{margin:0}
   .dpair figcaption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8E8672;margin-bottom:3px;font-weight:700}
-  .dpair img{width:100%;height:46mm;object-fit:cover;border-radius:8px;border:1px solid var(--filet);display:block}
+  .dpair .dimg{width:100%;height:46mm;border-radius:8px;border:1px solid var(--filet);background-size:cover;background-position:center}
 </style>
 </head>
 <body>
@@ -1115,6 +1115,10 @@
                 <button type="button" class="btn gold" id="restyleBtn" style="width:100%;justify-content:center;margin-top:14px">
                   Générer le réaménagement
                 </button>
+                <button type="button" class="btn" id="afterImportBtn" style="width:100%;justify-content:center;margin-top:8px">
+                  📁 Importer ma propre image « après »
+                </button>
+                <input type="file" id="afterImportInput" accept="image/*" hidden>
                 <div class="restyle-out" id="restyleOut" hidden>
                   <div class="ba">
                     <div class="ba-col"><small>Avant</small><img id="restyleBefore" alt="Avant"></div>
@@ -2912,6 +2916,24 @@
         else { if(selPhoto>di) selPhoto--; renderGallery(); } return; }
       var th=e.target.closest('.sthumb'); if(th){ selectPhoto(parseInt(th.dataset.i,10)); }
     });
+    var impBtn=document.getElementById('afterImportBtn'), impInp=document.getElementById('afterImportInput');
+    if(impBtn) impBtn.addEventListener('click',function(){
+      if(selPhoto<0 || !estPhotos[selPhoto]){ msg.textContent='S\u00e9lectionne d\u2019abord une photo (l\u2019avant).'; msg.hidden=false; return; }
+      impInp.click();
+    });
+    if(impInp) impInp.addEventListener('change',function(){
+      var f=this.files&&this.files[0]; if(!f) return;
+      var reader=new FileReader();
+      reader.onload=function(ev){
+        var p=estPhotos[selPhoto]; if(!p) return;
+        p.after=ev.target.result;
+        before.src=p.before; after.src=p.after; dl.href=p.after; out.hidden=false; msg.hidden=true;
+        renderGallery();
+        toast('Image \u00ab apr\u00e8s \u00bb import\u00e9e \u2713 \u2014 reprise dans l\u2019avis');
+      };
+      reader.readAsDataURL(f);
+      this.value='';
+    });
     btn.addEventListener('click',async function(){
       if(selPhoto<0 || !estPhotos[selPhoto]){ msg.textContent='Sélectionne d\'abord une photo.'; msg.hidden=false; return; }
       var p=estPhotos[selPhoto];
@@ -3014,7 +3036,7 @@
     var villeMaj=vNom.toUpperCase()||'NEVERS';
     function pf(titre, corps){ return '<div class="dsheet pageF"><div class="av-topbar"></div><div class="pf-body">'+
       '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>'+titre+'</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+corps+'</div></div>'; }
-    function pairHtml(list){ return list.map(function(p){ return '<div class="dpair"><figure><figcaption>Avant</figcaption><img src="'+p.before+'"></figure><figure><figcaption>Apr\u00e8s (home staging)</figcaption><img src="'+p.after+'"></figure></div>'; }).join(''); }
+    function pairHtml(list){ return list.map(function(p){ return '<div class="dpair"><figure><figcaption>Avant</figcaption><div class="dimg" style="background-image:url('+p.before+')"></div></figure><figure><figcaption>Apr\u00e8s (home staging)</figcaption><div class="dimg" style="background-image:url('+p.after+')"></div></figure></div>'; }).join(''); }
     var stagingExtra=''; for(var sx=2; sx<pairs.length; sx+=3){ stagingExtra+=pf('Home staging \u2014 avant / apr\u00e8s', '<div class="dstaging">'+pairHtml(pairs.slice(sx,sx+3))+'</div>'); }
     var ic=function(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>'; };
     var icCal=ic('<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>');
@@ -3041,7 +3063,7 @@
           '<header class="av-hd">'+
             '<img class="av-logo" src="/logo-gb.png" alt="GB Immobilier">'+
             '<div class="av-ttl"><h1>AVIS DE VALEUR</h1><div class="av-script">Estimation immobili\u00e8re</div></div>'+
-            '<div class="av-photo">'+(cover?'<img src="'+cover+'" alt="">':'')+'</div>'+
+            '<div class="av-photo"'+(cover?' style="background-image:url('+cover+')"':'')+'></div>'+
           '</header>'+
           '<div class="av-info">'+
             '<div class="av-cell"><div class="t">Agence</div><b>GB Immobilier \u2014 Nevers</b>'+
@@ -3141,7 +3163,7 @@
       var slot=el.querySelector('#dMapSlot'), mapEl=document.getElementById('miniMap');
       if(slot && mapEl && mapEl.classList.contains('show')){
         try{ var mcv=await html2canvas(mapEl,{scale:1.4,useCORS:true,logging:false});
-          slot.innerHTML='<img src="'+mcv.toDataURL('image/jpeg',0.88)+'" alt="Plan du quartier">'; }catch(e){ console.warn('map shot',e); }
+          slot.innerHTML='<div class="dmapimg" style="background-image:url('+mcv.toDataURL('image/jpeg',0.88)+')"></div>'; }catch(e){ console.warn('map shot',e); }
       }
       var sheets=el.querySelectorAll('.dsheet');
       var pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4',compress:true});
