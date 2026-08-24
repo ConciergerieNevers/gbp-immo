@@ -8,5 +8,13 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0E0D0A",
-  "theme_color": "#12100C"
+  "theme_color": "#12100C",
+  "icons": [
+    {
+      "src": "/logo-gb-app.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
