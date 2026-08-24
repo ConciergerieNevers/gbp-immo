@@ -821,7 +821,10 @@
   .av-ft .who b{display:block;font-size:12px;color:#131108}
   .av-ft .who span{font-size:10px;font-weight:700;color:#131108;display:block}
   .av-ft .who small{display:block;font-size:9.5px;color:#2A2415;margin-top:.5mm}
-  .av-sign{font-family:"Snell Roundhand","Savoye LET","Brush Script MT",cursive;font-size:21px;color:#131108}
+  .av-sign{font-family:"Great Vibes","Snell Roundhand","Savoye LET",cursive;font-size:31px;color:#131108;
+    transform:rotate(-7deg);padding:0 4mm 2mm 0;line-height:1}
+  .av-sign small{display:block;font-family:var(--sans);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:#2A2415;transform:none;text-align:center;margin-top:1.5mm}
   .av-bottom{background:#131108;color:#E8D9B4;text-align:center;font-size:9px;padding:2.6mm 6mm;flex:none}
   /* Pages suivantes (analyse, risques, home staging) */
   #dossier h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--or-2);border-bottom:1.5px solid var(--or-pale);padding-bottom:6px;margin:22px 0 11px;break-after:avoid;font-weight:800}
@@ -1495,6 +1498,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <script>
 (function(){
@@ -3055,6 +3059,66 @@
       '<span>Salles de bain : <b>'+((g('fSdb')&&g('fSdb').value)||'—')+'</b></span>'+
       '<span>Année : <b>'+(g('fAnnee').value||'—')+'</b></span></div>';
     var arg='Au regard des ventes réellement enregistrées autour du bien (données DVF de la DGFiP) et de leur médiane au m², corrigée de l\'état intérieur, du DPE, de la qualité de l\'emplacement et des équipements, la valeur de marché de ce bien s\'établit dans une fourchette de '+low+' à '+high+'. Compte tenu du positionnement retenu et d\'un marché local stable, nous recommandons un prix de mise en vente de '+reco+', cohérent avec les biens comparables du secteur tout en préservant une marge de négociation raisonnable.';
+      /* ============ ANNEXES — flux continu, sans blancs ============ */
+      var FOOTER_HTML='<footer class="av-ft">'+
+          '<span class="ic">'+icMail+'</span>'+
+          '<p>Vous remerciant de la confiance que vous voulez bien nous t\u00e9moigner et restant \u00e0 votre disposition pour participer \u00e0 la n\u00e9gociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments d\u00e9vou\u00e9s.</p>'+
+          '<div class="who"><b style="display:block">Jimmy Garcia</b><span style="display:block">Conseiller Immobilier</span><small style="display:block">06.78.86.56.12</small><small style="display:block">garciaj@gbimmobilier.net</small></div>'+
+          '<div class="av-sign">Jimmy Garcia<small>Conseiller immobilier</small></div>'+
+        '</footer>'+
+        '<div class="av-bottom">Cet avis de valeur est \u00e9tabli \u00e0 titre indicatif&nbsp;&nbsp;\u2014&nbsp;&nbsp;Il ne peut en aucun cas se substituer \u00e0 une expertise</div>';
+      var blocks=[];
+      function blk(h,html){ blocks.push({h:h,html:html}); }
+      if(window.__market){
+        var mk=window.__market, lastA=mk.annees[mk.annees.length-1];
+        blk(9,'<h2>March\u00e9 de la commune \u00b7 5 ans (DVF)</h2>');
+        blk(22,'<div class="pmtiles">'+
+          '<div class="pmtile"><small>Prix m\u00e9dian secteur</small><b>'+(lastA?Math.round(lastA.median).toLocaleString('fr-FR')+' \u20ac/m\u00b2':'\u2014')+'</b></div>'+
+          '<div class="pmtile"><small>\u00c9volution 1 an</small><b>'+((mk.evo1>0?'+':'')+(mk.evo1!==null?String(mk.evo1).replace('.',','):'\u2014'))+' %</b></div>'+
+          '<div class="pmtile"><small>\u00c9volution 5 ans</small><b>'+((mk.evo5>0?'+':'')+(mk.evo5!==null?String(mk.evo5).replace('.',','):'\u2014'))+' %</b></div>'+
+          '<div class="pmtile"><small>Ventes / an</small><b>'+Math.round(mk.annees.reduce(function(a,x){return a+x.ventes;},0)/mk.annees.length)+'</b></div></div>');
+        if(window.__trend) blk(12,'<p class="dnote">'+window.__trend+'</p>');
+        if(window.__poi){ blk(9,'<h2>Commodit\u00e9s \u00e0 proximit\u00e9</h2>'); blk(18,'<div class="poichips pmpoi">'+window.__poi+'</div>'); }
+        blk(66,'<div id="dMapSlot"></div>');
+      }
+      var compCount=(compRows.match(/<tr/g)||[]).length;
+      blk(9,'<h2>Ventes comparables \u00b7 DVF</h2>');
+      blk(12+compCount*7,'<table class="dtable"><thead><tr><th>Adresse \u00b7 date</th><th>Surface</th><th>Prix vendu</th><th>\u20ac/m\u00b2</th></tr></thead><tbody>'+compRows+'</tbody></table>');
+      blk(12,'<p class="dnote">'+txt('compSummary')+'</p>');
+      var brCount=(breakRows.match(/<tr/g)||[]).length;
+      blk(9,'<h2>Analyse &amp; positionnement du prix</h2>');
+      blk(6+brCount*7,'<table class="dtable"><tbody>'+breakRows+'</tbody></table>');
+      blk(12,'<p class="dnote">Prix de mise en vente conseill\u00e9 : <b>'+reco+'</b> \u00b7 '+pm2+'</p>');
+      blk(9,'<h2>Environnement &amp; risques \u00b7 G\u00e9orisques</h2>');
+      blk(30,'<div class="drisks">'+risks+'</div>');
+      if(pairs.length){
+        blk(9,'<h2>Home staging \u2014 avant / apr\u00e8s</h2>');
+        pairs.forEach(function(p){ blk(56,'<div class="dstaging">'+pairHtml([p])+'</div>'); });
+      }
+      var descV=(g('fDesc')&&g('fDesc').value.trim())||'';
+      if(descV){
+        blk(9,'<h2>Description du bien</h2>');
+        blk(Math.min(64,10+Math.ceil(descV.length/95)*4),'<p class="darg">'+descV.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</p>');
+      }
+      blk(9,'<h2>Argumentaire</h2>');
+      blk(36,'<p class="darg">'+arg+'</p>');
+      // packing glouton : capacité utile ~246 mm par feuille, ~44 mm réservés pour la signature finale
+      var CAP=246, FOOT=44;
+      var sheetsArr=[[]], usedArr=[0];
+      blocks.forEach(function(b){
+        var i=sheetsArr.length-1;
+        if(usedArr[i]+b.h>CAP){ sheetsArr.push([]); usedArr.push(0); i++; }
+        sheetsArr[i].push(b.html); usedArr[i]+=b.h;
+      });
+      if(usedArr[usedArr.length-1]>CAP-FOOT){ sheetsArr.push(['<h2>Conclusion</h2>']); usedArr.push(9); }
+      var annexHtml=sheetsArr.map(function(parts,i){
+        var last=(i===sheetsArr.length-1);
+        return '<div class="dsheet pageF"><div class="av-topbar"></div><div class="pf-body">'+
+          '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>'+(i===0?'Analyse &amp; annexes':'Annexes \u2014 suite')+'</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+
+          parts.join('')+'</div>'+
+          (last?FOOTER_HTML:'')+
+        '</div>';
+      }).join('');
     g('dossier').innerHTML=
       /* ============ PAGE 1 — AVIS DE VALEUR (GB Immobilier, V2) ============ */
       '<div class="dsheet av">'+
@@ -3093,44 +3157,10 @@
             '</div>'+
           '</div>'+
         '</div>'+
-      '</div>'+
-      /* ============ ANNEXES — feuilles A4 fixes ============ */
-      pf('Analyse de march\u00e9',
-        '<h2>Ventes comparables \u00b7 DVF</h2><table class="dtable"><thead><tr><th>Adresse \u00b7 date</th><th>Surface</th><th>Prix vendu</th><th>\u20ac/m\u00b2</th></tr></thead><tbody>'+compRows+'</tbody></table>'+
-        '<p class="dnote">'+txt('compSummary')+'</p>'+
-        '<h2>Analyse &amp; positionnement du prix</h2><table class="dtable"><tbody>'+breakRows+'</tbody></table>'+
-        '<p class="dnote">Prix de mise en vente conseill\u00e9 : <b>'+reco+'</b> \u00b7 '+pm2+'</p>')+
-      (window.__market ? pf('March\u00e9 &amp; quartier',
-        '<h2>March\u00e9 de la commune \u00b7 5 ans (DVF)</h2>'+
-        '<div class="pmtiles">'+
-          '<div class="pmtile"><small>Prix m\u00e9dian secteur</small><b>'+(window.__market.annees.length?Math.round(window.__market.annees[window.__market.annees.length-1].median).toLocaleString('fr-FR')+' \u20ac/m\u00b2':'\u2014')+'</b></div>'+
-          '<div class="pmtile"><small>\u00c9volution 1 an</small><b>'+((window.__market.evo1>0?'+':'')+(window.__market.evo1!==null?String(window.__market.evo1).replace('.',','):'\u2014'))+' %</b></div>'+
-          '<div class="pmtile"><small>\u00c9volution 5 ans</small><b>'+((window.__market.evo5>0?'+':'')+(window.__market.evo5!==null?String(window.__market.evo5).replace('.',','):'\u2014'))+' %</b></div>'+
-          '<div class="pmtile"><small>Ventes / an</small><b>'+Math.round(window.__market.annees.reduce(function(a,x){return a+x.ventes;},0)/window.__market.annees.length)+'</b></div>'+
-        '</div>'+
-        (window.__trend?('<p class="dnote">'+window.__trend+'</p>'):'')+
-        (window.__poi?('<h2>Commodit\u00e9s \u00e0 proximit\u00e9</h2><div class="poichips pmpoi">'+window.__poi+'</div>'):'')+
-        '<div id="dMapSlot"></div>') : '')+
-      pf('Environnement &amp; annexes',
-        '<h2>Environnement &amp; risques \u00b7 G\u00e9orisques</h2><div class="drisks">'+risks+'</div>'+
-        (pairs.length?('<h2>Home staging \u2014 avant / apr\u00e8s</h2><div class="dstaging">'+pairHtml(pairs.slice(0,2))+'</div>'):''))+
-      stagingExtra+
-      /* ============ PAGE FINALE — CONCLUSION & SIGNATURE ============ */
-      '<div class="dsheet avend">'+
-        '<div class="av-topbar"></div>'+
-        '<div class="av-endbody">'+
-          '<div class="p2hd"><img src="/logo-gb.png" alt=""><div><b>Conclusion</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+
-          ((g('fDesc')&&g('fDesc').value.trim())?('<h2>Description du bien</h2><p class="darg">'+g('fDesc').value.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</p>'):'')+
-          '<h2>Argumentaire</h2><p class="darg">'+arg+'</p>'+
-        '</div>'+
-        '<footer class="av-ft">'+
-          '<span class="ic">'+icMail+'</span>'+
-          '<p>Vous remerciant de la confiance que vous voulez bien nous t\u00e9moigner et restant \u00e0 votre disposition pour participer \u00e0 la n\u00e9gociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments d\u00e9vou\u00e9s.</p>'+
-          '<div class="who"><b style="display:block">Jimmy Garcia</b><span style="display:block">Conseiller Immobilier</span><small style="display:block">06.78.86.56.12</small><small style="display:block">garciaj@gbimmobilier.net</small></div>'+
-          '<div class="av-sign">Jimmy Garcia</div>'+
-        '</footer>'+
-        '<div class="av-bottom">Cet avis de valeur est \u00e9tabli \u00e0 titre indicatif&nbsp;&nbsp;\u2014&nbsp;&nbsp;Il ne peut en aucun cas se substituer \u00e0 une expertise</div>'+
-      '</div>';
+      '</div>'+ annexHtml;
+
+
+
   }
   document.getElementById('genBtn').addEventListener('click',function(){
     var b=this;var old=b.innerHTML;
