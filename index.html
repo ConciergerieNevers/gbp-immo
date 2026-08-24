@@ -730,8 +730,11 @@
   .av-crit h3{display:inline-block;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--or-2);margin:0 0 2mm 2mm;font-weight:800}
   .av-crit p{font-size:10.5px;line-height:1.65;color:#2A261C;text-align:justify;margin:0}
   .av-crit .qc{text-align:right;font-family:Georgia,serif;font-size:34px;color:var(--or);line-height:.6;margin-top:1mm}
-  .av-ft{background:linear-gradient(90deg,#D9AC55,#C08A2E);display:grid;grid-template-columns:auto 1fr auto auto;gap:6mm;
+  .av-ft{background:linear-gradient(90deg,#D9AC55,#C08A2E);display:flex;gap:6mm;
     align-items:center;padding:5mm 10mm;margin-top:6mm}
+  .av-ft p{flex:0 0 62mm}
+  .av-ft .who{flex:1;min-width:0}
+  .av-ft .av-sign{flex:0 0 auto}
   .av-ft .ic{width:13mm;height:13mm;border-radius:50%;background:#131108;display:grid;place-items:center;flex:none}
   .av-ft .ic svg{width:6.5mm;height:6.5mm;stroke:#D9AC55}
   .av-ft p{font-size:9.8px;line-height:1.55;color:#131108;margin:0;max-width:70mm}
@@ -2169,7 +2172,7 @@
         '<footer class="av-ft">'+
           '<span class="ic">'+icMail+'</span>'+
           '<p>Vous remerciant de la confiance que vous voulez bien nous témoigner et restant à votre disposition pour participer à la négociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments dévoués.</p>'+
-          '<div class="who"><b>Jimmy Garcia</b><span>Conseiller Immobilier</span><small>06.78.86.56.12</small><small>garciaj@gbimmobilier.net</small></div>'+
+          '<div class="who"><b style="display:block">Jimmy Garcia</b><span style="display:block">Conseiller Immobilier</span><small style="display:block">06.78.86.56.12</small><small style="display:block">garciaj@gbimmobilier.net</small></div>'+
           '<div class="av-sign">Jimmy Garcia</div>'+
         '</footer>'+
         '<div class="av-bottom">Cet avis de valeur est établi à titre indicatif&nbsp;&nbsp;—&nbsp;&nbsp;Il ne peut en aucun cas se substituer à une expertise</div>'+
