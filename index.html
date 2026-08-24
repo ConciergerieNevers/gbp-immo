@@ -3260,9 +3260,11 @@
     var type=g('fType').value;
     var adresse=(document.querySelector('#estimation .addrbox .a')||{}).textContent||'';
     var ville=(document.querySelector('#estimation .addrbox small')||{}).textContent||'';
-    var compRows;
+    var compRows, compExtra=0;
     if(dvfComps && dvfComps.some(function(c){return c.sel;})){
-      compRows=dvfComps.filter(function(c){return c.sel;}).map(function(c){
+      var selComps=dvfComps.filter(function(c){return c.sel;});
+      compExtra=Math.max(0, selComps.length-15);
+      compRows=selComps.slice(0,15).map(function(c){
         return '<tr><td>'+(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
       }).join('');
     } else {
@@ -3338,7 +3340,7 @@
       var compCount=(compRows.match(/<tr/g)||[]).length;
       blk(9,'<h2>Ventes comparables \u00b7 DVF</h2>');
       blk(12+compCount*7,'<table class="dtable"><thead><tr><th>Adresse \u00b7 date</th><th>Surface</th><th>Prix vendu</th><th>\u20ac/m\u00b2</th></tr></thead><tbody>'+compRows+'</tbody></table>');
-      blk(12,'<p class="dnote">'+txt('compSummary')+'</p>');
+      blk(12,'<p class="dnote">'+txt('compSummary').replace(/ \u00b7 touche une vente.*$/,'')+(compExtra?' Les 15 ventes les plus proches sont pr\u00e9sent\u00e9es ci-dessus ; '+compExtra+' autres ventes retenues entrent dans le calcul de la m\u00e9diane.':'')+'</p>');
       var brCount=(breakRows.match(/<tr/g)||[]).length;
       blk(9,'<h2>Analyse &amp; positionnement du prix</h2>');
       blk(6+brCount*7,'<table class="dtable"><tbody>'+breakRows+'</tbody></table>');
