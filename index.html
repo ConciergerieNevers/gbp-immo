@@ -501,6 +501,9 @@
   .stattile{background:var(--surface-2);border-radius:11px;padding:11px 13px;text-align:center}
   .stattile small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:660;margin-bottom:3px}
   .stattile b{font-size:17px;font-variant-numeric:tabular-nums}
+  .crm-subhead{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--accent);margin:20px 0 4px;padding-top:14px;border-top:1px solid var(--line)}
+  .crm-subhead .c{background:var(--accent-soft);border-radius:20px;padding:2px 9px;font-size:11px}
   .mkclient{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:20px;
     padding:6px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none}
   /* Mes estimations (écran Biens) */
@@ -1080,7 +1083,6 @@
         <div class="subtabs" id="crmTabs">
           <button class="subtab on" data-t="vendeurs">Vendeurs</button>
           <button class="subtab" data-t="acquereurs">Acquéreurs</button>
-          <button class="subtab" data-t="prospects">Prospects</button>
         </div>
         <div class="toolbar">
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input placeholder="Rechercher un contact…"></div>
@@ -1410,7 +1412,7 @@
     <form class="modal-body" id="contactForm">
       <div class="mfields">
         <label class="mf mf-wide"><span>Nom</span><input name="nom" required placeholder="M. et Mme Delaunay"></label>
-        <label class="mf"><span>Type</span><select name="role"><option value="vendeur">Vendeur</option><option value="acquereur">Acquéreur</option><option value="prospect">Prospect</option></select></label>
+        <label class="mf"><span>Type</span><select name="role"><option value="vendeur">Vendeur</option><option value="acquereur">Acquéreur</option><option value="prospect">Prospect vendeur</option></select></label>
         <label class="mf"><span>Statut / mandat</span><input name="statut" placeholder="Exclusif · Chaud · Tiède…"></label>
         <label class="mf mf-wide"><span>Détail (bien lié / recherche / origine)</span><input name="detail" placeholder="12 rue des Récollets · T3/T4 centre…"></label>
         <label class="mf"><span>Budget (€) — acquéreur</span><input name="budget" type="number" inputmode="numeric" placeholder="160000"></label>
@@ -1865,16 +1867,26 @@
   }
   var crmTab='vendeurs';
   function renderCrm(tab){
-    if(tab) crmTab=tab;
-    var role={vendeurs:'vendeur',acquereurs:'acquereur',prospects:'prospect'}[crmTab];
-    var list=contactsData.filter(function(c){return c.role===role;});
-    document.getElementById('crmList').innerHTML = list.length ? list.map(function(c){
+    if(tab && tab!=='prospects') crmTab=tab;
+    function row(c){
       var initials=(c.nom||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       return '<div class="crow" data-id="'+c.id+'"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+initials+'</div>'+
         '<div class="cmain"><b>'+(c.nom||'')+'</b><small>'+(c.detail||'')+'</small></div>'+
         (c.role==='prospect'?'<button type="button" class="mkclient" data-mk="'+c.id+'">\u2192 Client</button>':'')+
         '<div class="cmeta">'+contactTag(c)+'<small class="cnext">'+((c.action||'')+' →')+'</small></div></div>';
-    }).join('') : '<div style="color:var(--ink-3);padding:18px 4px;font-size:14px">Aucun contact ici — clique « Ajouter ».</div>';
+    }
+    var html='';
+    if(crmTab==='vendeurs'){
+      var vend=contactsData.filter(function(c){return c.role==='vendeur';});
+      var pros=contactsData.filter(function(c){return c.role==='prospect';});
+      html = vend.length ? vend.map(row).join('') : '<div style="color:var(--ink-3);padding:14px 4px;font-size:14px">Aucun vendeur — clique « Ajouter ».</div>';
+      html += '<div class="crm-subhead">Prospects vendeurs <span class="c">'+pros.length+'</span></div>';
+      html += pros.length ? pros.map(row).join('') : '<div style="color:var(--ink-3);padding:10px 4px;font-size:13px">Aucun prospect vendeur — ils arrivent automatiquement depuis tes estimations.</div>';
+    } else {
+      var acq=contactsData.filter(function(c){return c.role==='acquereur';});
+      html = acq.length ? acq.map(row).join('') : '<div style="color:var(--ink-3);padding:18px 4px;font-size:14px">Aucun contact ici — clique « Ajouter ».</div>';
+    }
+    document.getElementById('crmList').innerHTML=html;
   }
   document.getElementById('crmTabs').addEventListener('click',function(e){
     var t=e.target.closest('.subtab');if(!t)return;
