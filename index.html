@@ -442,7 +442,7 @@
   .restyle-notes{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;
     font:inherit;font-size:13px;color:var(--ink);resize:vertical;min-height:40px}
   .restyle-notes:focus{outline:none;border-color:var(--accent)}
-  .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 16px 4px}
   @media (max-width:640px){ .clifields{grid-template-columns:1fr} }
   .compfilters{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:7px 0 9px}
   .compfilters input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 9px;font:inherit;font-size:13px;color:var(--ink);min-width:0}
@@ -456,6 +456,9 @@
   .comptable tr.selrow.out td{text-decoration:line-through}
   .field[hidden]{display:none}
   .field input[readonly]{background:var(--surface-2);color:var(--ink-2)}
+  .result > .mf{display:flex;margin:12px 16px 0}
+  .result > .btn{width:calc(100% - 32px)!important;margin-left:16px!important;margin-right:16px!important}
+  .result > .restyle-msg{margin:11px 16px 0}
   /* Aperçu avis */
   .avpv{position:fixed;inset:0;z-index:300;background:#3a372f;display:flex;flex-direction:column}
   .avpv[hidden]{display:none}
@@ -477,7 +480,7 @@
   .lotsynth{background:var(--accent-soft);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--ink);margin-top:6px}
   .lotsynth b{color:var(--accent)}
   .lot-hab[hidden],.lot-com[hidden]{display:none}
-  .rentbox{margin-top:12px;background:var(--surface-2);border-radius:10px;padding:11px 13px;font-size:12.5px}
+  .rentbox{margin:12px 16px 0;background:var(--surface-2);border-radius:10px;padding:11px 13px;font-size:12.5px}
   .rentbox b{color:var(--accent);font-variant-numeric:tabular-nums}
   .rentbox .rline{display:flex;justify-content:space-between;padding:2px 0}
   .rentbox[hidden]{display:none}
@@ -1556,6 +1559,10 @@
       </div>
       <div id="cliEstims"></div>
       <div id="cliRdvs"></div>
+      <div class="mfields" style="margin-top:14px">
+        <button type="button" class="btn" id="cNewEstim">🏠 Nouvelle estimation</button>
+        <button type="button" class="btn" id="cNewRdv">📅 Nouveau RDV</button>
+      </div>
       <div class="autherr" id="contactErr"></div>
       <div class="modal-ft">
         <button type="button" class="btn danger-o" id="contactDelete" style="margin-right:auto" hidden>Supprimer</button>
@@ -2262,6 +2269,24 @@
     var b=ev.target.closest('.rst'); if(b) b.classList.toggle('on');
   });
   function closeContactForm(){ contactModal.hidden=true; }
+  document.getElementById('cNewEstim').addEventListener('click',function(){
+    var e=contactForm.elements;
+    var nom=e.nom.value.trim(), mail=e.email.value.trim();
+    contactModal.hidden=true;
+    var cn=document.getElementById('cliNom'), cm=document.getElementById('cliMail');
+    if(cn) cn.value=nom; if(cm) cm.value=mail;
+    editingEstimId=null;
+    go('estimation');
+    toast('Nouvelle estimation pour '+(nom||'ce contact')+' \u2014 renseigne l\u2019adresse.');
+  });
+  document.getElementById('cNewRdv').addEventListener('click',function(){
+    var nom=contactForm.elements.nom.value.trim();
+    contactModal.hidden=true;
+    openRdvForm(null);
+    var lf=document.getElementById('rdvForm');
+    if(lf && lf.elements.lien) lf.elements.lien.value=nom;
+    toast('Nouveau RDV li\u00e9 \u00e0 '+(nom||'ce contact'));
+  });
   document.getElementById('addContactBtn').addEventListener('click',function(){ openContactForm(null); });
   document.getElementById('contactModalX').addEventListener('click',closeContactForm);
   document.getElementById('contactCancel').addEventListener('click',closeContactForm);
