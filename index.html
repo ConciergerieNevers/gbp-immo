@@ -833,7 +833,7 @@
   .av-ft .who small{display:block;font-size:8.4px;color:var(--grisF);margin-top:.7mm}
   .av-sign{font-family:"Great Vibes",cursive;font-size:30px;color:#111;transform:rotate(-3deg);padding:0 3mm 1mm 0;line-height:1}
   .av-sign small{display:block;font-family:var(--sansP);font-size:6px;letter-spacing:.32em;text-transform:uppercase;color:var(--gris);transform:none;text-align:center;margin-top:1.6mm;font-weight:600}
-  .av-bottom{background:#111;color:#BBB;text-align:center;font-size:7px;letter-spacing:.2em;padding:2.6mm 6mm;flex:none;text-transform:uppercase}
+  .av-bottom{background:#E9DFC8;color:#7A6733;text-align:center;font-size:7px;letter-spacing:.2em;padding:2.6mm 6mm;flex:none;text-transform:uppercase}
   /* ---- annexes ---- */
   .pageF .p2hd,.avend .p2hd{display:flex;align-items:flex-end;gap:5mm;border-bottom:.3mm solid #111;padding-bottom:3mm;margin-bottom:5mm;position:relative}
   .pageF .p2hd:after,.avend .p2hd:after{display:none}
@@ -1414,8 +1414,8 @@
   <div class="modal-card">
     <div class="modal-hd"><b id="venteModalTitle">Nouvelle vente</b>
       <button class="modal-x" id="venteX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
-    <form id="venteForm">
-      <div class="mform">
+    <form class="modal-body" id="venteForm">
+      <div class="mfields">
         <label class="mf mf-wide"><span>Bien (adresse)</span><input name="bien" list="venteBienOptions" placeholder="12 rue des Récollets…" required><datalist id="venteBienOptions"></datalist></label>
         <label class="mf mf-wide"><span>Client</span><input name="client" list="venteCliOptions" placeholder="M. et Mme…"><datalist id="venteCliOptions"></datalist></label>
         <label class="mf"><span>Prix de vente (€)</span><input name="prix" type="number" required></label>
@@ -2173,10 +2173,14 @@
     var pos=Math.max(6,Math.min(94,(reco-low)/(high-low)*100));
     document.getElementById('gaugeMk').style.left=pos+'%';
     // breakdown
-    var bd=[['Base marché ('+Math.round(state.baseM2).toLocaleString('fr-FR')+' €/m² × '+surf+' m²)',base,false],
-      ['Emplacement',base*pctLoc/100,pctLoc>=0],
-      ['État · DPE · terrain',base*(state.etat+state.dpe+state.terr)/100,(state.etat+state.dpe+state.terr)>=0]];
-    if(toggEur||toggPct)bd.push(['Équipements & environnement',base*toggPct/100+toggEur,(base*toggPct/100+toggEur)>=0]);
+    var bd=[['Base marché ('+Math.round(state.baseM2).toLocaleString('fr-FR')+' €/m² × '+surf+' m²)',base,false]];
+    if(pctLoc) bd.push(['Emplacement ('+(pctLoc>0?'+':'')+pctLoc+' %)',base*pctLoc/100,pctLoc>=0]);
+    if(state.etat) bd.push(['État intérieur ('+(state.etat>0?'+':'')+state.etat+' %)',base*state.etat/100,state.etat>=0]);
+    if(state.dpe) bd.push(['Qualité du DPE ('+(state.dpe>0?'+':'')+state.dpe+' %)',base*state.dpe/100,state.dpe>=0]);
+    if(state.terr) bd.push(['Terrain / exposition ('+(state.terr>0?'+':'')+state.terr+' %)',base*state.terr/100,state.terr>=0]);
+    for(var tk in state.tgls){ if(state.tgls[tk]){ var tg=state.tgls[tk];
+      var tval=tg.eur?parseFloat(tg.eur):base*parseFloat(tg.pct)/100;
+      bd.push([(tg.label||'Option').replace(/\s*·.*$/,''), tval, tval>=0]); } }
     state.custom.forEach(function(c){ bd.push([c.n, c.e, c.e>=0]); });
     if(parseFloat(state.trav))bd.push(['Travaux à prévoir',parseFloat(state.trav),false]);
     if(state.override)bd.push(['Prix final ajusté (plafond retenu)', state.override-Math.round(adjusted*1.02/1000)*1000, (state.override-Math.round(adjusted*1.02/1000)*1000)>=0]);
@@ -2343,6 +2347,15 @@
     document.getElementById('ventePart').innerHTML='Ma commission ('+pct+' %) : <b>'+p.toLocaleString('fr-FR')+' \u20ac</b>';
   }
   venteForm.addEventListener('input',ventePartPreview);
+  venteForm.elements.client.addEventListener('input',function(){
+    var c=contactsData.find(function(x){ return (x.nom||'').trim().toLowerCase()===this.value.trim().toLowerCase(); }.bind(this));
+    if(c && c.detail && !venteForm.elements.bien.value.trim()){ venteForm.elements.bien.value=c.detail; }
+  });
+  venteForm.elements.bien.addEventListener('input',function(){
+    // et inversement : bien du portefeuille → propriétaire proposé comme client
+    var b=(biens||[]).find(function(x){ return (x.ad||'').trim().toLowerCase()===this.value.trim().toLowerCase(); }.bind(this));
+    if(b && b.owner && !venteForm.elements.client.value.trim()){ venteForm.elements.client.value=b.owner; }
+  });
   function openVenteForm(v){
     editingVenteId=(v&&v.id)||null;
     document.getElementById('venteModalTitle').textContent=v?'Modifier la vente':'Nouvelle vente';
@@ -2889,14 +2902,14 @@
     var t=e.target.closest('.tgl');if(!t)return;
     t.classList.toggle('on');
     var key=t.dataset.eur?('e'+t.dataset.eur):('p'+t.dataset.pct);
-    state.tgls[key]=t.classList.contains('on')?{eur:t.dataset.eur,pct:t.dataset.pct}:false;
+    state.tgls[key]=t.classList.contains('on')?{eur:t.dataset.eur,pct:t.dataset.pct,label:t.textContent.trim()}:false;
     compute();
   });
   document.getElementById('fSurf').addEventListener('input',compute);
   // init toggles state (garage on by default)
   document.querySelectorAll('#tgls .tgl.on').forEach(function(t){
     var key=t.dataset.eur?('e'+t.dataset.eur):('p'+t.dataset.pct);
-    state.tgls[key]={eur:t.dataset.eur,pct:t.dataset.pct};
+    state.tgls[key]={eur:t.dataset.eur,pct:t.dataset.pct,label:t.textContent.trim()};
   });
   renderComps();
 
