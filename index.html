@@ -808,7 +808,7 @@
   .av-result .r b{display:block;font-family:var(--serifP);font-size:21px;font-weight:500;color:#EDE6D4;font-variant-numeric:tabular-nums}
   .av-result .r.main b{font-size:32px;color:#E3C77E}
   .av-result .r.main span{display:block;font-size:7.4px;color:#9A917C;margin-top:1.2mm}
-  .av-cover{width:100%;height:40mm;background-size:cover;background-position:center;margin-bottom:5.5mm;border-radius:3mm}
+  .av-cover{width:100%;height:52mm;background-size:cover;background-position:center;margin-bottom:5.5mm;border-radius:3mm}
   .av-photo{width:52mm;height:30mm;border-radius:2.5mm;flex:none;background:#F2F0EB;
     overflow:hidden;position:relative;background-size:cover;background-position:center}
   /* ---- infos : colonnes texte, hairlines ---- */
@@ -3463,7 +3463,7 @@
       var sheets=el.querySelectorAll('.dsheet');
       var pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4',compress:true});
       for(var i=0;i<sheets.length;i++){
-        var cv=await html2canvas(sheets[i],{scale:2.6,useCORS:true,backgroundColor:'#ffffff',logging:false});
+        var cv=await html2canvas(sheets[i],{scale:3,useCORS:true,backgroundColor:'#ffffff',logging:false});
         if(i>0) pdf.addPage();
         var h=Math.min(297, cv.height*210/cv.width);
         pdf.addImage(cv.toDataURL('image/jpeg',0.95),'JPEG',0,0,210,h);

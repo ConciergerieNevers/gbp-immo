@@ -131,7 +131,7 @@ export default async function handler(req, res){
       near = clean.filter(function(r){ return r.pm2>=300 && r.pm2<=9000; })
                   .sort(function(a,b){ return a.dist-b.dist; });
     }
-    var top = near.slice(0, 8);
+    var top = near.slice(0, 20);
     var med = median(top.map(function(r){ return r.pm2; }));
 
     res.status(200).json({
