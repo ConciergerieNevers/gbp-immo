@@ -501,6 +501,13 @@
   .stattile{background:var(--surface-2);border-radius:11px;padding:11px 13px;text-align:center}
   .stattile small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:660;margin-bottom:3px}
   .stattile b{font-size:17px;font-variant-numeric:tabular-nums}
+  .acqfilters{padding:14px 16px;margin-bottom:14px}
+  .afgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media (max-width:640px){ .afgrid{grid-template-columns:repeat(2,1fr)} }
+  .afgrid input,.afgrid select{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font:inherit;color:var(--ink);width:100%}
+  .acqfilters[hidden]{display:none}
+  .acq-title{font-size:14px;font-weight:700;margin:18px 0 4px;color:var(--ink)}
+  #acqSection[hidden]{display:none}
   .crm-subhead{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.08em;
     text-transform:uppercase;color:var(--accent);margin:20px 0 4px;padding-top:14px;border-top:1px solid var(--line)}
   .crm-subhead .c{background:var(--accent-soft);border-radius:20px;padding:2px 9px;font-size:11px}
@@ -1088,6 +1095,18 @@
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input placeholder="Rechercher un contact…"></div>
           <button class="btn pri" id="addContactBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ajouter</button>
         </div>
+        <div class="card acqfilters" id="acqFilters" hidden>
+          <div class="restyle-sub" style="margin-top:0">🔎 J'ai un bien — quels acquéreurs correspondent ?</div>
+          <div class="afgrid">
+            <label class="mf"><span>Prix du bien (€)</span><input id="afPrix" type="number" placeholder="220000"></label>
+            <label class="mf"><span>Type</span><select id="afType"><option value="">Tous</option><option>Maison</option><option>Appartement</option><option>Terrain</option><option>Immeuble</option></select></label>
+            <label class="mf"><span>Chambres du bien</span><input id="afCh" type="number" placeholder="3"></label>
+            <label class="mf"><span>Surface (m²)</span><input id="afSurf" type="number" placeholder="110"></label>
+            <label class="mf"><span>Secteur</span><input id="afSect" type="text" placeholder="Nevers, Marzy…"></label>
+            <label class="mf"><span>État du bien</span><select id="afEtat"><option value="">—</option><option value="renove">Neuf / rénové</option><option value="rafraichir">À rafraîchir</option><option value="travaux">Travaux</option></select></label>
+          </div>
+          <button type="button" class="ifedit" id="afReset" style="padding:6px 0 0">Réinitialiser les filtres</button>
+        </div>
         <div class="card" style="padding:6px 14px"><div class="clist" id="crmList"></div></div>
       </section>
 
@@ -1412,12 +1431,57 @@
     <form class="modal-body" id="contactForm">
       <div class="mfields">
         <label class="mf mf-wide"><span>Nom</span><input name="nom" required placeholder="M. et Mme Delaunay"></label>
+        <label class="mf"><span>Téléphone</span><input name="telephone" type="tel" placeholder="06 12 34 56 78"></label>
+        <label class="mf"><span>E-mail</span><input name="email" type="email" placeholder="contact@mail.fr"></label>
         <label class="mf"><span>Type</span><select name="role"><option value="vendeur">Vendeur</option><option value="acquereur">Acquéreur</option><option value="prospect">Prospect vendeur</option></select></label>
-        <label class="mf"><span>Statut / mandat</span><input name="statut" placeholder="Exclusif · Chaud · Tiède…"></label>
-        <label class="mf mf-wide"><span>Détail (bien lié / recherche / origine)</span><input name="detail" placeholder="12 rue des Récollets · T3/T4 centre…"></label>
-        <label class="mf"><span>Budget (€) — acquéreur</span><input name="budget" type="number" inputmode="numeric" placeholder="160000"></label>
+        <label class="mf"><span>Statut</span><input name="statut" placeholder="Exclusif · Chaud · Tiède…"></label>
+        <label class="mf mf-wide"><span>Détail (bien lié / origine)</span><input name="detail" placeholder="12 rue des Récollets · recommandation…"></label>
         <label class="mf"><span>Dernière relance</span><input name="derniere_relance" placeholder="hier · il y a 3 j"></label>
-        <label class="mf mf-wide"><span>Prochaine action</span><input name="prochaine_action" placeholder="Signature RDV jeudi"></label>
+        <label class="mf mf-wide"><span>Prochaine action</span><input name="prochaine_action" placeholder="Rappeler jeudi"></label>
+      </div>
+      <div id="acqSection" hidden>
+        <div class="acq-title">🎯 Fiche de découverte acquéreur</div>
+        <div class="restyle-sub">Le projet</div>
+        <div class="mfields">
+          <label class="mf"><span>Type de projet</span><select name="r_projet"><option>Résidence principale</option><option>Résidence secondaire</option><option>Investissement locatif</option></select></label>
+          <label class="mf"><span>Horizon d'achat</span><select name="r_horizon"><option>Urgent (&lt; 3 mois)</option><option>3 à 6 mois</option><option>6 à 12 mois</option><option>Plus de 12 mois</option></select></label>
+          <label class="mf"><span>Situation</span><select name="r_situation"><option>Premier achat</option><option>Propriétaire — doit vendre</option><option>Propriétaire — sans vente</option><option>Locataire</option></select></label>
+          <label class="mf"><span>Motivation</span><input name="r_motivation" placeholder="Mutation, agrandissement, retraite…"></label>
+        </div>
+        <div class="restyle-sub">Le financement</div>
+        <div class="mfields">
+          <label class="mf"><span>Budget maximum (€)</span><input name="budget" type="number" inputmode="numeric" placeholder="220000"></label>
+          <label class="mf"><span>Apport personnel (€)</span><input name="r_apport" type="number" inputmode="numeric" placeholder="30000"></label>
+          <label class="mf mf-wide"><span>Financement</span><select name="r_financement"><option>Non étudié</option><option>Simulation faite</option><option>Courtier en cours</option><option>Accord de principe banque</option><option>Achat comptant</option></select></label>
+        </div>
+        <div class="restyle-sub">Ce qu'il recherche</div>
+        <div class="mfields">
+          <label class="mf"><span>Type de bien</span><select name="r_type"><option>Maison</option><option>Appartement</option><option>Maison ou appartement</option><option>Terrain</option><option>Immeuble</option><option>Autre</option></select></label>
+          <label class="mf"><span>État accepté</span><select name="r_etat"><option>Neuf ou rénové uniquement</option><option>Rafraîchissement accepté</option><option>Travaux acceptés</option><option>Peu importe</option></select></label>
+          <label class="mf mf-wide"><span>Secteurs / quartiers recherchés</span><input name="r_secteurs" placeholder="Nevers centre, Marzy, Varennes-Vauzelles…"></label>
+          <label class="mf"><span>Surface min (m²)</span><input name="r_surf" type="number" placeholder="90"></label>
+          <label class="mf"><span>Terrain min (m²)</span><input name="r_terrain" type="number" placeholder="300"></label>
+          <label class="mf"><span>Chambres min</span><input name="r_ch" type="number" placeholder="3"></label>
+          <label class="mf"><span>Étage max (appart.)</span><input name="r_etage" type="number" placeholder="2"></label>
+        </div>
+        <div class="restyle-sub">Indispensables</div>
+        <div class="restyle-styles" id="acqMust">
+          <button type="button" class="rst" data-m="Garage / stationnement">Garage</button>
+          <button type="button" class="rst" data-m="Jardin">Jardin</button>
+          <button type="button" class="rst" data-m="Plain-pied">Plain-pied</button>
+          <button type="button" class="rst" data-m="Terrasse / balcon">Terrasse</button>
+          <button type="button" class="rst" data-m="Piscine">Piscine</button>
+          <button type="button" class="rst" data-m="Proche écoles">Proche écoles</button>
+          <button type="button" class="rst" data-m="Proche gare">Proche gare</button>
+          <button type="button" class="rst" data-m="Au calme">Au calme</button>
+          <button type="button" class="rst" data-m="Fibre">Fibre</button>
+          <button type="button" class="rst" data-m="Cave">Cave</button>
+          <button type="button" class="rst" data-m="Ascenseur">Ascenseur</button>
+        </div>
+        <div class="mfields" style="margin-top:12px">
+          <label class="mf mf-wide"><span>Rédhibitoires</span><input name="r_redhib" placeholder="Mitoyenneté, route passante, vis-à-vis…"></label>
+          <label class="mf mf-wide"><span>Notes de découverte</span><textarea name="r_notes" class="restyle-notes" rows="2" placeholder="Contexte, visites déjà faites, remarques…"></textarea></label>
+        </div>
       </div>
       <div class="autherr" id="contactErr"></div>
       <div class="modal-ft">
@@ -1870,8 +1934,20 @@
     if(tab && tab!=='prospects') crmTab=tab;
     function row(c){
       var initials=(c.nom||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var sub=c.detail||'';
+      if(c.role==='acquereur' && c.recherche){
+        var r=c.recherche, bits=[];
+        if(r.type) bits.push(r.type);
+        if(r.secteurs) bits.push(r.secteurs);
+        if(r.ch_min) bits.push('\u2265 '+r.ch_min+' ch.');
+        if(c.budget) bits.push(Math.round(c.budget/1000)+' k\u20ac'+(r.apport?' (apport '+Math.round(r.apport/1000)+' k)':''));
+        if(r.financement && r.financement!=='Non étudié') bits.push(r.financement);
+        if(r.horizon) bits.push(r.horizon);
+        if(bits.length) sub=bits.join(' \u00b7 ');
+      }
+      if(c.tel) sub+=(sub?' \u00b7 ':'')+'\ud83d\udcde '+c.tel;
       return '<div class="crow" data-id="'+c.id+'"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+initials+'</div>'+
-        '<div class="cmain"><b>'+(c.nom||'')+'</b><small>'+(c.detail||'')+'</small></div>'+
+        '<div class="cmain"><b>'+(c.nom||'')+'</b><small>'+sub+'</small></div>'+
         (c.role==='prospect'?'<button type="button" class="mkclient" data-mk="'+c.id+'">\u2192 Client</button>':'')+
         '<div class="cmeta">'+contactTag(c)+'<small class="cnext">'+((c.action||'')+' →')+'</small></div></div>';
     }
@@ -1884,10 +1960,41 @@
       html += pros.length ? pros.map(row).join('') : '<div style="color:var(--ink-3);padding:10px 4px;font-size:13px">Aucun prospect vendeur — ils arrivent automatiquement depuis tes estimations.</div>';
     } else {
       var acq=contactsData.filter(function(c){return c.role==='acquereur';});
-      html = acq.length ? acq.map(row).join('') : '<div style="color:var(--ink-3);padding:18px 4px;font-size:14px">Aucun contact ici — clique « Ajouter ».</div>';
+      var f={ prix:parseInt((document.getElementById('afPrix')||{}).value,10)||null,
+              type:(document.getElementById('afType')||{}).value||'',
+              ch:parseInt((document.getElementById('afCh')||{}).value,10)||null,
+              surf:parseInt((document.getElementById('afSurf')||{}).value,10)||null,
+              sect:((document.getElementById('afSect')||{}).value||'').trim().toLowerCase(),
+              etat:(document.getElementById('afEtat')||{}).value||'' };
+      var filtered=acq.filter(function(c){
+        var r=c.recherche||{};
+        if(f.prix && c.budget && c.budget<f.prix) return false;
+        if(f.type && r.type && r.type.indexOf(f.type)<0 && r.type!=='Maison ou appartement') return false;
+        if(f.type==='Maison' && r.type==='Appartement') return false;
+        if(f.type==='Appartement' && r.type==='Maison') return false;
+        if(f.ch && r.ch_min && r.ch_min>f.ch) return false;
+        if(f.surf && r.surf_min && r.surf_min>f.surf) return false;
+        if(f.sect && r.secteurs && r.secteurs.toLowerCase().indexOf(f.sect)<0) return false;
+        if(f.etat==='rafraichir' && r.etat==='Neuf ou rénové uniquement') return false;
+        if(f.etat==='travaux' && (r.etat==='Neuf ou rénové uniquement'||r.etat==='Rafraîchissement accepté')) return false;
+        return true;
+      });
+      var actifs=(f.prix||f.type||f.ch||f.surf||f.sect||f.etat);
+      html = (actifs?'<div class="crm-subhead" style="border-top:0;margin-top:6px;padding-top:4px">'+filtered.length+' acquéreur'+(filtered.length>1?'s':'')+' correspondant'+(filtered.length>1?'s':'')+' sur '+acq.length+'</div>':'');
+      html += filtered.length ? filtered.map(row).join('') : '<div style="color:var(--ink-3);padding:18px 4px;font-size:14px">'+(actifs?'Aucun acquéreur ne correspond à ces critères.':'Aucun acquéreur — clique « Ajouter ».')+'</div>';
     }
     document.getElementById('crmList').innerHTML=html;
+    var af=document.getElementById('acqFilters'); if(af) af.hidden=(crmTab!=='acquereurs');
   }
+  ['afPrix','afType','afCh','afSurf','afSect','afEtat'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.addEventListener('input',function(){ renderCrm(); });
+  });
+  var afR=document.getElementById('afReset');
+  if(afR) afR.addEventListener('click',function(){
+    ['afPrix','afCh','afSurf','afSect'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('afType').value=''; document.getElementById('afEtat').value='';
+    renderCrm();
+  });
   document.getElementById('crmTabs').addEventListener('click',function(e){
     var t=e.target.closest('.subtab');if(!t)return;
     this.querySelectorAll('.subtab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');
@@ -1915,7 +2022,8 @@
       if(res.error) throw res.error;
       if(res.data && res.data.length){
         contactsData=res.data.map(function(r){ return {id:r.id, role:r.role, nom:r.nom, detail:r.detail,
-          statut:r.statut, budget:r.budget, relance:r.derniere_relance, action:r.prochaine_action, couleur:r.couleur||'#6a9'}; });
+          statut:r.statut, budget:r.budget, relance:r.derniere_relance, action:r.prochaine_action, couleur:r.couleur||'#6a9',
+          tel:r.telephone, email:r.email, recherche:r.recherche||null}; });
         renderCrm();
       }
     }catch(e){ console.warn('[ESTIMAKE] Supabase contacts → démo', e); }
@@ -1926,6 +2034,10 @@
   var contactModal=document.getElementById('contactModal'), contactForm=document.getElementById('contactForm'),
       contactErr=document.getElementById('contactErr'), editingContactId=null;
   var CPAL=['#6a9','#7aa','#b78','#a86','#699','#8a7'];
+  function toggleAcqSection(){
+    var sec=document.getElementById('acqSection');
+    if(sec) sec.hidden = contactForm.elements.role.value!=='acquereur';
+  }
   function openContactForm(c){
     editingContactId = (c && c.id) ? c.id : null;
     var cd=document.getElementById('contactDelete'); if(cd) cd.hidden=!editingContactId;
@@ -1935,8 +2047,30 @@
     e.statut.value=c?(c.statut||''):''; e.detail.value=c?(c.detail||''):'';
     e.budget.value=(c&&c.budget)?c.budget:''; e.derniere_relance.value=c?(c.relance||''):'';
     e.prochaine_action.value=c?(c.action||''):'';
+    e.telephone.value=c?(c.tel||''):''; e.email.value=c?(c.email||''):'';
+    var r=(c&&c.recherche)||{};
+    e.r_projet.value=r.projet||'Résidence principale';
+    e.r_horizon.value=r.horizon||'3 à 6 mois';
+    e.r_situation.value=r.situation||'Premier achat';
+    e.r_motivation.value=r.motivation||'';
+    e.r_apport.value=r.apport||'';
+    e.r_financement.value=r.financement||'Non étudié';
+    e.r_type.value=r.type||'Maison';
+    e.r_etat.value=r.etat||'Peu importe';
+    e.r_secteurs.value=r.secteurs||'';
+    e.r_surf.value=r.surf_min||''; e.r_terrain.value=r.terrain_min||'';
+    e.r_ch.value=r.ch_min||''; e.r_etage.value=r.etage_max||'';
+    e.r_redhib.value=r.redhibitoires||''; e.r_notes.value=r.notes||'';
+    document.querySelectorAll('#acqMust .rst').forEach(function(b){
+      b.classList.toggle('on', Array.isArray(r.must)&&r.must.indexOf(b.dataset.m)>-1);
+    });
+    toggleAcqSection();
     contactErr.classList.remove('show'); contactErr.textContent=''; contactModal.hidden=false;
   }
+  contactForm.elements.role.addEventListener('change',toggleAcqSection);
+  document.getElementById('acqMust').addEventListener('click',function(ev){
+    var b=ev.target.closest('.rst'); if(b) b.classList.toggle('on');
+  });
   function closeContactForm(){ contactModal.hidden=true; }
   document.getElementById('addContactBtn').addEventListener('click',function(){ openContactForm(null); });
   document.getElementById('contactModalX').addEventListener('click',closeContactForm);
@@ -1945,11 +2079,22 @@
   contactForm.addEventListener('submit',async function(ev){
     ev.preventDefault();
     var e=contactForm.elements, budget=parseInt(e.budget.value,10); if(isNaN(budget)) budget=null;
+    var recherche=null;
+    if(e.role.value==='acquereur'){
+      recherche={ projet:e.r_projet.value, horizon:e.r_horizon.value, situation:e.r_situation.value,
+        motivation:e.r_motivation.value.trim(), apport:parseInt(e.r_apport.value,10)||null,
+        financement:e.r_financement.value, type:e.r_type.value, etat:e.r_etat.value,
+        secteurs:e.r_secteurs.value.trim(), surf_min:parseInt(e.r_surf.value,10)||null,
+        terrain_min:parseInt(e.r_terrain.value,10)||null, ch_min:parseInt(e.r_ch.value,10)||null,
+        etage_max:parseInt(e.r_etage.value,10)||null, redhibitoires:e.r_redhib.value.trim(), notes:e.r_notes.value.trim(),
+        must:[].map.call(document.querySelectorAll('#acqMust .rst.on'),function(b){return b.dataset.m;}) };
+    }
     var row={ role:e.role.value, nom:e.nom.value.trim(), detail:e.detail.value.trim(),
       statut:e.statut.value.trim()||null, budget:budget, derniere_relance:e.derniere_relance.value.trim(),
-      prochaine_action:e.prochaine_action.value.trim(), couleur:CPAL[contactsData.length%CPAL.length] };
+      prochaine_action:e.prochaine_action.value.trim(), couleur:CPAL[contactsData.length%CPAL.length],
+      telephone:e.telephone.value.trim()||null, email:e.email.value.trim()||null, recherche:recherche };
     if(!row.nom){ contactErr.textContent='Le nom est obligatoire.'; contactErr.classList.add('show'); return; }
-    var tabName={vendeur:'vendeurs',acquereur:'acquereurs',prospect:'prospects'}[row.role];
+    var tabName={vendeur:'vendeurs',acquereur:'acquereurs',prospect:'vendeurs'}[row.role];
     function showTab(){ document.querySelectorAll('#crmTabs .subtab').forEach(function(x){ x.classList.toggle('on', x.dataset.t===tabName); }); renderCrm(tabName); }
     var save=document.getElementById('contactSave'); save.disabled=true; var old=save.textContent; save.textContent='Enregistrement…';
     try{
