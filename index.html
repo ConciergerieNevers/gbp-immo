@@ -69,7 +69,7 @@
   }
 
   *{box-sizing:border-box}
-  html,body{margin:0;overflow-x:hidden}
+  html,body{margin:0;overflow-x:clip}
   /* Anti-zoom iOS : pas de zoom au double-tap, pas de zoom auto en tapant un champ */
   html{touch-action:manipulation;-webkit-text-size-adjust:100%}
   @media (max-width:768px){ input,select,textarea{font-size:16px!important} }
@@ -583,7 +583,7 @@
   .tgl .bx svg{width:12px;height:12px;color:#fff;opacity:0} .tgl.on .bx svg{opacity:1}
 
   /* Result panel */
-  .result{position:sticky;top:92px;padding:0;overflow:hidden}
+  .result{position:sticky;top:92px;padding:0;overflow:hidden;max-height:calc(100vh - 108px);overflow-y:auto}
   .result .hd{background:linear-gradient(160deg,var(--brand-2),var(--brand));color:#fff;padding:19px 20px 17px}
   .result .hd .eyebrow{color:rgba(255,255,255,.7)}
   .result .hd .fourchette{font-family:var(--serif);font-size:19px;margin-top:9px;letter-spacing:0}
