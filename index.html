@@ -1099,6 +1099,7 @@
           <button class="subtab on" type="button">Mes biens</button>
         </div>
         <div class="sectitle"><h2>Mes estimations</h2><div class="grow"></div><span class="eyebrow" id="estimCount"></span></div>
+        <div class="search" style="margin-bottom:13px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="estimSearch" placeholder="Rechercher une adresse, un client, un type…"></div>
         <div class="grid bienscol" id="estimList"><div class="estimempty">Aucune estimation enregistrée pour l'instant — elles apparaîtront ici dès que tu enregistres depuis l'écran Estimer.</div></div>
         <div class="sectitle" style="margin-top:22px"><h2>Portefeuille</h2></div>
         <div class="toolbar">
@@ -2851,8 +2852,19 @@
       if(res.error) throw res.error;
       var list=document.getElementById('estimList'); if(!list) return;
       var rows=res.data||[];
-      document.getElementById('estimCount').textContent=rows.length?(rows.length+' estimation'+(rows.length>1?'s':'')):'';
-      if(!rows.length) return;
+      window.__estimsAll=rows;
+      renderEstimList();
+    }catch(e){ console.warn('[ESTIMAKE] estimations', e); }
+  }
+  function renderEstimList(){
+      var list=document.getElementById('estimList'); if(!list) return;
+      var q=((document.getElementById('estimSearch')||{}).value||'').trim().toLowerCase();
+      var all=window.__estimsAll||[];
+      var rows=q?all.filter(function(r){
+        return ((r.adresse||'')+' '+(r.client||'')+' '+(r.type||'')).toLowerCase().indexOf(q)>-1;
+      }):all;
+      document.getElementById('estimCount').textContent=all.length?(q?(rows.length+' / '+all.length):(all.length+' estimation'+(all.length>1?'s':''))):'';
+      if(!rows.length){ list.innerHTML='<div class="estimempty">'+(q?'Aucune estimation ne correspond \u00e0 \u00ab '+q+' \u00bb.':'Aucune estimation enregistr\u00e9e pour l\u2019instant.')+'</div>'; window.__estims=[]; return; }
       window.__estims=rows;
       list.innerHTML=rows.map(function(r,i){
         var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
@@ -2870,8 +2882,8 @@
             '<div class="specs"><span>'+(r.type||'')+'</span>'+(r.surface?'<span>'+r.surface+' m\u00b2</span>':'')+'<span>'+d+'</span></div></div>'+
         '</div>';
       }).join('');
-    }catch(e){ console.warn('[ESTIMAKE] estimations', e); }
   }
+  (function(){ var se=document.getElementById('estimSearch'); if(se) se.addEventListener('input',renderEstimList); })();
   document.getElementById('estimList').addEventListener('click',async function(e){
     var del=e.target.closest('.estdel');
     if(del){ e.stopPropagation();
