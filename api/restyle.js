@@ -14,12 +14,12 @@
 export const config = { maxDuration: 60 };
 
 const STYLES = {
-  'Moderne':    'a bright modern interior, clean lines, neutral palette, designer furniture, warm natural light',
-  'Scandinave': 'a cozy scandinavian interior, light wood, white walls, soft textiles, minimal warm decor',
-  'Cosy':       'a warm cosy interior, soft ambient lighting, comfortable seating, plants, layered textiles',
-  'Luxe':       'an upscale luxury interior, elegant materials, marble and brass accents, refined designer furniture',
-  'Épuré':      'a decluttered, minimalist, professionally staged interior, neutral tones, spacious airy feel',
-  'Industriel': 'a warm industrial interior, exposed brick and concrete, black metal frames, wood and leather'
+  'Moderne':    'contemporary home-staging: warm neutral palette, clean-lined furniture, a few tasteful decor pieces, plants, soft natural daylight',
+  'Scandinave': 'scandinavian home-staging: light oak wood, off-white walls, linen and wool textiles, calm and uncluttered',
+  'Cosy':       'warm cosy home-staging: soft neutral tones, a comfortable sofa, throw blankets and a rug, plants, gentle lighting',
+  'Luxe':       'understated high-end home-staging: quality natural materials, refined but restrained furniture, subtle elegant accents — no gaudy gold, no excess',
+  'Épuré':      'minimalist home-staging: decluttered, neutral tones, a few well-chosen pieces, airy and spacious feel',
+  'Industriel': 'soft industrial home-staging: matte black metal details, warm wood, neutral textiles, kept liveable and tasteful'
 };
 
 // Aménagements cibles (transformer l'usage de la pièce sans toucher à la structure)
@@ -34,8 +34,8 @@ const ROOMS = {
   'bureau':           'a home office: a desk, an ergonomic chair and wall shelving'
 };
 
-var KEEP = 'ABSOLUTE PRIORITY: keep the EXACT same room — identical walls, windows, doors, ceiling, floor surface, room size and camera viewpoint. Do NOT invent a different, larger or fancier room. Change only the furniture, fixtures, materials, colours and lighting. Photorealistic professional real-estate interior photograph, realistic perspective, high detail.';
-var NEG  = 'different room, changed or added windows, moved walls, altered architecture, bigger room, distorted or warped perspective, fisheye, extra rooms, unrealistic proportions, cartoon, illustration, blurry, low quality, watermark, text, logo';
+var KEEP = 'This must look like a REAL professional real-estate home-staging photograph — believable and natural, NOT an AI render and NOT a fantasy or magazine-palace scene. ABSOLUTE PRIORITY: keep the EXACT same room — identical walls, windows, doors, ceiling, floor surface, room size and camera viewpoint. Do NOT enlarge, embellish or replace the room. Change only the furniture, decor, textiles, colours and lighting, tastefully and realistically, in line with current interior-design trends. Natural lighting, realistic materials, subtle and understated, high detail.';
+var NEG  = 'AI render, CGI, 3D render, videogame, fantasy, surreal, exaggerated luxury, gaudy, gold everywhere, ornate palace, chandelier overload, different room, changed or added windows, moved walls, altered architecture, bigger room, distorted or warped perspective, fisheye, extra rooms, unrealistic proportions, oversaturated, cartoon, illustration, blurry, low quality, watermark, text, logo';
 
 function defaultPrompt(style, room){
   var s = STYLES[style] || STYLES['Moderne'];

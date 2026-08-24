@@ -418,6 +418,18 @@
   .photo-remove svg{width:16px;height:16px}
   .restyle{margin-top:14px}
   .restyle[hidden]{display:none}
+  .staging-lab{font-size:13px;color:var(--ink-2);font-weight:600;margin:2px 0 9px}
+  .staging-lab small{display:block;font-size:11px;color:var(--ink-3);font-weight:500;margin-top:2px}
+  .staging-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:8px}
+  .sthumb{position:relative;aspect-ratio:1/1;border-radius:11px;overflow:hidden;border:2px solid var(--line);cursor:pointer;background:var(--surface-2)}
+  .sthumb.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+  .sthumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .sthumb .sbadge{position:absolute;left:5px;bottom:5px;background:rgba(20,16,7,.82);color:#f4e3b8;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;letter-spacing:.03em}
+  .sthumb .sdel{position:absolute;top:4px;right:4px;width:21px;height:21px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  .sthumb .sdel svg{width:12px;height:12px}
+  .sadd{aspect-ratio:1/1;border:2px dashed var(--line);border-radius:11px;background:var(--surface);color:var(--ink-3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11px;font-weight:600;text-align:center;padding:6px}
+  .sadd svg{width:22px;height:22px}
+  .sadd:hover{border-color:var(--accent);color:var(--accent)}
   .restyle-lab{font-size:13px;color:var(--ink-2);font-weight:520;margin-bottom:9px}
   .restyle-sub{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:660;margin:12px 0 6px}
   .restyle-notes{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;
@@ -670,6 +682,11 @@
   .dtitle{font-size:24px;letter-spacing:-.02em;margin:0 0 2px;color:#16211d}
   .dsub{color:#56605a;font-size:13.5px;margin-bottom:14px}
   .dcover{width:100%;height:62mm;object-fit:cover;border-radius:12px;margin:2px 0 18px;border:1px solid #dbded6;display:block}
+  .dstaging{display:flex;flex-direction:column;gap:11px}
+  .dpair{display:grid;grid-template-columns:1fr 1fr;gap:9px;break-inside:avoid}
+  .dpair figure{margin:0}
+  .dpair figcaption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6b7a72;margin-bottom:3px;font-weight:700}
+  .dpair img{width:100%;height:46mm;object-fit:cover;border-radius:8px;border:1px solid #dbded6;display:block}
   .dspecs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
   .dspec{border:1px solid #dbded6;border-radius:9px;padding:10px 6px;text-align:center}
   .dspec b{display:block;font-size:16px;color:#16211d;font-variant-numeric:tabular-nums}
@@ -900,20 +917,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
                 Cadastre &amp; DVF chargés automatiquement pour cette adresse
               </div>
-              <label class="photobox" id="estPhotoBox">
-                <input type="file" accept="image/*" capture="environment" id="estPhotoInput" hidden>
-                <div class="photo-empty" id="estPhotoEmpty">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg>
-                  <b>Prendre une photo du bien</b>
-                  <small>Appareil photo ou galerie · apparaîtra sur le dossier PDF</small>
-                </div>
-                <img id="estPhotoImg" alt="Photo du bien" hidden>
-                <button type="button" class="photo-remove" id="estPhotoRemove" title="Retirer la photo" hidden>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                </button>
-              </label>
+              <div class="staging-lab">📷 Photos du bien <small>galerie ou appareil · plusieurs possibles · reprises dans le dossier</small></div>
+              <input type="file" accept="image/*" multiple id="estPhotoInput" hidden>
+              <div class="staging-grid" id="estGallery"></div>
               <div class="restyle" id="restyleBox" hidden>
-                <div class="restyle-lab">✨ Réaménager cette pièce avec l'IA — la structure réelle (murs, fenêtres, volumes) est conservée.</div>
+                <div class="restyle-lab">✨ Home-staging de la photo sélectionnée — la structure réelle (murs, fenêtres, volumes) est conservée.</div>
                 <div class="restyle-sub">Transformer en</div>
                 <div class="restyle-styles" id="restyleRooms">
                   <button type="button" class="rst on" data-r="">Même pièce</button>
@@ -1900,35 +1908,21 @@
   renderComps();
 
   // generate dossier feedback (+ enregistrement en base si configurée)
-  /* ---------- photo du bien (estimation) ---------- */
-  var estPhoto=null;
+  /* ---------- Photos du bien + home-staging (multi-photos) ---------- */
+  var estPhotos=[];   // [{ before:dataURL, after:dataURL|null }]
+  var selPhoto=-1;
   (function(){
-    var input=document.getElementById('estPhotoInput'), img=document.getElementById('estPhotoImg'),
-        empty=document.getElementById('estPhotoEmpty'), rm=document.getElementById('estPhotoRemove');
-    if(!input) return;
-    var rbox=document.getElementById('restyleBox');
-    input.addEventListener('change',function(){
-      var f=this.files&&this.files[0]; if(!f) return;
-      var reader=new FileReader();
-      reader.onload=function(e){ estPhoto=e.target.result; img.src=estPhoto; img.hidden=false; empty.hidden=true; rm.hidden=false; if(rbox) rbox.hidden=false; };
-      reader.readAsDataURL(f);
-    });
-    rm.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation();
-      estPhoto=null; input.value=''; img.hidden=true; img.removeAttribute('src'); empty.hidden=false; rm.hidden=true;
-      if(rbox){ rbox.hidden=true; document.getElementById('restyleOut').hidden=true; document.getElementById('restyleMsg').hidden=true; } });
-  })();
-
-  /* ---------- restyling IA (Claude rédige le prompt + modèle d'image via /api/restyle) ---------- */
-  (function(){
-    var box=document.getElementById('restyleBox'); if(!box) return;
+    var input=document.getElementById('estPhotoInput'), gallery=document.getElementById('estGallery'),
+        rbox=document.getElementById('restyleBox');
+    if(!input || !gallery) return;
     var styles=document.getElementById('restyleStyles'), rooms=document.getElementById('restyleRooms'),
         btn=document.getElementById('restyleBtn'),
         out=document.getElementById('restyleOut'), before=document.getElementById('restyleBefore'),
         after=document.getElementById('restyleAfter'), dl=document.getElementById('restyleDl'),
-        msg=document.getElementById('restyleMsg');
-    function pickHandler(group){ group.addEventListener('click',function(e){ var b=e.target.closest('.rst'); if(!b) return;
+        msg=document.getElementById('restyleMsg'), notesEl=document.getElementById('restyleNotes');
+    function pickHandler(group){ if(!group) return; group.addEventListener('click',function(e){ var b=e.target.closest('.rst'); if(!b) return;
       group.querySelectorAll('.rst').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); }); }
-    pickHandler(styles); if(rooms) pickHandler(rooms);
+    pickHandler(styles); pickHandler(rooms);
     function scale(dataURL){ return new Promise(function(res){
       var im=new Image();
       im.onload=function(){ var max=1024, w=im.width, h=im.height;
@@ -1936,22 +1930,67 @@
         var c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(im,0,0,w,h);
         try{ res(c.toDataURL('image/jpeg',0.85)); }catch(e){ res(dataURL); } };
       im.onerror=function(){ res(dataURL); }; im.src=dataURL; }); }
+    var addSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+    var delSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    function renderGallery(){
+      var html='';
+      estPhotos.forEach(function(p,i){
+        html+='<div class="sthumb'+(i===selPhoto?' sel':'')+'" data-i="'+i+'">'+
+          '<img src="'+(p.after||p.before)+'" alt="photo '+(i+1)+'">'+
+          (p.after?'<span class="sbadge">✨ Après</span>':'')+
+          '<button type="button" class="sdel" data-del="'+i+'" title="Retirer">'+delSVG+'</button></div>';
+      });
+      html+='<button type="button" class="sadd" id="sAddTile">'+addSVG+'<span>Ajouter<br>des photos</span></button>';
+      gallery.innerHTML=html;
+      document.getElementById('sAddTile').addEventListener('click',function(){ input.click(); });
+    }
+    function selectPhoto(i){
+      selPhoto=i; renderGallery();
+      if(i<0 || !estPhotos[i]){ rbox.hidden=true; return; }
+      rbox.hidden=false; var p=estPhotos[i];
+      before.src=p.before;
+      if(p.after){ after.src=p.after; dl.href=p.after; out.hidden=false; } else { out.hidden=true; }
+      msg.hidden=true;
+      try{ rbox.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(e){}
+    }
+    input.addEventListener('change',function(){
+      var files=[].slice.call(this.files||[]); if(!files.length) return;
+      var pending=files.length, firstNew=estPhotos.length;
+      files.forEach(function(f){
+        var reader=new FileReader();
+        reader.onload=function(e){ estPhotos.push({before:e.target.result, after:null}); if(--pending===0){ selectPhoto(firstNew); } };
+        reader.onerror=function(){ if(--pending===0){ selectPhoto(firstNew); } };
+        reader.readAsDataURL(f);
+      });
+      this.value='';
+    });
+    gallery.addEventListener('click',function(e){
+      var del=e.target.closest('.sdel');
+      if(del){ e.stopPropagation(); var di=parseInt(del.dataset.del,10); estPhotos.splice(di,1);
+        if(selPhoto===di){ selPhoto=-1; renderGallery(); rbox.hidden=true; }
+        else { if(selPhoto>di) selPhoto--; renderGallery(); } return; }
+      var th=e.target.closest('.sthumb'); if(th){ selectPhoto(parseInt(th.dataset.i,10)); }
+    });
     btn.addEventListener('click',async function(){
-      if(!estPhoto) return;
+      if(selPhoto<0 || !estPhotos[selPhoto]){ msg.textContent='Sélectionne d\'abord une photo.'; msg.hidden=false; return; }
+      var p=estPhotos[selPhoto];
       var sel=styles.querySelector('.rst.on'); var style=sel?sel.dataset.s:'Moderne';
       var rsel=rooms?rooms.querySelector('.rst.on'):null; var room=rsel?(rsel.dataset.r||''):'';
-      var notesEl=document.getElementById('restyleNotes'); var notes=notesEl?notesEl.value.trim():'';
+      var notes=notesEl?notesEl.value.trim():'';
       msg.hidden=true; out.hidden=true; var old=btn.textContent; btn.disabled=true; btn.textContent='Génération en cours… (15–30 s)';
       try{
-        var small=await scale(estPhoto);
+        var small=await scale(p.before);
         var r=await fetch('/api/restyle',{ method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ image:small, style:style, room:room, notes:notes }) });
         var j=await r.json().catch(function(){ return { error:'Réponse invalide du serveur.' }; });
         if(!r.ok || !j.image){ throw new Error(j.error || ('Erreur '+r.status)); }
-        before.src=small; after.src=j.image; dl.href=j.image; out.hidden=false;
+        p.after=j.image;
+        before.src=p.before; after.src=j.image; dl.href=j.image; out.hidden=false;
+        renderGallery();   // met à jour le badge "Après"
       }catch(e){
-        msg.textContent='⚠️ '+(e.message||e)+' — le restyling IA fonctionne une fois le site déployé sur Vercel avec les clés API configurées.'; msg.hidden=false;
+        msg.textContent='⚠️ '+(e.message||e); msg.hidden=false;
       }finally{ btn.disabled=false; btn.textContent=old; }
     });
+    renderGallery();
   })();
 
   /* ---------- recherche d'adresse réelle (Base Adresse Nationale) ---------- */
@@ -2012,6 +2051,10 @@
     var risks=[].slice.call(document.querySelectorAll('#estimation .risks .risk')).map(function(r){
       return '<div class="drisk"><b>'+r.querySelector('b').textContent+'</b><small>'+r.querySelector('small').textContent+'</small></div>';
     }).join('');
+    var cover = estPhotos.length ? (estPhotos[0].after||estPhotos[0].before) : '';
+    var pairs = estPhotos.filter(function(p){ return p.after; });
+    var stagingHtml = pairs.length ? ('<h2>Home staging — avant / après</h2><div class="dstaging">'+
+      pairs.map(function(p){ return '<div class="dpair"><figure><figcaption>Avant</figcaption><img src="'+p.before+'"></figure><figure><figcaption>Après (home staging)</figcaption><img src="'+p.after+'"></figure></div>'; }).join('')+'</div>') : '';
     var reco=txt('rReco'), low=txt('rLow'), high=txt('rHigh'), pm2=txt('rPm2');
     var agent=txt('runame')||'Jimmy Garcia'; var agentEmail=txt('rurole'); if(agentEmail.indexOf('@')<0) agentEmail='';
     var dd=new Date(); var dateStr=dd.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
@@ -2021,7 +2064,7 @@
         '<header class="dhd"><div class="dbrand"><div class="dlogo">'+dLogoSVG+'</div><div><b>ESTIMAKE</b><span>Agence GBP · Nevers</span></div></div>'+
           '<div class="dmeta">Dossier d\'estimation<small>'+dateStr+'</small></div></header>'+
         '<h1 class="dtitle">'+adresse+'</h1><div class="dsub">'+ville+' · '+type+'</div>'+
-        (estPhoto?'<img class="dcover" src="'+estPhoto+'" alt="Photo du bien">':'')+
+        (cover?'<img class="dcover" src="'+cover+'" alt="Photo du bien">':'')+
         '<div class="dspecs">'+spec(g('fSurf').value,'m² habitables')+spec(g('fTerr').value,'m² terrain')+spec(g('fPieces').value,'pièces')+spec(g('fChambres').value,'chambres')+spec(g('fAnnee').value,'année')+'</div>'+
         '<div class="dprice"><div class="dprice-l"><span>Valeur de marché estimée</span><b>'+low+' – '+high+'</b></div>'+
           '<div class="dprice-r"><span>Prix de mise en vente conseillé</span><span class="big">'+reco+'</span><small>'+pm2+'</small></div></div>'+
@@ -2029,6 +2072,7 @@
         '<p class="dnote">'+txt('compSummary')+'</p>'+
         '<h2>Analyse &amp; positionnement du prix</h2><table class="dtable"><tbody>'+breakRows+'</tbody></table>'+
         '<h2>Environnement &amp; risques · Géorisques</h2><div class="drisks">'+risks+'</div>'+
+        stagingHtml+
         '<h2>Argumentaire</h2><p class="darg">'+arg+'</p>'+
         '<footer class="dft"><div><b>'+agent+'</b> · Agence GBP · Nevers'+(agentEmail?'<br>'+agentEmail:'')+'</div>'+
           '<div>Estimation à titre indicatif — ne constitue pas une expertise réglementée.<br>Généré par ESTIMAKE le '+dateStr+'.</div></footer>'+
