@@ -438,6 +438,20 @@
   .restyle-notes:focus{outline:none;border-color:var(--accent)}
   .clifields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
   @media (max-width:640px){ .clifields{grid-template-columns:1fr} }
+  /* Raccourcis Immo-Facile (cockpit) */
+  .ifedit{border:0;background:none;color:var(--accent);font:inherit;font-size:13px;font-weight:640;cursor:pointer;padding:4px 6px}
+  .iflinks{display:flex;flex-wrap:wrap;gap:9px}
+  .ifchip{display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:var(--rail);color:#EBDFC2;
+    border-radius:11px;padding:11px 15px;font-size:13.5px;font-weight:600;border:1px solid transparent}
+  .ifchip svg{width:15px;height:15px;flex:none;color:var(--accent)}
+  .ifchip:active{transform:scale(.97)}
+  .ifchip .ifdel{margin-left:4px;width:19px;height:19px;border:0;border-radius:50%;background:rgba(255,255,255,.16);
+    color:#fff;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;font-size:12px;line-height:1}
+  .iflinks.editing .ifdel{display:inline-flex}
+  .ifadd{display:grid;gap:9px;margin-top:13px}
+  .ifadd input{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 12px;font:inherit;color:var(--ink)}
+  .ifadd input:focus{outline:none;border-color:var(--accent)}
+  .ifadd[hidden]{display:none}
   .restyle-styles{display:flex;gap:6px;flex-wrap:wrap}
   .rst{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:7px 13px;font-size:13px;
     color:var(--ink-2);font-weight:540;cursor:pointer}
@@ -875,6 +889,16 @@
           </div>
         </div>
 
+        <div class="sectitle"><h2>Immo-Facile · accès rapides</h2><div class="grow"></div><button class="ifedit" id="ifEdit" type="button">Modifier</button></div>
+        <div class="card pad" style="margin-bottom:22px">
+          <div class="iflinks" id="ifLinks"></div>
+          <div class="ifadd" id="ifAdd" hidden>
+            <input id="ifName" placeholder="Nom (ex : Liste des biens)" maxlength="40">
+            <input id="ifUrl" type="url" placeholder="Colle ici le lien de la page Immo-Facile (https://…)">
+            <button class="btn gold" id="ifSaveBtn" type="button">Ajouter le raccourci</button>
+          </div>
+        </div>
+
         <div class="sectitle"><h2>Tunnel de conversion</h2><div class="grow"></div><span class="eyebrow">12 derniers mois</span></div>
         <div class="grid funnel">
           <div class="card pad">
@@ -1276,6 +1300,42 @@
   var houseSVG='<svg class="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>';
   var checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
   var euro=function(n){return Math.round(n).toLocaleString('fr-FR')+' €';};
+
+  /* ---------- Raccourcis Immo-Facile (cockpit, éditables) ---------- */
+  (function(){
+    var box=document.getElementById('ifLinks'); if(!box) return;
+    var DEF=[{n:'Accueil Immo-Facile',u:'https://v2.immo-facile.com/catalog/admin-v2/home.php'}];
+    var links; try{ links=JSON.parse(localStorage.getItem('estimake_iflinks')||'null'); }catch(e){}
+    if(!Array.isArray(links)||!links.length) links=DEF.slice();
+    function save(){ localStorage.setItem('estimake_iflinks', JSON.stringify(links)); }
+    var ico='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+    function render(){
+      box.innerHTML=links.map(function(l,i){
+        return '<a class="ifchip" href="'+esc(l.u)+'" target="_blank" rel="noopener">'+ico+esc(l.n)+
+          '<button type="button" class="ifdel" data-i="'+i+'" title="Retirer">✕</button></a>';
+      }).join('');
+    }
+    render();
+    box.addEventListener('click',function(e){
+      var d=e.target.closest('.ifdel');
+      if(d){ e.preventDefault(); e.stopPropagation(); links.splice(parseInt(d.dataset.i,10),1); save(); render(); }
+    });
+    var editBtn=document.getElementById('ifEdit'), addForm=document.getElementById('ifAdd');
+    editBtn.addEventListener('click',function(){
+      var on=box.classList.toggle('editing');
+      addForm.hidden=!on;
+      editBtn.textContent=on?'Terminé':'Modifier';
+    });
+    document.getElementById('ifSaveBtn').addEventListener('click',function(){
+      var n=document.getElementById('ifName').value.trim(), u=document.getElementById('ifUrl').value.trim();
+      if(!n||!u){ toast('Renseigne le nom et le lien.'); return; }
+      if(!/^https?:\/\//i.test(u)){ u='https://'+u; }
+      links.push({n:n,u:u}); save(); render();
+      document.getElementById('ifName').value=''; document.getElementById('ifUrl').value='';
+      toast('Raccourci ajouté ✓');
+    });
+  })();
 
   /* ---------- theme : mode JOUR par défaut, sombre optionnel et mémorisé ---------- */
   var root=document.documentElement;
