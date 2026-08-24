@@ -454,6 +454,22 @@
   .comptable tr.selrow .ck{color:var(--accent);font-size:14px}
   .comptable tr.selrow.out{opacity:.42}
   .comptable tr.selrow.out td{text-decoration:line-through}
+  /* Lots immeuble */
+  #lotsCard[hidden]{display:none}
+  .lotrow{display:flex;align-items:center;gap:11px;background:var(--surface-2);border-radius:10px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
+  .lotrow .lt{width:36px;height:36px;border-radius:9px;background:var(--rail);color:#EBDFC2;display:grid;place-items:center;font-size:15px;flex:none}
+  .lotrow b{font-size:13.5px;display:block}
+  .lotrow small{font-size:12px;color:var(--ink-3);display:block;margin-top:2px}
+  .lotrow .loy{margin-left:auto;text-align:right;flex:none}
+  .lotrow .loy b{color:var(--accent);font-variant-numeric:tabular-nums}
+  .lotrow .loy small{font-size:10.5px}
+  .lotsynth{background:var(--accent-soft);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--ink);margin-top:6px}
+  .lotsynth b{color:var(--accent)}
+  .lot-hab[hidden],.lot-com[hidden]{display:none}
+  .rentbox{margin-top:12px;background:var(--surface-2);border-radius:10px;padding:11px 13px;font-size:12.5px}
+  .rentbox b{color:var(--accent);font-variant-numeric:tabular-nums}
+  .rentbox .rline{display:flex;justify-content:space-between;padding:2px 0}
+  .rentbox[hidden]{display:none}
   /* Marché & quartier */
   .mk-auto{font-size:11px;color:var(--accent);font-weight:640;margin-left:8px;text-transform:none;letter-spacing:0}
   .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:13px}
@@ -1214,6 +1230,8 @@
                   <input class="inp" id="fSdb" type="number" value="1"></div>
                 <div class="field"><label>Année (approx.)</label>
                   <input class="inp" id="fAnnee" type="number" value="1972"></div>
+                <div class="field"><label>Loyer potentiel (€/mois)</label>
+                  <input class="inp" id="fLoyer" type="number" placeholder="650"></div>
               </div>
               <div style="margin-top:15px">
                 <label style="font-size:12px;color:var(--ink-2);font-weight:560;display:block;margin-bottom:7px">Emplacement</label>
@@ -1256,6 +1274,13 @@
                 Charger les ventes réelles (DVF)
               </button>
               <div class="restyle-msg" id="dvfMsg" hidden></div>
+            </div>
+
+            <div class="card estcard" id="lotsCard" hidden>
+              <h3><span class="stepnum">🏢</span> Lots de l'immeuble
+                <button type="button" class="btn pri" id="addLotBtn" style="margin-left:auto;padding:8px 13px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Lot</span></button></h3>
+              <div id="lotsList"><div class="estimempty">Ajoute chaque lot (appartement, local commercial, garage…) avec ses propres caractéristiques.</div></div>
+              <div class="lotsynth" id="lotSynth" hidden></div>
             </div>
 
             <div class="card estcard" id="marketCard">
@@ -1335,6 +1360,7 @@
               <div class="big tnum" id="rReco">199 000 €</div>
               <div class="pm2 tnum" id="rPm2">soit 1 567 €/m² · marché stable</div>
               <div class="recoflag" id="recoFlag" hidden>Prix ajusté manuellement · <button type="button" id="recoReset">revenir au calcul</button></div>
+              <div class="rentbox" id="rentBox" hidden></div>
             </div>
             <div class="gauge">
               <div class="track"><div class="mk" id="gaugeMk" style="left:66%"></div></div>
@@ -1556,6 +1582,37 @@
       <input type="date" id="statsFrom"> <span>→</span> <input type="date" id="statsTo">
     </div>
     <div id="statsBody" style="max-height:52vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- ======== FORMULAIRE LOT (immeuble) ======== -->
+<div class="modal" id="lotModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b id="lotModalTitle">Nouveau lot</b>
+      <button class="modal-x" id="lotX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form class="modal-body" id="lotForm">
+      <div class="mfields">
+        <label class="mf"><span>Type de lot</span><select name="l_type"><option>Appartement</option><option>Studio</option><option>Maison</option><option>Local commercial</option><option>Bureau</option><option>Garage / Parking</option><option>Cave</option><option>Autre</option></select></label>
+        <label class="mf"><span>Étage / niveau</span><input name="l_etage" placeholder="RDC, 1er, 2e…"></label>
+        <label class="mf"><span>Surface (m²)</span><input name="l_surf" type="number" required></label>
+        <label class="mf"><span>État</span><select name="l_etat"><option>Bon état</option><option>À rafraîchir</option><option>Travaux</option><option>Refait à neuf</option></select></label>
+        <label class="mf lot-hab"><span>Pièces</span><input name="l_pieces" type="number" placeholder="3"></label>
+        <label class="mf lot-hab"><span>Chambres</span><input name="l_ch" type="number" placeholder="2"></label>
+        <label class="mf lot-hab"><span>Salles de bain</span><input name="l_sdb" type="number" placeholder="1"></label>
+        <label class="mf lot-hab"><span>DPE</span><select name="l_dpe"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></label>
+        <label class="mf lot-com"><span>Activité / destination</span><input name="l_activite" placeholder="Commerce, restauration, profession libérale…"></label>
+        <label class="mf lot-com"><span>Vitrine (m linéaire)</span><input name="l_vitrine" type="number" placeholder="6"></label>
+        <label class="mf"><span>Loyer (€/mois)</span><input name="l_loyer" type="number" placeholder="520"></label>
+        <label class="mf"><span>Occupation</span><select name="l_occ"><option>Loué</option><option>Vacant</option><option>Occupé propriétaire</option></select></label>
+        <label class="mf mf-wide"><span>Note</span><input name="l_note" placeholder="Bail 3/6/9 en cours, compteurs séparés…"></label>
+      </div>
+      <div class="autherr" id="lotErr"></div>
+      <div class="modal-ft">
+        <button type="button" class="btn danger-o" id="lotDelete" style="margin-right:auto" hidden>Supprimer</button>
+        <button type="button" class="btn" id="lotCancel">Annuler</button>
+        <button type="submit" class="btn pri">Enregistrer le lot</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -2383,6 +2440,18 @@
     // bandeau prix mobile toujours visible
     var spR=document.getElementById('spRange'), spP=document.getElementById('spReco');
     if(spR){ spR.textContent=Math.round(low/1000)+' – '+Math.round(high/1000)+' k€'; spP.textContent=euro(reco); }
+    // rentabilité locative
+    var rb=document.getElementById('rentBox');
+    if(rb){
+      var loyM=(typeof loyersMensuels==='function')?loyersMensuels():0;
+      if(loyM>0 && reco>0){
+        var loyA=loyM*12, rdt=loyA/reco*100;
+        rb.hidden=false;
+        rb.innerHTML='<div class="rline"><span>Loyers potentiels</span><b>'+loyM.toLocaleString('fr-FR')+' \u20ac/mois \u00b7 '+loyA.toLocaleString('fr-FR')+' \u20ac/an</b></div>'+
+          '<div class="rline"><span>Rendement brut au prix conseill\u00e9</span><b>'+rdt.toFixed(1).replace('.',',')+' %</b></div>'+
+          '<div class="rline" style="color:var(--ink-3)"><span>Prix pour 8 % \u00b7 9 % \u00b7 10 %</span><span>'+Math.round(loyA/0.08/1000)+' k\u20ac \u00b7 '+Math.round(loyA/0.09/1000)+' k\u20ac \u00b7 '+Math.round(loyA/0.10/1000)+' k\u20ac</span></div>';
+      } else { rb.hidden=true; }
+    }
   }
   /* ---------- ajustements manuels (montants libres) ---------- */
   (function(){
@@ -2806,6 +2875,9 @@
     if(Array.isArray(dt.custom)){ state.custom=dt.custom.slice(); }
     if(r.prix_final){ state.override=r.prix_final; }
     if(dt.cover && typeof window.__setEstCover==='function'){ window.__setEstCover(dt.cover); }
+    estLots=Array.isArray(dt.lots)?dt.lots.slice():[];
+    if(dt.loyer&&g('fLoyer')) g('fLoyer').value=dt.loyer;
+    if(typeof renderLots==='function') renderLots();
     editingEstimId=r.id;
     compute();
     go('estimation');
@@ -2838,6 +2910,7 @@
       description:(g('fDesc')&&g('fDesc').value.trim())||null,
       prix_final: state.override||null,
       data:{ cover:(estPhotos.length?await makeThumb(estPhotos[0].after||estPhotos[0].before):null),
+             lots:(estLots.length?estLots:null), loyer:(g('fLoyer')&&g('fLoyer').value)||null,
              terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav }
     };
@@ -2964,6 +3037,92 @@
     finally{ btn.disabled=false; }
   }
   document.getElementById('dvfBtn').addEventListener('click',loadDVF);
+  /* ---------- LOTS D'IMMEUBLE (estimation par lot + rentabilité) ---------- */
+  var estLots=[];
+  var LOT_ICONS={'Appartement':'\ud83c\udfe0','Studio':'\ud83c\udfe0','Maison':'\ud83c\udfe0','Local commercial':'\ud83c\udfea','Bureau':'\ud83d\udcbc','Garage / Parking':'\ud83d\ude97','Cave':'\ud83d\udce6','Autre':'\ud83d\udccb'};
+  function lotIsHab(t){ return ['Appartement','Studio','Maison'].indexOf(t)>-1; }
+  function lotIsCom(t){ return ['Local commercial','Bureau'].indexOf(t)>-1; }
+  function loyersMensuels(){
+    var tot=0;
+    if(document.getElementById('fType').value==='Immeuble' && estLots.length){
+      estLots.forEach(function(l){ tot+=(parseFloat(l.loyer)||0); });
+    } else {
+      tot=parseFloat(document.getElementById('fLoyer').value)||0;
+    }
+    return tot;
+  }
+  function renderLots(){
+    var card=document.getElementById('lotsCard'); if(!card) return;
+    var isImm=document.getElementById('fType').value==='Immeuble';
+    card.hidden=!isImm;
+    var list=document.getElementById('lotsList'), synth=document.getElementById('lotSynth');
+    if(!isImm){ return; }
+    if(!estLots.length){
+      list.innerHTML='<div class="estimempty">Ajoute chaque lot (appartement, local commercial, garage\u2026) avec ses propres caract\u00e9ristiques.</div>';
+      synth.hidden=true; return;
+    }
+    list.innerHTML=estLots.map(function(l,i){
+      var det=[l.etage, l.surf+' m\u00b2', l.etat].filter(Boolean);
+      if(lotIsHab(l.type)){ if(l.pieces) det.push(l.pieces+' p.'); if(l.ch) det.push(l.ch+' ch.'); if(l.sdb) det.push(l.sdb+' sdb'); if(l.dpe) det.push('DPE '+l.dpe); }
+      if(lotIsCom(l.type) && l.activite) det.push(l.activite);
+      return '<div class="lotrow" data-i="'+i+'"><div class="lt">'+(LOT_ICONS[l.type]||'\ud83d\udccb')+'</div>'+
+        '<div style="min-width:0"><b>Lot '+(i+1)+' \u2014 '+l.type+'</b><small>'+det.join(' \u00b7 ')+'</small></div>'+
+        '<div class="loy"><b>'+(l.loyer?(parseFloat(l.loyer).toLocaleString('fr-FR')+' \u20ac/mois'):'\u2014')+'</b><small>'+(l.occ||'')+'</small></div></div>';
+    }).join('');
+    var surfT=estLots.reduce(function(a,l){return a+(parseFloat(l.surf)||0);},0);
+    var loyT=estLots.reduce(function(a,l){return a+(parseFloat(l.loyer)||0);},0);
+    synth.hidden=false;
+    synth.innerHTML='<b>'+estLots.length+' lot'+(estLots.length>1?'s':'')+'</b> \u00b7 surface cumul\u00e9e <b>'+surfT+' m\u00b2</b> \u00b7 loyers <b>'+loyT.toLocaleString('fr-FR')+' \u20ac/mois</b> ('+(loyT*12).toLocaleString('fr-FR')+' \u20ac/an)';
+    // surface habitable du bien = somme des lots (pour la base m²)
+    if(surfT>0){ document.getElementById('fSurf').value=surfT; }
+    compute();
+  }
+  var lotModal=document.getElementById('lotModal'), lotForm=document.getElementById('lotForm'), editingLotIdx=null;
+  function lotFieldsToggle(){
+    var t=lotForm.elements.l_type.value;
+    document.querySelectorAll('#lotForm .lot-hab').forEach(function(el){ el.hidden=!lotIsHab(t); });
+    document.querySelectorAll('#lotForm .lot-com').forEach(function(el){ el.hidden=!lotIsCom(t); });
+  }
+  lotForm.elements.l_type.addEventListener('change',lotFieldsToggle);
+  function openLotForm(i){
+    editingLotIdx=(typeof i==='number')?i:null;
+    var l=(editingLotIdx!==null)?estLots[editingLotIdx]:null;
+    document.getElementById('lotModalTitle').textContent=l?('Lot '+(editingLotIdx+1)):'Nouveau lot';
+    document.getElementById('lotDelete').hidden=(editingLotIdx===null);
+    var e=lotForm.elements;
+    e.l_type.value=l?l.type:'Appartement'; e.l_etage.value=l?(l.etage||''):'';
+    e.l_surf.value=l?(l.surf||''):''; e.l_etat.value=l?(l.etat||'Bon état'):'Bon état';
+    e.l_pieces.value=l?(l.pieces||''):''; e.l_ch.value=l?(l.ch||''):''; e.l_sdb.value=l?(l.sdb||''):'';
+    e.l_dpe.value=l?(l.dpe||''):''; e.l_activite.value=l?(l.activite||''):''; e.l_vitrine.value=l?(l.vitrine||''):'';
+    e.l_loyer.value=l?(l.loyer||''):''; e.l_occ.value=l?(l.occ||'Loué'):'Loué'; e.l_note.value=l?(l.note||''):'';
+    lotFieldsToggle();
+    document.getElementById('lotErr').classList.remove('show');
+    lotModal.hidden=false;
+  }
+  document.getElementById('addLotBtn').addEventListener('click',function(){ openLotForm(null); });
+  document.getElementById('lotsList').addEventListener('click',function(e){
+    var r=e.target.closest('.lotrow'); if(r) openLotForm(parseInt(r.dataset.i,10));
+  });
+  document.getElementById('lotX').addEventListener('click',function(){ lotModal.hidden=true; });
+  document.getElementById('lotCancel').addEventListener('click',function(){ lotModal.hidden=true; });
+  lotModal.addEventListener('click',function(e){ if(e.target===lotModal) lotModal.hidden=true; });
+  lotForm.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var e=lotForm.elements;
+    if(!e.l_surf.value){ var er=document.getElementById('lotErr'); er.textContent='La surface est obligatoire.'; er.classList.add('show'); return; }
+    var l={ type:e.l_type.value, etage:e.l_etage.value.trim(), surf:parseFloat(e.l_surf.value)||0,
+      etat:e.l_etat.value, pieces:e.l_pieces.value, ch:e.l_ch.value, sdb:e.l_sdb.value, dpe:e.l_dpe.value,
+      activite:e.l_activite.value.trim(), vitrine:e.l_vitrine.value, loyer:parseFloat(e.l_loyer.value)||0,
+      occ:e.l_occ.value, note:e.l_note.value.trim() };
+    if(editingLotIdx!==null){ estLots[editingLotIdx]=l; } else { estLots.push(l); }
+    lotModal.hidden=true; renderLots(); toast('Lot enregistr\u00e9 \u2713');
+  });
+  document.getElementById('lotDelete').addEventListener('click',function(){
+    if(editingLotIdx===null) return;
+    estLots.splice(editingLotIdx,1); lotModal.hidden=true; renderLots(); toast('Lot retir\u00e9');
+  });
+  document.getElementById('fType').addEventListener('change',function(){ renderLots(); compute(); });
+  document.getElementById('fLoyer').addEventListener('input',compute);
   /* ---------- Marché & quartier (stats DVF 5 ans + POI + carte) ---------- */
   var miniMap=null, miniMarker=null;
   function euroM2(v){ return v ? (Math.round(v).toLocaleString('fr-FR')+' \u20ac/m\u00b2') : '\u2014'; }
@@ -3381,6 +3540,29 @@
       blk(9,'<h2>Analyse &amp; positionnement du prix</h2>');
       blk(6+brCount*7,'<table class="dtable"><tbody>'+breakRows+'</tbody></table>');
       blk(12,'<p class="dnote">Prix de mise en vente conseill\u00e9 : <b>'+reco+'</b> \u00b7 '+pm2+'</p>');
+      if(estLots.length && g('fType').value==='Immeuble'){
+        blk(9,'<h2>D\u00e9tail des lots de l\u2019immeuble</h2>');
+        var lotRows=estLots.map(function(l,i){
+          var det=[]; if(lotIsHab(l.type)){ if(l.pieces) det.push(l.pieces+' p.'); if(l.ch) det.push(l.ch+' ch.'); if(l.sdb) det.push(l.sdb+' sdb'); if(l.dpe) det.push('DPE '+l.dpe); }
+          if(lotIsCom(l.type)&&l.activite) det.push(l.activite);
+          if(l.note) det.push(l.note);
+          return '<tr><td>Lot '+(i+1)+' \u2014 '+l.type+(l.etage?' \u00b7 '+l.etage:'')+(det.length?'<br><span style="color:#8A8272;font-size:8.6px">'+det.join(' \u00b7 ')+'</span>':'')+'</td>'+
+            '<td>'+l.surf+' m\u00b2</td><td>'+(l.etat||'')+'</td><td>'+(l.loyer?parseFloat(l.loyer).toLocaleString('fr-FR')+' \u20ac/mois':'\u2014')+'<br><span style="color:#8A8272;font-size:8.6px">'+(l.occ||'')+'</span></td></tr>';
+        }).join('');
+        blk(14+estLots.length*11,'<table class="dtable"><thead><tr><th>Lot</th><th>Surface</th><th>\u00c9tat</th><th>Loyer</th></tr></thead><tbody>'+lotRows+'</tbody></table>');
+      }
+      var loyM=(typeof loyersMensuels==='function')?loyersMensuels():0;
+      if(loyM>0){
+        var recoN=parseInt(String(reco).replace(/[^0-9]/g,''),10)||0;
+        var loyA=loyM*12, rdt=recoN?(loyA/recoN*100):0;
+        blk(9,'<h2>Approche locative</h2>');
+        blk(22,'<div class="pmtiles">'+
+          '<div class="pmtile"><small>Loyers mensuels</small><b>'+loyM.toLocaleString('fr-FR')+' \u20ac</b></div>'+
+          '<div class="pmtile"><small>Loyers annuels</small><b>'+loyA.toLocaleString('fr-FR')+' \u20ac</b></div>'+
+          '<div class="pmtile"><small>Rendement brut</small><b>'+(rdt?rdt.toFixed(1).replace('.',',')+' %':'\u2014')+'</b></div>'+
+          '<div class="pmtile"><small>Prix pour 9 %</small><b>'+Math.round(loyA/0.09/1000)+' k\u20ac</b></div></div>');
+        blk(12,'<p class="dnote">Au prix de pr\u00e9sentation conseill\u00e9, le bien offre un rendement locatif brut de <b>'+rdt.toFixed(1).replace('.',',')+' %</b>. Plus le rendement est \u00e9lev\u00e9, plus le prix est attractif pour un investisseur.</p>');
+      }
       blk(9,'<h2>Environnement &amp; risques \u00b7 G\u00e9orisques</h2>');
       blk(30,'<div class="drisks">'+risks+'</div>');
       if(pairs.length){
@@ -3413,7 +3595,14 @@
       }).join('');
       /* ============ PAGE 1 — AVIS DE VALEUR (V5, orientée client) ============ */
       var compl1=(g('fCompl')&&g('fCompl').value.trim())?(' \u00b7 '+g('fCompl').value.trim()):'';
-      var infosCle=[g('fType').value, (g('fSurf').value?g('fSurf').value+' m\u00b2 habitables':''), (g('fTerr').value&&g('fTerr').value!=='0'?g('fTerr').value+' m\u00b2 de terrain':''), (g('fPieces').value?g('fPieces').value+' pi\u00e8ces':''), (g('fChambres').value?g('fChambres').value+' chambres':'')].filter(Boolean).join('  \u00b7  ');
+      var infosCle;
+      if(g('fType').value==='Immeuble' && estLots.length){
+        var _surfT=estLots.reduce(function(a,l){return a+(parseFloat(l.surf)||0);},0);
+        var _loyT=estLots.reduce(function(a,l){return a+(parseFloat(l.loyer)||0);},0);
+        infosCle=['Immeuble \u00b7 '+estLots.length+' lots', _surfT+' m\u00b2 cumul\u00e9s', (_loyT?_loyT.toLocaleString('fr-FR')+' \u20ac/mois de loyers':'')].filter(Boolean).join('  \u00b7  ');
+      } else {
+        infosCle=[g('fType').value, (g('fSurf').value?g('fSurf').value+' m\u00b2 habitables':''), (g('fTerr').value&&g('fTerr').value!=='0'?g('fTerr').value+' m\u00b2 de terrain':''), (g('fPieces').value?g('fPieces').value+' pi\u00e8ces':''), (g('fChambres').value?g('fChambres').value+' chambres':'')].filter(Boolean).join('  \u00b7  ');
+      }
       g('dossier').innerHTML=
       '<div class="dsheet av">'+
         '<div class="av-topbar"></div>'+
