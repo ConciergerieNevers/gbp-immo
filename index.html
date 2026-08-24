@@ -1125,9 +1125,12 @@
             <div class="card estcard">
               <h3><span class="stepnum">3</span> Ventes comparables · DVF</h3>
               <div class="radiobar" id="rayonBar">
-                <button data-r="300">Rayon 300 m</button>
+                <button data-r="300">300 m</button>
                 <button class="on" data-r="500">500 m</button>
                 <button data-r="1000">1 km</button>
+                <button data-r="2000">2 km</button>
+                <button data-r="3000">3 km</button>
+                <button data-r="5000">5 km</button>
               </div>
               <div class="chips" id="yearBar" style="margin:9px 0 4px" hidden></div>
               <div style="overflow-x:auto">
@@ -2008,7 +2011,7 @@
     return arr.length%2?arr[m]:(arr[m-1]+arr[m])/2;}
   function renderComps(){
     // données de démonstration converties au format sélectionnable unifié
-    dvfComps=(comps[state.rayon]||[]).map(function(r){
+    dvfComps=(comps[state.rayon]||comps[1000]||[]).map(function(r){
       return { adresse:r[0], date:r[1], surface:r[2], prix:r[3], pm2:Math.round(r[3]/r[2]), sel:!r[4], demo:true };
     });
     renderDvfComps();
