@@ -487,6 +487,9 @@
   .poi{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:20px;padding:7px 12px;font-size:12.5px;font-weight:560}
   .poi b{color:var(--accent);font-weight:700}
   .poi.muted{color:var(--ink-3);font-weight:500}
+  .poi .pdel{margin-left:5px;border:0;background:none;color:var(--crit);cursor:pointer;font-size:12px;padding:0 2px;display:none}
+  .poichips.editing .pdel{display:inline}
+  #poiAdd[hidden]{display:none}
   .simrow{display:flex;gap:9px;margin-bottom:13px}
   .simrow .btn{flex:1;justify-content:center;text-decoration:none}
   .minimap{height:220px;border-radius:12px;overflow:hidden;border:1px solid var(--line);display:none;position:relative;z-index:0;isolation:isolate}
@@ -1300,8 +1303,14 @@
                 <div class="mtile"><small>Ventes / an</small><b id="mVol">—</b></div>
               </div>
               <div class="mtrend" id="mTrend" hidden></div>
-              <div class="restyle-sub">À proximité</div>
+              <div class="restyle-sub" style="display:flex;align-items:center">À proximité
+                <button type="button" class="ifedit" id="poiEdit" style="margin-left:auto">Modifier</button></div>
               <div class="poichips" id="poiChips"><span class="poi muted">Choisis une adresse pour analyser le quartier…</span></div>
+              <div class="cadjform" id="poiAdd" hidden style="margin-bottom:13px">
+                <input type="text" id="poiName" placeholder="Ex : Collège, Tabac, Parc…" maxlength="40">
+                <input type="number" id="poiDist" placeholder="Distance (m)">
+                <button type="button" class="btn" id="poiAddBtn">Ajouter</button>
+              </div>
               <div class="restyle-sub">Biens similaires en vente</div>
               <div class="simrow" id="simRow">
                 <a class="btn" id="simLbc" href="#" target="_blank" rel="noopener">🔎 LeBonCoin</a>
@@ -3391,20 +3400,57 @@
       }
     }catch(e){ console.warn('[ESTIMAKE] market', e); }
   }
+  var poiList=[], poiCacheKey=null;
+  function poiSave(){ if(poiCacheKey){ try{ localStorage.setItem(poiCacheKey, JSON.stringify(poiList)); }catch(e){} } }
+  function renderPoiChips(){
+    var box=document.getElementById('poiChips');
+    var editing=box.classList.contains('editing');
+    var cs=(poiList||[]).map(function(p,i){
+      var d=(p.m>=1000)?((p.m/1000).toFixed(1).replace('.',',')+' km'):(p.m+' m');
+      return '<span class="poi">'+p.label+' <b>'+d+'</b><button type="button" class="pdel" data-pi="'+i+'">\u2715</button></span>'; });
+    box.innerHTML=cs.length?cs.join(''):'<span class="poi muted">Aucune commodit\u00e9 \u2014 \u00ab Modifier \u00bb pour en ajouter.</span>';
+    if(editing) box.classList.add('editing');
+    // version PDF (sans boutons)
+    window.__poi=cs.length?(poiList.map(function(p){
+      var d=(p.m>=1000)?((p.m/1000).toFixed(1).replace('.',',')+' km'):(p.m+' m');
+      return '<span class="poi">'+p.label+' <b>'+d+'</b></span>'; }).join('')):null;
+  }
+  (function(){
+    var box=document.getElementById('poiChips');
+    if(box) box.addEventListener('click',function(e){
+      var d=e.target.closest('.pdel'); if(!d) return;
+      poiList.splice(parseInt(d.dataset.pi,10),1); poiSave(); renderPoiChips();
+    });
+    var pe=document.getElementById('poiEdit');
+    if(pe) pe.addEventListener('click',function(){
+      var on=box.classList.toggle('editing');
+      document.getElementById('poiAdd').hidden=!on;
+      pe.textContent=on?'Termin\u00e9':'Modifier';
+      renderPoiChips();
+    });
+    var pb=document.getElementById('poiAddBtn');
+    if(pb) pb.addEventListener('click',function(){
+      var n=document.getElementById('poiName').value.trim();
+      var m=parseInt(document.getElementById('poiDist').value,10);
+      if(!n||!m){ toast('Renseigne le libell\u00e9 et la distance (m).'); return; }
+      poiList.push({label:n,m:m});
+      poiList.sort(function(a,b){return a.m-b.m;});
+      document.getElementById('poiName').value=''; document.getElementById('poiDist').value='';
+      poiSave(); renderPoiChips(); toast('Commodit\u00e9 ajout\u00e9e \u2713');
+    });
+  })();
   async function loadPOI(){
     if(!estCoord) return;
     var box=document.getElementById('poiChips');
     var la=estCoord.lat, lo=estCoord.lon;
     var ck='estimake_poi_'+la.toFixed(3)+'_'+lo.toFixed(3);   // cache ~100 m
+    poiCacheKey=ck;
     try{ var cached=JSON.parse(localStorage.getItem(ck)||'null');
       if(cached){ chips(cached); return; } }catch(e){}
     box.innerHTML='<span class="poi muted">Analyse du quartier\u2026</span>';
     function chips(list){
-      var cs=(list||[]).map(function(p){
-        var d=(p.m>=1000)?((p.m/1000).toFixed(1).replace('.',',')+' km'):(p.m+' m');
-        return '<span class="poi">'+p.label+' <b>'+d+'</b></span>'; });
-      box.innerHTML=cs.length?cs.join(''):'<span class="poi muted">Zone rurale \u2014 aucune commodit\u00e9 \u00e0 moins de 1,3 km.</span>';
-      window.__poi=cs.length?box.innerHTML:null;
+      poiList=list||[];
+      renderPoiChips();
     }
     var MIRS=['https://overpass.openstreetmap.fr/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter','https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
     var qy='[out:json][timeout:15];(node(around:1300,'+la+','+lo+')[amenity~"school|kindergarten|pharmacy|doctors|hospital|post_office"];node(around:1300,'+la+','+lo+')[shop~"supermarket|bakery|convenience"];node(around:3000,'+la+','+lo+')[railway=station];node(around:900,'+la+','+lo+')[highway=bus_stop];);out body 80;';
