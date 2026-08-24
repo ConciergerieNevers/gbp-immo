@@ -2298,7 +2298,7 @@
       var r2=await fetch('/api/poi?lat='+la+'&lon='+lo);
       var j2=await r2.json(); if(!r2.ok) throw new Error(j2.error||r2.status);
       chips(j2.poi);
-    }catch(e){ box.innerHTML='<span class="poi muted">Analyse du quartier indisponible pour le moment \u2014 \u2buo Actualiser pour r\u00e9essayer.</span>'.replace('\u2buo','\u21bb'); }
+    }catch(e){ box.innerHTML='<span class="poi muted">Analyse du quartier indisponible pour le moment \u2014 \u21bb Actualiser pour r\u00e9essayer.</span>'; }
   }
   var dvfMarkers=[];
   function renderDvfMarkers(){
