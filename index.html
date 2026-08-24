@@ -1533,6 +1533,7 @@
         </div>
       </div>
       <div id="cliEstims"></div>
+      <div id="cliRdvs"></div>
       <div class="autherr" id="contactErr"></div>
       <div class="modal-ft">
         <button type="button" class="btn danger-o" id="contactDelete" style="margin-right:auto" hidden>Supprimer</button>
@@ -2173,7 +2174,34 @@
     });
     toggleAcqSection();
     renderCliEstims(c);
+    renderCliRdvs(c);
     contactErr.classList.remove('show'); contactErr.textContent=''; contactModal.hidden=false;
+  }
+  function renderCliRdvs(c){
+    var box=document.getElementById('cliRdvs'); if(!box) return;
+    box.innerHTML='';
+    if(!c || !c.nom) return;
+    var nom=c.nom.trim().toLowerCase();
+    var linked=(agendaData||[]).filter(function(r){ return (r.lien||'').toLowerCase().indexOf(nom)>-1; });
+    if(!linked.length){ box.innerHTML='<div class="restyle-sub">Suivi des rendez-vous</div><div class="estimempty" style="padding:10px">Aucun RDV rattach\u00e9 \u2014 lie ce contact dans le champ \u00ab Li\u00e9 \u00e0 \u00bb d\u2019un RDV de l\u2019agenda.</div>'; return; }
+    var today=new Date().toISOString().slice(0,10);
+    linked.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+    var avenir=linked.filter(function(r){ return (r.date||'')>=today; }).reverse();
+    var passes=linked.filter(function(r){ return (r.date||'')<today; });
+    function row(r,futur){
+      var d=r.date?new Date(r.date+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):'';
+      return '<div class="cadjrow clirdv" data-rid="'+r.id+'" style="cursor:pointer'+(futur?'':';opacity:.6')+'">'+
+        '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+(futur?'\ud83d\udcc5':'\u2713')+' '+d+(r.heure?' '+r.heure:'')+' \u2014 '+(r.titre||'')+(r.type?' <small style="color:var(--ink-3)">('+r.type+')</small>':'')+'</span></div>';
+    }
+    box.innerHTML='<div class="restyle-sub">Suivi des rendez-vous ('+linked.length+')</div>'+
+      (avenir.length?avenir.map(function(r){return row(r,true);}).join(''):'')+
+      (passes.length?passes.map(function(r){return row(r,false);}).join(''):'');
+    box.querySelectorAll('.clirdv').forEach(function(el){
+      el.addEventListener('click',function(){
+        var r=(agendaData||[]).find(function(x){ return String(x.id)===el.dataset.rid; });
+        if(r){ contactModal.hidden=true; openRdvForm(r); }
+      });
+    });
   }
   async function renderCliEstims(c){
     var box=document.getElementById('cliEstims'); if(!box) return;
