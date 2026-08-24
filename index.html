@@ -542,6 +542,8 @@
   .mkclient{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:20px;
     padding:6px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none}
   /* Mes estimations (écran Biens) */
+  .estimcard .ph-logo{display:grid;place-items:center;background-image:url(/logo-gb-app.png)!important;
+    background-size:46% auto!important;background-position:center 38%!important;background-repeat:no-repeat!important}
   .estimcard .estdel{width:24px;height:24px;border:0;border-radius:50%;background:rgba(20,17,10,.55);color:#fff;
     cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
   #estimList{margin-bottom:6px}
@@ -1284,6 +1286,7 @@
               <div id="lotsList"><div class="estimempty">Ajoute chaque lot (appartement, local commercial, garage…) avec ses propres caractéristiques.</div></div>
               <div class="lotsynth" id="lotSynth" hidden></div>
               <div id="lotVals"></div>
+              <div id="allGallery"></div>
             </div>
 
             <div class="card estcard" id="marketCard">
@@ -2844,7 +2847,7 @@
   async function loadEstimations(){
     if(!sb) return;
     try{
-      var res=await sb.from('estimations').select('*').eq('deleted',false).order('created_at',{ascending:false}).limit(40);
+      var res=await sb.from('estimations').select('id,adresse,type,surface,valeur_basse,valeur_haute,prix_conseille,prix_final,client,created_at,cover:data->cover').eq('deleted',false).order('created_at',{ascending:false}).limit(40);
       if(res.error) throw res.error;
       var list=document.getElementById('estimList'); if(!list) return;
       var rows=res.data||[];
@@ -2854,11 +2857,11 @@
       list.innerHTML=rows.map(function(r,i){
         var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
         var prix=(r.prix_final||r.prix_conseille);
-        var cov=(r.data&&r.data.cover)||null;
+        var cov=r.cover||(r.data&&r.data.cover)||null;
         return '<div class="card bien estimcard" data-i="'+i+'">'+
           (cov
             ?('<div class="ph" style="background-image:url('+cov+');background-size:cover;background-position:center">')
-            :('<div class="ph" style="background:'+facades[i%facades.length]+'">'+houseSVG))+
+            :('<div class="ph ph-logo" style="background:#17150F">'))+
             '<div class="top"><span class="pill" style="background:rgba(20,17,10,.55);color:#EFE3C2">Estimation</span>'+
             '<button type="button" class="estdel" data-del="'+r.id+'" title="Supprimer">\u2715</button></div>'+
             '<div class="price tnum">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</div></div>'+
@@ -2876,6 +2879,8 @@
       toast('Estimation d\u00e9plac\u00e9e dans la corbeille \u2713'); loadEstimations(); return; }
     var it=e.target.closest('.estimcard'); if(!it||!window.__estims) return;
     var r=window.__estims[parseInt(it.dataset.i,10)]; if(!r) return;
+    // charger la fiche complète (photos, lots…) avant hydratation
+    if(sb){ try{ var full=await sb.from('estimations').select('*').eq('id',r.id).single(); if(!full.error&&full.data) r=full.data; }catch(err){} }
     // recharge les données dans l'écran Estimer
     var g=function(id){return document.getElementById(id);};
     if(r.adresse){ g('addrA').textContent=r.adresse; g('addrS').textContent='estimation du '+(r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR'):'')+' \u00b7 re-s\u00e9lectionne l\u2019adresse pour recharger le march\u00e9'; }
@@ -3139,6 +3144,18 @@
     if(surfT>0){ document.getElementById('fSurf').value=surfT; }
     compute();
     updateLotVals();
+    renderAllGallery();
+  }
+  function renderAllGallery(){
+    var box=document.getElementById('allGallery'); if(!box) return;
+    var items=[];
+    (estPhotos||[]).forEach(function(p){ items.push({src:p.after||p.before, tag:'Bien'}); });
+    estLots.forEach(function(l,i){ (l.photos||[]).forEach(function(p){ items.push({src:p, tag:'Lot '+(i+1)}); }); });
+    if(items.length<2){ box.innerHTML=''; return; }
+    box.innerHTML='<div class="restyle-sub">Galerie compl\u00e8te ('+items.length+' photos)</div>'+
+      '<div class="staging-grid">'+items.map(function(it){
+        return '<div class="sthumb" style="cursor:default"><img src="'+it.src+'"><span class="sbadge">'+it.tag+'</span></div>';
+      }).join('')+'</div>';
   }
   var lotModal=document.getElementById('lotModal'), lotForm=document.getElementById('lotForm'), editingLotIdx=null;
   var lotPhotosTmp=[];
@@ -3155,7 +3172,7 @@
     e.stopPropagation(); lotPhotosTmp.splice(parseInt(d.dataset.lp,10),1); renderLotGallery();
   });
   document.getElementById('lotPhotoInput').addEventListener('change',function(){
-    var files=[].slice.call(this.files||[]).slice(0, 4-lotPhotosTmp.length);
+    var files=[].slice.call(this.files||[]).slice(0, 10-lotPhotosTmp.length);
     files.forEach(function(f){
       var rd=new FileReader();
       rd.onload=async function(ev){ var th=await makeThumb(ev.target.result); if(th) lotPhotosTmp.push(th); renderLotGallery(); };
@@ -3682,9 +3699,12 @@
         // photos des lots
         estLots.forEach(function(l,i){
           if(Array.isArray(l.photos)&&l.photos.length){
-            var ph=l.photos.slice(0,4).map(function(p){ return '<div class="dimg" style="background-image:url('+p+')"></div>'; }).join('');
+            var ph=l.photos.map(function(p){ return '<div class="dimg" style="background-image:url('+p+')"></div>'; }).join('');
             blk(9,'<h2>Lot '+(i+1)+' \u2014 '+l.type+(l.etage?' \u00b7 '+l.etage:'')+' \u00b7 photos</h2>');
-            blk(52,'<div class="dpair" style="grid-template-columns:repeat('+Math.min(l.photos.length,2)+',1fr)">'+ph+'</div>');
+            for(var pi=0; pi<l.photos.length; pi+=2){
+              var pair=l.photos.slice(pi,pi+2).map(function(p){ return '<div class="dimg" style="background-image:url('+p+')"></div>'; }).join('');
+              blk(52,'<div class="dpair" style="grid-template-columns:repeat('+Math.min(2,l.photos.length-pi)+',1fr)">'+pair+'</div>');
+            }
           }
         });
       }
@@ -3705,6 +3725,14 @@
       if(pairs.length){
         blk(9,'<h2>Home staging \u2014 avant / apr\u00e8s</h2>');
         pairs.forEach(function(p){ blk(56,'<div class="dstaging">'+pairHtml([p])+'</div>'); });
+      }
+      var galPhotos=(estPhotos||[]).filter(function(p){ return !p.after; }).map(function(p){ return p.before; });
+      if(galPhotos.length>1){
+        blk(9,'<h2>Galerie du bien</h2>');
+        for(var gp=1; gp<galPhotos.length; gp+=2){   // la 1re est déjà la photo de couverture
+          var pr=galPhotos.slice(gp,gp+2).map(function(p){ return '<div class="dimg" style="background-image:url('+p+')"></div>'; }).join('');
+          blk(52,'<div class="dpair" style="grid-template-columns:repeat('+Math.min(2,galPhotos.length-gp)+',1fr)">'+pr+'</div>');
+        }
       }
       var descV=(g('fDesc')&&g('fDesc').value.trim())||'';
       if(descV){
