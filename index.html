@@ -1081,6 +1081,17 @@
   .m-svc span{font-size:6.6px;letter-spacing:.2em;color:#4c4331;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:1.8mm}
   .m-svc i{width:1.7mm;height:1.7mm;background:var(--gold);transform:rotate(45deg);flex:none}
   .m-legal{font-size:5.9px;line-height:1.65;color:#9a917f;margin-top:2mm}
+  /* --- barre DPE (couleurs officielles) : grande pour le bien, mini par lot --- */
+  .m-dpe{display:flex;gap:1.2mm;align-items:flex-end;margin:2mm 0 1mm;max-width:96mm}
+  .m-dpe span{flex:1;height:5.6mm;display:grid;place-items:center;font-size:7px;font-weight:700;color:#fff;border-radius:1mm;opacity:.3}
+  .m-dpe span.on{opacity:1;height:7.6mm;outline:.45mm solid var(--ink2);outline-offset:.3mm;font-size:9px}
+  .m-dpe.sm{max-width:30mm;gap:.5mm;margin:1.2mm 0 0}
+  .m-dpe.sm span{height:3mm;font-size:4.6px;border-radius:.5mm}
+  .m-dpe.sm span.on{height:4.2mm;outline-width:.3mm;font-size:5.6px}
+  /* --- bloc agence (page finale) --- */
+  .m-agence{display:grid;grid-template-columns:52mm 1fr;gap:6mm;align-items:center;background:var(--sable);padding:5mm 6mm;margin:0 0 6mm}
+  .m-agence .m-agph{height:40mm;background-size:cover;background-position:center;border:.35mm solid var(--goldL);box-shadow:0 0 0 1.2mm var(--sable),0 0 0 1.45mm var(--hair2)}
+  .m-agt{font-family:var(--serifP);font-size:14.5px;font-weight:600;color:var(--ink2);margin:1mm 0 2mm}
   /* annexes sur fond crème */
   .mpage h2{font-family:var(--sansP);font-size:8.6px;text-transform:uppercase;letter-spacing:.3em;display:block;border:0;padding:0 0 1.6mm;margin:6.5mm 0 3mm;break-after:avoid;font-weight:700;color:var(--gold)!important;border-bottom:.25mm solid var(--hair2)!important}
   .mpage h2:after{display:none}
@@ -1402,6 +1413,8 @@
                   <input class="inp" id="fSdb" type="number" value="1"></div>
                 <div class="field"><label>Année (approx.)</label>
                   <input class="inp" id="fAnnee" type="number" value="1972"></div>
+                <div class="field"><label>Classe DPE</label>
+                  <select class="inp" id="fDpeCl"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div>
                 <div class="field"><label>Loyer potentiel (€/mois)</label>
                   <input class="inp" id="fLoyer" type="number" placeholder="650"></div>
               </div>
@@ -2005,7 +2018,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-144814';
+  var __BUILD='20260825-145357';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3895,7 +3908,7 @@
   function resetEstimState(){
     editingEstimId=null;
     estPhotos=[]; estLots=[]; state.custom=[]; state.override=null; state.overLow=null; state.overHigh=null;
-    ['cliNom','cliMail','fDesc','fCompl','fLoyer','fSurf','fTerr','fPieces','fChambres','fSdb','fAnnee'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+    ['cliNom','cliMail','fDesc','fCompl','fLoyer','fSurf','fTerr','fPieces','fChambres','fSdb','fAnnee','fDpeCl'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
     estCoord=null; estVilleTxt=null;
     var aa=document.getElementById('addrA'), as=document.getElementById('addrS');
     if(aa) aa.textContent='Aucune adresse';
@@ -3961,6 +3974,7 @@
     if(dt.chambres) g('fChambres').value=dt.chambres;
     if(dt.sdb&&g('fSdb')) g('fSdb').value=dt.sdb;
     if(dt.annee) g('fAnnee').value=dt.annee;
+    if(dt.dpeClasse&&g('fDpeCl')) g('fDpeCl').value=dt.dpeClasse;
     if(Array.isArray(dt.custom)){ state.custom=dt.custom.slice(); }
     if(typeof window.__renderCustomAdj==='function') window.__renderCustomAdj();
     if(r.prix_final){ state.override=r.prix_final; }
@@ -4062,7 +4076,7 @@
              overLow:state.overLow||null, overHigh:state.overHigh||null,
              terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav,
-             baseM2:state.baseM2||null, tgls:state.tgls,
+             baseM2:state.baseM2||null, tgls:state.tgls, dpeClasse:(g('fDpeCl')&&g('fDpeCl').value)||null,
              ville:(function(){ var s=((g('addrS')||{}).textContent||'').split('·')[0].trim();
                if(s&&!/estimation du|sélectionne/i.test(s)) return s; return estVilleTxt||null; })() }
     };
@@ -4410,15 +4424,15 @@
   });
   function adaptFields(){
     var t=document.getElementById('fType').value;
-    var show={ surf:true, terr:true, pieces:true, ch:true, sdb:true, annee:true, loyer:true };
+    var show={ surf:true, terr:true, pieces:true, ch:true, sdb:true, annee:true, loyer:true, dpe:true };
     var surfLabel='Surface habitable (m\u00b2)', surfRO=false;
-    if(t==='Immeuble'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:true,loyer:false};
-      surfLabel='Surface cumul\u00e9e (auto \u00b7 somme des lots)'; surfRO=true; }
-    else if(t==='Terrain'){ show={surf:false,terr:true,pieces:false,ch:false,sdb:false,annee:false,loyer:false}; }
-    else if(t==='Local commercial'||t==='Bureaux'||t==='Fonds de commerce'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:true,loyer:true}; }
-    else if(t==='Garage / Parking'||t==='Cave'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:false,loyer:true}; }
+    if(t==='Immeuble'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:true,loyer:false,dpe:false};
+      surfLabel='Surface cumul\u00e9e (auto \u00b7 somme des lots)'; surfRO=true; }   // le DPE se saisit PAR LOT
+    else if(t==='Terrain'){ show={surf:false,terr:true,pieces:false,ch:false,sdb:false,annee:false,loyer:false,dpe:false}; }
+    else if(t==='Local commercial'||t==='Bureaux'||t==='Fonds de commerce'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:true,loyer:true,dpe:true}; }
+    else if(t==='Garage / Parking'||t==='Cave'){ show={surf:true,terr:false,pieces:false,ch:false,sdb:false,annee:false,loyer:true,dpe:false}; }
     else if(t==='Appartement'){ show.terr=false; }
-    var map={surf:'fSurf',terr:'fTerr',pieces:'fPieces',ch:'fChambres',sdb:'fSdb',annee:'fAnnee',loyer:'fLoyer'};
+    var map={surf:'fSurf',terr:'fTerr',pieces:'fPieces',ch:'fChambres',sdb:'fSdb',annee:'fAnnee',loyer:'fLoyer',dpe:'fDpeCl'};
     for(var k in map){ var el=document.getElementById(map[k]); if(!el) continue;
       var fd=el.closest('.field'); if(fd) fd.hidden=!show[k]; }
     var sEl=document.getElementById('fSurf');
@@ -4427,6 +4441,17 @@
   document.getElementById('fType').addEventListener('change',function(){ adaptFields(); renderLots(); compute(); });
   adaptFields();
   document.getElementById('fLoyer').addEventListener('input',compute);
+  // classe DPE choisie → le curseur « Qualité du DPE » se règle automatiquement (modifiable ensuite)
+  document.getElementById('fDpeCl').addEventListener('change',function(){
+    var v=LOT_DPE_PCT[this.value||''];
+    if(this.value && v!==undefined){
+      state.dpe=v;
+      var el=document.getElementById('rDpe'), lb=document.getElementById('lbDpe');
+      if(el) el.value=v;
+      if(lb){ lb.textContent=(v>0?'+':'')+v+' %'; lb.className=v>0?'pos':(v<0?'neg':''); }
+    }
+    compute();
+  });
   /* ---------- Marché & quartier (stats DVF 5 ans + POI + carte) ---------- */
   var miniMap=null, miniMarker=null;
   function euroM2(v){ return v ? (Math.round(v).toLocaleString('fr-FR')+' \u20ac/m\u00b2') : '\u2014'; }
@@ -4822,6 +4847,14 @@
     function ft(n,tot){ return '<div class="m-ft"><span>GB Immobilier — Rapport d\'estimation confidentiel</span><b>'+('0'+n).slice(-2)+' / '+('0'+tot).slice(-2)+'</b></div>'; }
     function page(body,n,tot){ return '<div class="dsheet mpage">'+hd()+'<div class="m-body">'+body+'</div>'+ft(n,tot)+'</div>'; }
     function eyebrow(num,lbl){ return '<div class="m-eyebrow"><em>'+num+'</em>'+lbl+'</div>'; }
+    var DPE_COLORS={A:['#00A06D','#fff'],B:['#52B153','#fff'],C:['#A5CC74','#33331a'],D:['#F4E70F','#33331a'],E:['#F0B50F','#33331a'],F:['#EB8235','#fff'],G:['#D7221F','#fff']};
+    function dpeBar(cl,sm){
+      if(!cl||!DPE_COLORS[cl]) return '';
+      return '<div class="m-dpe'+(sm?' sm':'')+'">'+'ABCDEFG'.split('').map(function(L){
+        var c=DPE_COLORS[L];
+        return '<span style="background:'+c[0]+';color:'+c[1]+'"'+(L===cl?' class="on"':'')+'>'+L+'</span>';
+      }).join('')+'</div>';
+    }
 
     /* ---- couverture ---- */
     // pas de photo du logement → photo par défaut (Nevers, « Photo base » fournie par l'agence)
@@ -4895,9 +4928,12 @@
     var specTbl='<div class="m-spectbl"><div>'+spCol(specPairs.slice(0,half))+'</div><div>'+spCol(specPairs.slice(half))+'</div></div>';
     var chipLbls=Object.keys(state.tgls).filter(function(k){return state.tgls[k];}).map(function(k){ return (state.tgls[k].label||'').replace(/\s*·.*$/,'').trim(); }).filter(Boolean);
     var chipsHtml=chipLbls.length?('<div class="m-chips">'+chipLbls.slice(0,6).map(function(c){return '<span><i></i>'+escH(c)+'</span>';}).join('')+'</div>'):'';
+    var dpeCl=(g('fDpeCl')&&g('fDpeCl').value)||'';
+    var dpeHtml=dpeCl?('<div class="m-lbl">Diagnostic de performance énergétique</div>'+dpeBar(dpeCl,false)+
+      '<p class="m-p" style="font-size:8px;color:#6c6250;margin:1.5mm 0 0">Classe énergie '+dpeCl+' — incidence intégrée à l\'expertise de valeur.</p>'):'';
     var bienBody=eyebrow('02','Votre bien')+
       '<h1 class="m-h1">'+escH(type==='Immeuble'?'Votre immeuble':(type==='Terrain'?'Votre terrain':'Votre '+type.toLowerCase()))+(vNom?' <i>à '+escH(vNom)+'</i>':'')+'</h1>'+
-      '<p class="m-p">'+introBien+'</p>'+photoBlock+specTbl+chipsHtml;
+      '<p class="m-p">'+introBien+'</p>'+photoBlock+specTbl+dpeHtml+chipsHtml;
 
     /* ---- page 4 · marché ---- */
     var mk=window.__market||null;
@@ -4991,7 +5027,7 @@
       blk(9,'<h2>Détail des lots de l\'immeuble</h2>');
       var totLV=0, totLL=0, allLV=true;
       var lotTrs=estLots.map(function(l,i){
-        var det=[]; if(lotIsHab(l.type)){ if(l.pieces) det.push(l.pieces+' p.'); if(l.ch) det.push(l.ch+' ch.'); if(l.sdb) det.push(l.sdb+' sdb'); if(l.dpe) det.push('DPE '+l.dpe); }
+        var det=[]; if(lotIsHab(l.type)){ if(l.pieces) det.push(l.pieces+' p.'); if(l.ch) det.push(l.ch+' ch.'); if(l.sdb) det.push(l.sdb+' sdb'); }
         if(lotIsCom(l.type)&&l.activite) det.push(l.activite);
         var pcts=(typeof lotPcts==='function')?lotPcts(l):{etat:0,dpe:0,adj:0};
         if(pcts.etat) det.push('état '+(pcts.etat>0?'+':'')+pcts.etat+' %');
@@ -5002,7 +5038,7 @@
         var loyA=(parseFloat(l.loyer)||0)*12; totLL+=loyA;
         if(lv){ totLV+=lv.v; } else { allLV=false; }
         var rdt=(lv&&loyA)?(loyA/lv.v*100):null;
-        return '<tr><td>Lot '+(i+1)+' — '+escH(l.type)+(l.etage?' · '+escH(l.etage):'')+(det.length?'<br><span style="color:#8A8272;font-size:8.6px">'+escH(det.join(' · '))+'</span>':'')+'</td>'+
+        return '<tr><td>Lot '+(i+1)+' — '+escH(l.type)+(l.etage?' · '+escH(l.etage):'')+(det.length?'<br><span style="color:#8A8272;font-size:8.6px">'+escH(det.join(' · '))+'</span>':'')+dpeBar(l.dpe,true)+'</td>'+
           '<td>'+l.surf+' m² · '+escH(l.etat||'')+'</td>'+
           '<td>'+(lv?lv.v.toLocaleString('fr-FR')+' €':'—')+(lv?'<br><span style="color:#8A8272;font-size:8.2px">'+escH(lv.src)+'</span>':'')+'</td>'+
           '<td>'+(l.loyer?parseFloat(l.loyer).toLocaleString('fr-FR')+' €/mois':'—')+(rdt?'<br><span style="color:#2F7D5B;font-weight:700">'+rdt.toFixed(1).replace('.',',')+' %</span>':'<br><span style="color:#8A8272;font-size:8.6px">'+escH(l.occ||'')+'</span>')+'</td></tr>';
@@ -5104,6 +5140,15 @@
         '<div class="m-step"><div class="num"><i>1</i></div><b>Stratégie &amp; mandat</b><p>Définition ensemble du prix de présentation, du calendrier et de la stratégie de commercialisation adaptée à vos objectifs.</p></div>'+
         '<div class="m-step"><div class="num"><i>2</i></div><b>Mise en valeur</b><p>Reportage photographique, home staging virtuel et dossier de vente complet pour présenter votre bien sous son meilleur jour.</p></div>'+
         '<div class="m-step"><div class="num"><i>3</i></div><b>Commercialisation</b><p>Diffusion ciblée, visites qualifiées et accompagnées, négociation et suivi jusqu\'à la signature de l\'acte authentique.</p></div>'+
+      '</div>'+
+      '<div class="m-agence">'+
+        '<div class="m-agph" style="background-image:url(/agence-gb.jpg)"></div>'+
+        '<div>'+
+          '<div class="m-lbl" style="margin-top:0">L\'agence</div>'+
+          '<h3 class="m-agt">GB Immobilier — 50 ans à Nevers</h3>'+
+          '<p class="m-p" style="font-size:8.6px;margin-bottom:0">Implantée à Nevers depuis 50 ans, GB Immobilier est l\'une des principales agences de la région : une structure à taille humaine de douze collaborateurs, portée par une connaissance incomparable du marché neversois. Du premier diagnostic à la signature chez le notaire, vous bénéficiez d\'un accompagnement personnalisé — dès le mandat signé, nous gérons tout de A à Z, pour valoriser votre patrimoine et mener votre projet dans les meilleures conditions.</p>'+
+          '<div class="m-svc" style="margin:2.5mm 0 0"><span><i></i>Vente</span><span><i></i>Location</span><span><i></i>Gestion locative</span><span><i></i>Syndic de copropriété</span></div>'+
+        '</div>'+
       '</div>'+
       '<div class="m-contact">'+
         '<div class="lg"><img src="/logo-gb-app.png" alt=""><b>GB IMMOBILIER</b><span>Nevers</span></div>'+
