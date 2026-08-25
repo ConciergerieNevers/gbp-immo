@@ -918,8 +918,11 @@
   #dMapSlot .dmapimg{width:100%;height:58mm;border-radius:3mm;border:.25mm solid var(--hair);margin-top:3mm;background-size:cover;background-position:center}
   .pgnum{position:absolute;bottom:3.4mm;left:0;right:0;text-align:center;font-size:6.2px;letter-spacing:.34em;color:#BBB;text-transform:uppercase}
   /* ============ CHARTE V6 — « MODÈLE À PRENDRE » (crème · noir · or) ============ */
-  #dossier{--cream:#F8F6F0;--ink2:#161310;--gold:#A8853B;--goldL:#C9A96B;--hair2:#E4DCC9;--sable:#F1EBDD;--vert:#2F7D5B;--rouge:#A33B2E}
-  .mcover,.mpage{width:210mm;height:296mm;background:var(--cream);display:flex;flex-direction:column;overflow:hidden;page-break-after:always;position:relative}
+  #dossier,.mcover,.mpage{--cream:#F8F6F0;--ink2:#161310;--gold:#A8853B;--goldL:#C9A96B;--hair2:#E4DCC9;--sable:#F1EBDD;--vert:#2F7D5B;--rouge:#A33B2E;
+    --or:#B08A2E;--noir:#111;--gris:#8A8A8A;--grisF:#3D3D3D;--hair:#E3E1DC;
+    --serifP:"Cormorant Garamond",Georgia,serif;--sansP:"Montserrat",-apple-system,"Segoe UI",sans-serif}
+  .mcover,.mpage{width:210mm;height:296mm;background:var(--cream);display:flex;flex-direction:column;overflow:hidden;page-break-after:always;position:relative;
+    color:#161310;font-family:var(--sansP);-webkit-print-color-adjust:exact;print-color-adjust:exact}
   /* --- gabarit pages intérieures --- */
   .m-hd{flex:none;display:flex;align-items:center;gap:3.5mm;margin:8mm 14mm 0;padding-bottom:4mm}
   .m-hd img{width:9.5mm;height:9.5mm;border-radius:2.2mm;object-fit:cover}
@@ -1063,7 +1066,8 @@
   .m-svc i{width:1.7mm;height:1.7mm;background:var(--gold);transform:rotate(45deg);flex:none}
   .m-legal{font-size:5.9px;line-height:1.65;color:#9a917f;margin-top:2mm}
   /* annexes sur fond crème */
-  .mpage #dossier-h2, .mpage h2{color:var(--gold)!important;border-bottom-color:var(--hair2)!important}
+  .mpage h2{font-family:var(--sansP);font-size:8.6px;text-transform:uppercase;letter-spacing:.3em;display:block;border:0;padding:0 0 1.6mm;margin:6.5mm 0 3mm;break-after:avoid;font-weight:700;color:var(--gold)!important;border-bottom:.25mm solid var(--hair2)!important}
+  .mpage h2:after{display:none}
   .mpage .dtable td{border-top-color:var(--hair2)}
   .mpage .pmtile,.mpage .dnote,.mpage .pmpoi .poi,.mpage .drisk{background:var(--sable);border-color:#E6DCC4}
 </style>
