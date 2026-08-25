@@ -123,8 +123,21 @@ async function stability(key, prompt, bytes, mediaType){
   return 'data:image/jpeg;base64,' + out.toString('base64');
 }
 
+// L'API consomme des crédits BFL/Stability/Anthropic → réservée aux utilisateurs connectés (JWT Supabase).
+async function requireUser(req){
+  var SB = process.env.SB_URL, SK = process.env.SB_SERVICE_KEY;
+  if(!SB || !SK) return true;   // pas configuré → on ne casse pas l'app
+  var tok = String(req.headers.authorization||'').replace(/^Bearer\s+/i,'');
+  if(!tok) return false;
+  try{
+    var r = await fetch(SB.replace(/\/$/,'')+'/auth/v1/user', { headers:{ apikey:SK, Authorization:'Bearer '+tok } });
+    return r.ok;
+  }catch(e){ return false; }
+}
+
 export default async function handler(req, res){
   if(req.method !== 'POST'){ res.status(405).json({ error: 'Méthode non autorisée' }); return; }
+  if(!(await requireUser(req))){ res.status(401).json({ error: 'Connexion requise — reconnecte-toi dans l\'app.' }); return; }
   var BFL  = process.env.BFL_API_KEY;
   var STAB = process.env.STABILITY_API_KEY;
   var ANTH = process.env.ANTHROPIC_API_KEY;

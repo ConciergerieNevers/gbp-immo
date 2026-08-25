@@ -1997,6 +1997,52 @@
   var houseSVG='<svg class="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>';
   var checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
   var euro=function(n){return Math.round(n).toLocaleString('fr-FR')+' €';};
+  /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
+     __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
+     on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
+  var __BUILD='20260825-144440';
+  (function(){
+    var checking=false;
+    function modalOpen(){
+      return [].some.call(document.querySelectorAll('.modal'),function(m){ return !m.hidden; }) ||
+        document.querySelector('.drawer.open');
+    }
+    function showUpdateBar(){
+      if(document.getElementById('updBar')) return;
+      var b=document.createElement('button');
+      b.id='updBar'; b.type='button'; b.textContent='🔄 Nouvelle version — mettre à jour';
+      b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:200;background:var(--accent,#B08A2E);color:#fff;border:0;border-radius:24px;padding:12px 18px;font:600 14px/1 -apple-system,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer';
+      b.addEventListener('click',function(){ try{ sessionStorage.setItem('estimake_upd_done',__REMOTE||''); }catch(e){} window.location.reload(); });
+      document.body.appendChild(b);
+    }
+    var __REMOTE=null;
+    async function checkUpdate(){
+      if(checking||__BUILD==='dev') return; checking=true;
+      try{
+        var r=await fetch(window.location.pathname+'?u='+Date.now(),{cache:'no-store'});
+        var t=await r.text();
+        var m=t.match(/__BUILD='([^']+)'/);
+        if(m && m[1] && m[1]!==__BUILD){
+          __REMOTE=m[1];
+          var done=null; try{ done=sessionStorage.getItem('estimake_upd_done'); }catch(e){}
+          if(done===m[1]){ showUpdateBar(); }             // reload déjà tenté → bouton manuel
+          else if(modalOpen()){ showUpdateBar(); }        // saisie en cours → on n'interrompt pas
+          else { try{ sessionStorage.setItem('estimake_upd_done',m[1]); }catch(e){} window.location.reload(); }
+        }
+      }catch(e){}
+      checking=false;
+    }
+    document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') checkUpdate(); });
+    setInterval(checkUpdate, 30*60*1000);
+    setTimeout(checkUpdate, 8000);
+  })();
+  // en-têtes des API d'IA : jeton de connexion Supabase (les API le vérifient côté serveur)
+  async function aiHeaders(){
+    var h={'content-type':'application/json'};
+    try{ var s=await sb.auth.getSession(); var t=s&&s.data&&s.data.session&&s.data.session.access_token;
+      if(t) h.Authorization='Bearer '+t; }catch(e){}
+    return h;
+  }
   // échappement HTML pour tout texte externe injecté via innerHTML (RDV Google, saisies libres)
   var escH=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
 
@@ -2453,8 +2499,11 @@
     document.getElementById('contactModalTitle').textContent = c ? 'Modifier le contact' : 'Nouveau contact';
     var e=contactForm.elements;
     e.nom.value=c?(c.nom||''):''; e.role.value=c?(c.role||'vendeur'):'vendeur';
-    // statut : menu déroulant — si la valeur existante n'est pas dans la liste, on l'ajoute
+    // statut : menu déroulant — anciennes valeurs converties (Exclusif → Mandat exclusif…),
+    // et seule une valeur vraiment inconnue est ajoutée à la liste
     var stSel=e.statut, stVal=c?(c.statut||''):'';
+    var stMap={'exclusif':'Mandat exclusif','simple':'Mandat simple','compromis':'Compromis','vendu':'Vendu'};
+    if(stVal && stMap[stVal.trim().toLowerCase()]) stVal=stMap[stVal.trim().toLowerCase()];
     if(stVal && ![].some.call(stSel.options,function(o){return o.value===stVal||o.text===stVal;})){
       var op=document.createElement('option'); op.textContent=stVal; stSel.appendChild(op);
     }
@@ -3102,7 +3151,7 @@
       if(t.length<10){ toast('Écris d\u2019abord quelques phrases sur le bien.'); return; }
       b.disabled=true; var old=b.textContent; b.textContent='Correction en cours…'; msg.hidden=true;
       try{
-        var r=await fetch('/api/texte',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text:t})});
+        var r=await fetch('/api/texte',{method:'POST',headers:await aiHeaders(),body:JSON.stringify({text:t})});
         var j=await r.json().catch(function(){return {};});
         if(!r.ok || !j.text){ throw new Error(j.error||('Erreur '+r.status)); }
         ta.value=j.text; toast('Texte corrigé ✓');
@@ -4631,7 +4680,7 @@
       msg.hidden=true; out.hidden=true; var old=btn.textContent; btn.disabled=true; btn.textContent='Génération en cours… (15–30 s)';
       try{
         var small=await scale(p.before);
-        var r=await fetch('/api/restyle',{ method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ image:small, style:style, room:room, notes:notes }) });
+        var r=await fetch('/api/restyle',{ method:'POST', headers:await aiHeaders(), body:JSON.stringify({ image:small, style:style, room:room, notes:notes }) });
         var j=await r.json().catch(function(){ return { error:'Réponse invalide du serveur.' }; });
         if(!r.ok || !j.image){ throw new Error(j.error || ('Erreur '+r.status)); }
         p.after=j.image;
