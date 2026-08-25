@@ -2019,7 +2019,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-154211';
+  var __BUILD='20260825-155354';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3355,34 +3355,38 @@
     tb.addEventListener('click',function(e){ var b=e.target.closest('[data-tt]'); if(!b) return; todoTab=b.dataset.tt; renderTodoAgenda(); }); })();
   (function(){ var ab=document.getElementById('todoAddBtn'); if(ab) ab.addEventListener('click',function(){ openTaskForm(null); }); })();
   function tasksOn(ds){ return (tachesData||[]).filter(function(t){ return t.echeance===ds; }); }
-  // Autocomplete contacts VISIBLE (les <datalist> sont quasi invisibles sur Safari iOS)
-  function attachContactSuggest(inp, sug){
-    if(!inp||!sug) return;
-    function hide(){ sug.innerHTML=''; }
-    function show(){
-      var q=(inp.value||'').trim().toLowerCase();
-      var list=(contactsData||[]).filter(function(c){
-        return c.nom && (!q || (c.nom+' '+(c.detail||'')).toLowerCase().indexOf(q)>-1);
-      }).slice(0,6);
-      if(!list.length || (list.length===1 && list[0].nom===inp.value)){ hide(); return; }
-      sug.innerHTML=list.map(function(c){
-        return '<button type="button" data-n="'+escH(c.nom)+'">'+escH(c.nom)+'<small>'+escH([c.role==='acquereur'?'acquéreur':(c.role==='prospect'?'prospect vendeur':'vendeur'),c.detail].filter(Boolean).join(' · '))+'</small></button>';
-      }).join('');
-    }
-    inp.addEventListener('input',show);
-    inp.addEventListener('focus',show);
-    sug.addEventListener('mousedown',function(e){
-      var b=e.target.closest('button'); if(!b) return;
-      e.preventDefault();
-      inp.value=b.dataset.n; hide();
-      inp.dispatchEvent(new Event('input',{bubbles:true}));   // déclenche les autofills existants
-      setTimeout(hide,0);
-    });
-    inp.addEventListener('blur',function(){ setTimeout(hide,250); });
+  // Autocomplete contacts VISIBLE (les <datalist> sont quasi invisibles sur Safari iOS).
+  // En DÉLÉGATION au niveau document : fonctionne quel que soit le moment où le champ apparaît.
+  function contactSugBox(el){
+    if(!el || !el.name) return null;
+    if(el.name==='t_lien') return document.getElementById('taskLienSug');
+    if(el.name==='lien' && el.form && el.form.id==='rdvForm') return document.getElementById('rdvLienSug');
+    return null;
   }
+  function renderContactSug(inp, sug){
+    var q=(inp.value||'').trim().toLowerCase();
+    var list=(contactsData||[]).filter(function(c){
+      return c.nom && (!q || (c.nom+' '+(c.detail||'')).toLowerCase().indexOf(q)>-1);
+    }).slice(0,6);
+    if(!list.length || (list.length===1 && list[0].nom===inp.value)){ sug.innerHTML=''; return; }
+    sug.innerHTML=list.map(function(c){
+      return '<button type="button" data-n="'+escH(c.nom)+'">'+escH(c.nom)+'<small>'+escH([c.role==='acquereur'?'acquéreur':(c.role==='prospect'?'prospect vendeur':'vendeur'),c.detail].filter(Boolean).join(' · '))+'</small></button>';
+    }).join('');
+  }
+  document.addEventListener('input',function(e){ var s=contactSugBox(e.target); if(s) renderContactSug(e.target,s); },true);
+  document.addEventListener('focusin',function(e){ var s=contactSugBox(e.target); if(s) renderContactSug(e.target,s); });
+  document.addEventListener('mousedown',function(e){
+    var b=e.target.closest('#taskLienSug button[data-n], #rdvLienSug button[data-n]');
+    if(!b) return;
+    e.preventDefault();
+    var sug=b.parentElement, inp=sug.closest('label').querySelector('input');
+    if(inp){ inp.value=b.dataset.n; inp.dispatchEvent(new Event('input',{bubbles:true})); }
+    setTimeout(function(){ sug.innerHTML=''; },0);
+  });
+  document.addEventListener('focusout',function(e){
+    var s=contactSugBox(e.target); if(s) setTimeout(function(){ s.innerHTML=''; },250);
+  });
   var taskModal=document.getElementById('taskModal'), taskForm=document.getElementById('taskForm'), editingTaskId=null;
-  attachContactSuggest(taskForm.elements.t_lien, document.getElementById('taskLienSug'));
-  (function(){ var rf=document.getElementById('rdvForm'); if(rf) attachContactSuggest(rf.elements.lien, document.getElementById('rdvLienSug')); })();
   function openTaskForm(t, presetLien){
     editingTaskId=(t&&t.id)||null;
     document.getElementById('taskModalTitle').textContent=t?'Modifier la t\u00e2che':'Nouvelle t\u00e2che';
@@ -5049,19 +5053,19 @@
     /* ---- annexes (flux continu, packing) ---- */
     var blocks=[];
     function blk(h,html){ blocks.push({h:h,html:html}); }
-    if(mk){
-      var lastA=mk.annees[mk.annees.length-1];
-      blk(9,'<h2>Marché de la commune · 5 ans (DVF)</h2>');
-      blk(22,'<div class="pmtiles">'+
-        '<div class="pmtile"><small>Prix médian secteur</small><b>'+(lastA?Math.round(lastA.median).toLocaleString('fr-FR')+' €/m²':'—')+'</b></div>'+
-        '<div class="pmtile"><small>Évolution 1 an</small><b style="color:'+(mk.evo1>0?'#2F7D5B':(mk.evo1<0?'#A33B2E':'#111'))+'">'+((mk.evo1>0?'+':'')+(mk.evo1!==null?String(mk.evo1).replace('.',','):'—'))+' %</b></div>'+
-        '<div class="pmtile"><small>Évolution 5 ans</small><b style="color:'+(mk.evo5>0?'#2F7D5B':(mk.evo5<0?'#A33B2E':'#111'))+'">'+((mk.evo5>0?'+':'')+(mk.evo5!==null?String(mk.evo5).replace('.',','):'—'))+' %</b></div>'+
-        '<div class="pmtile"><small>Ventes / an</small><b>'+(volMoy!==null?volMoy:'—')+'</b></div></div>');
-      if(window.__trend) blk(12,'<p class="dnote">'+window.__trend+'</p>');
+    // (les tuiles marché 5 ans ne sont PLUS répétées en annexe : elles vivent page « Le marché ».
+    //  On ne garde ici que la phrase de tendance 5 ans, qui apporte une info en plus.)
+    if(mk && window.__trend){
+      blk(9,'<h2>Tendance du marché sur 5 ans</h2>');
+      blk(12,'<p class="dnote">'+window.__trend+(mk.evo5!==null&&mk.evo5!==undefined?' Évolution sur 5 ans : '+((mk.evo5>0?'+':'')+String(mk.evo5).replace('.',','))+' %.':'')+'</p>');
     }
     if(rowsAnnex.length){
-      blk(9,'<h2>Ventes comparables — suite</h2>');
-      blk(12+rowsAnnex.length*7,'<table class="m-comp"><thead><tr><th>Bien</th><th>Surface</th><th>Prix de vente</th><th>Prix / m²</th><th>Date</th></tr></thead><tbody>'+rowsAnnex.map(compTr).join('')+'</tbody></table>');
+      blk(9,'<h2>Ventes comparables — suite (DVF)</h2>');
+      // tranches de 6 lignes, hauteur large (les adresses longues passent sur 2 lignes)
+      for(var rc=0; rc<rowsAnnex.length; rc+=6){
+        var part=rowsAnnex.slice(rc,rc+6);
+        blk(14+part.length*9,'<table class="m-comp"><thead><tr><th>Bien</th><th>Surface</th><th>Prix de vente</th><th>Prix / m²</th><th>Date</th></tr></thead><tbody>'+part.map(compTr).join('')+'</tbody></table>');
+      }
       if(extraC) blk(10,'<p class="dnote">'+extraC+' autres ventes retenues entrent dans le calcul de la médiane.</p>');
     }
     if(estLots.length && type==='Immeuble'){
