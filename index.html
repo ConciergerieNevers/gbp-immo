@@ -2069,7 +2069,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-172429';
+  var __BUILD='20260825-172552';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2413,19 +2413,20 @@
     var pv=document.getElementById('bienPhotoPrev');
     if(pv) pv.style.backgroundImage=(b&&b.photo)?('url('+b.photo+')'):'none';
     // suivi commercial : on repart de la vente déjà liée à ce bien s'il y en a une
-    var v=b?venteForBien(b):null;
-    e.v_prix.value=(v&&v.prix)?v.prix:'';
-    e.v_hono.value=(v&&v.honoraires)?v.honoraires:'';
-    e.v_pmode.value='fai';
-    e.v_rentree.value=(v && !v.rentree)?'0':'1';
-    e.v_sortie.value=(v && v.sortie)?'1':'0';
-    e.v_part.value=(v && v.part_perso)?v.part_perso:'';
-    e.v_acq.value=(v && v.acquereur)?v.acquereur:'';
+    var v=b?venteForBien(b):null, s=loadSuivi(b);
+    e.v_prix.value=s.prix||((v&&v.prix)?v.prix:'');
+    e.v_hono.value=s.hono||((v&&v.honoraires)?v.honoraires:'');
+    e.v_pmode.value=s.pmode||'fai';
+    e.v_rentree.value=(s.rentree!==undefined)?s.rentree:((v && !v.rentree)?'0':'1');
+    e.v_sortie.value=(s.sortie!==undefined)?s.sortie:((v && v.sortie)?'1':'0');
+    e.v_part.value=s.part||((v && v.part_perso)?v.part_perso:'');
+    e.v_acq.value=s.acq||((v && v.acquereur)?v.acquereur:'');
     var hb=honoDetail(b);
-    e.v_hfix.value=hb.fix; e.v_hpct.value=hb.pct;
-    e.v_dcomp.value=(v&&v.statut!=='acte'&&v.date_vente)?v.date_vente:'';
-    e.v_dacte.value=(v&&v.statut==='acte'&&v.date_vente)?v.date_vente:'';
-    e.v_etape.value=etapeCourante(b);
+    e.v_hfix.value=(s.hfix!==undefined&&s.hfix!=='')?s.hfix:hb.fix;
+    e.v_hpct.value=(s.hpct!==undefined&&s.hpct!=='')?s.hpct:hb.pct;
+    e.v_dcomp.value=s.dcomp||((v&&v.statut!=='acte'&&v.date_vente)?v.date_vente:'');
+    e.v_dacte.value=s.dacte||((v&&v.statut==='acte'&&v.date_vente)?v.date_vente:'');
+    e.v_etape.value=etapeCourante(b)||s.etape||'';
     delete e.v_hono.dataset.auto;
     bienComAdapt();
     bienErr.classList.remove('show'); bienErr.textContent=''; bienModal.hidden=false;
@@ -2457,6 +2458,21 @@
     if(vendu && e.v_sortie.value==='0' && !venteForBien({ad:e.adresse.value})) e.v_sortie.value='1';
     bienHonoAuto(false);   // honoraires calculés dès l'ouverture (prix du bien ou prix de vente réel)
     bienComPreview();
+  }
+  /* ---- suivi commercial mémorisé PAR BIEN (colonne biens.suivi si dispo, sinon local) ---- */
+  function loadSuivi(b){
+    if(!b) return {};
+    if(b.suivi && typeof b.suivi==='object') return b.suivi;
+    try{ return JSON.parse(localStorage.getItem('estimake_suivi_'+b.id)||'{}'); }catch(e){ return {}; }
+  }
+  async function saveSuivi(id, obj){
+    if(!id) return;
+    try{ localStorage.setItem('estimake_suivi_'+id, JSON.stringify(obj)); }catch(e){}
+    if(!sb) return;
+    try{
+      var r=await sb.from('biens').update({suivi:obj}).eq('id',id);
+      if(r.error && !/column|schema cache|suivi/i.test(r.error.message||'')) throw r.error;
+    }catch(e){ console.warn('[ESTIMAKE] suivi', e); }
   }
   // barème propre à CE bien (négociable) — mémorisé par bien, défaut = barème agence
   function honoDetail(b){
@@ -2621,6 +2637,12 @@
         }
         await syncBiens();
         toast(editingBienId?'Bien modifié ✓':'Bien ajouté ✓');
+        // le suivi commercial est TOUJOURS mémorisé (même sans compromis) : rien à ressaisir
+        await saveSuivi(savedId, { etape:e.v_etape.value, prix:e.v_prix.value, pmode:e.v_pmode.value,
+          hfix:e.v_hfix.value, hpct:e.v_hpct.value, hono:e.v_hono.value,
+          rentree:e.v_rentree.value, sortie:e.v_sortie.value, acq:e.v_acq.value.trim(),
+          part:e.v_part.value, dcomp:e.v_dcomp.value, dacte:e.v_dacte.value });
+        honoSave(savedId, e.v_hfix.value, e.v_hpct.value);
         // étape → tâche de suivi automatique (répondre à l'offre, préparer le compromis, suivi acte…)
         if(etapeChanged) etapeTacheAuto(etapeNew, row.adresse, row.proprietaire);
         // STATUT Compromis/Vendu → la vente liée est créée ou mise à jour (le cockpit suit, zéro double saisie)
@@ -5766,7 +5788,7 @@
   function mapBien(r){
     return {ad:r.adresse, tw:r.secteur, px:r.prix, m2:r.surface, ch:r.chambres, pi:r.pieces, ty:r.type,
       st:r.statut, dpe:r.dpe, ref:r.reference, owner:r.proprietaire, terr:r.terrain,
-      an:r.annee, gar:!!r.garage, acq:r.nb_acquereurs||0, hist:r.historique||[], photo:r.photo_url||'', id:r.id, crea:r.created_at};
+      an:r.annee, gar:!!r.garage, acq:r.nb_acquereurs||0, hist:r.historique||[], photo:r.photo_url||'', suivi:r.suivi||null, id:r.id, crea:r.created_at};
   }
   async function syncBiens(){
     if(!sb) return;                       // pas de config → on reste sur la démo
