@@ -934,8 +934,9 @@
   .m-hdname{font-size:9px;letter-spacing:.34em;font-weight:600;color:var(--ink2)}
   .m-hdname span{display:block;font-size:5.6px;letter-spacing:.3em;color:var(--gold);font-weight:600;margin-top:1mm;text-transform:uppercase}
   .m-ref{margin-left:auto;font-size:6.8px;letter-spacing:.26em;color:#7d715a;font-weight:600}
-  .m-body{flex:1;min-height:0;overflow:hidden;padding:7mm 14mm 3mm}
-  .m-ft{flex:none;display:flex;justify-content:space-between;align-items:center;margin:0 14mm;padding:3mm 0 6mm;border-top:.25mm solid var(--hair2);font-size:6.2px;letter-spacing:.24em;color:#9a917f;text-transform:uppercase}
+  .m-body{flex:1;min-height:0;overflow:hidden;padding:7mm 14mm 16mm}
+  /* pied de page TOUJOURS collé en bas (position absolue : insensible au rendu flex de html2canvas) */
+  .m-ft{position:absolute;bottom:0;left:14mm;right:14mm;display:flex;justify-content:space-between;align-items:center;margin:0;padding:3mm 0 6mm;border-top:.25mm solid var(--hair2);font-size:6.2px;letter-spacing:.24em;color:#9a917f;text-transform:uppercase;background:var(--cream)}
   .m-ft b{color:var(--gold);font-weight:600;font-family:var(--serifP);font-size:9px;letter-spacing:.14em}
   .m-eyebrow{font-size:7.6px;letter-spacing:.3em;color:var(--gold);font-weight:700;text-transform:uppercase;margin-bottom:3.2mm}
   .m-eyebrow em{font-style:normal;font-family:var(--serifP);font-size:11px;letter-spacing:.12em;margin-right:2.5mm;color:var(--gold)}
@@ -944,7 +945,7 @@
   .m-p{font-size:9.6px;line-height:1.78;color:#37301f;margin:0 0 3.4mm}
   .m-p b{color:var(--ink2)}
   /* --- couverture --- */
-  .mcover{align-items:center;text-align:center;padding:14mm 16mm 0;
+  .mcover{align-items:center;text-align:center;padding:14mm 16mm 26mm;
     background:linear-gradient(160deg,#1b1712 0%,#12100b 55%,#0d0b08 100%)}
   .mcover .mc-name{color:#EDE6D4}
   .mcover .mc-eyebrow{color:#9A917C}
@@ -964,14 +965,14 @@
   .mc-div{display:flex;align-items:center;gap:3mm;margin:6mm auto 7mm;width:52mm}
   .mc-div:before,.mc-div:after{content:'';flex:1;height:.25mm;background:var(--goldL)}
   .mc-div i{width:2.2mm;height:2.2mm;background:var(--gold);transform:rotate(45deg);flex:none}
-  .mc-photo{width:158mm;height:76mm;background-size:cover;background-position:center;border:.4mm solid var(--goldL);box-shadow:0 0 0 1.6mm var(--cream), 0 0 0 1.85mm var(--hair2)}
-  .mc-phold{width:158mm;height:76mm;background:linear-gradient(150deg,#1b1712,#0f0d09);border:.4mm solid var(--goldL);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm}
+  .mc-photo{width:158mm;height:76mm;background-size:cover;background-position:center;border:.4mm solid var(--goldL);box-shadow:0 0 0 1.6mm var(--cream), 0 0 0 1.85mm var(--hair2);margin-left:auto;margin-right:auto;align-self:center}
+  .mc-phold{width:158mm;height:76mm;background:linear-gradient(150deg,#1b1712,#0f0d09);border:.4mm solid var(--goldL);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm;margin-left:auto;margin-right:auto;align-self:center}
   .mc-phold img{width:15mm;height:15mm;border-radius:3mm;opacity:.9}
   .mc-phold span{font-size:6.4px;letter-spacing:.34em;color:#C9A96B;text-transform:uppercase}
   .mc-line1{font-family:var(--serifP);font-style:italic;font-size:16px;color:var(--ink2);margin-top:7mm}
   .mc-addr{font-size:8.4px;letter-spacing:.28em;color:var(--gold);font-weight:600;text-transform:uppercase;margin-top:2.6mm}
   .mc-specs{font-size:7px;letter-spacing:.26em;color:#8d8168;font-weight:500;text-transform:uppercase;margin-top:2mm}
-  .mc-meta{margin-top:auto;width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6mm;border-top:.3mm solid var(--hair2);padding:4.5mm 0 9mm;text-align:left}
+  .mc-meta{position:absolute;bottom:0;left:16mm;right:16mm;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6mm;border-top:.3mm solid var(--hair2);padding:4.5mm 0 9mm;text-align:left}
   .mc-meta div:nth-child(2){text-align:center}
   .mc-meta div:nth-child(3){text-align:right}
   .mc-meta small{display:block;font-size:6px;letter-spacing:.3em;color:#9a917f;font-weight:600;text-transform:uppercase;margin-bottom:1.8mm}
