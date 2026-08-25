@@ -3068,6 +3068,8 @@
       if(rv){ go('agenda'); openRdvForm(rv); }
     }
   });
+  // rendu immédiat (la carte ne doit jamais rester sur « Chargement… »), puis la synchro affine
+  try{ renderToday(); renderTodoAgenda(); }catch(e){ console.warn('[ESTIMAKE] rendu initial tâches', e); }
   syncTaches();
   /* ---------- VENTES & COMMISSIONS (25 % rentrée + 25 % sortie) ---------- */
   var ventesData=[];
