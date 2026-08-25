@@ -4267,7 +4267,7 @@
         price=document.getElementById('calcPrice'), pm2El=document.getElementById('calcPm2');
     if(!fab) return;
     var pxm2=null;
-    fab.addEventListener('click',function(){ if(typeof resetEstimation==='function'){ resetEstimation(); } }); if(!pop.hidden){ if(!pxm2 && state.baseM2) pxm2=state.baseM2; recalc(); } });
+    fab.addEventListener('click',function(){ if(typeof resetEstimation==='function'){ resetEstimation(); } });
     close.addEventListener('click',function(){ pop.hidden=true; });
     var tmr;
     addr.addEventListener('input',function(){ clearTimeout(tmr); var q=this.value.trim(); if(q.length<3){ sug.innerHTML=''; return; }
