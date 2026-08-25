@@ -1665,9 +1665,39 @@
         <label class="mf"><span>Chambres</span><input name="chambres" type="number" inputmode="numeric"></label>
         <label class="mf"><span>Année</span><input name="annee" type="number" inputmode="numeric"></label>
         <label class="mf"><span>DPE</span><select name="dpe"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option value="ND">N/D (à vérifier)</option></select></label>
+        <label class="mf"><span>Référence</span><input name="reference" placeholder="GBP-2041"></label>
+        <label class="mf"><span>Acquéreurs positionnés</span><input name="nb_acquereurs" type="number" inputmode="numeric" placeholder="0"></label>
         <label class="mf mf-wide"><span>Propriétaire</span><input name="proprietaire" placeholder="M. et Mme Delaunay"></label>
         <label class="mf mf-check"><input type="checkbox" name="garage"><span>Garage</span></label>
+        <label class="mf mf-wide"><span>Photo du bien</span>
+          <span style="display:flex;gap:10px;align-items:center">
+            <span id="bienPhotoPrev" style="width:64px;height:44px;border-radius:8px;background:var(--surface-2) center/cover no-repeat;flex:none;border:1px solid var(--line)"></span>
+            <label class="btn" style="flex:1;justify-content:center;cursor:pointer">📷 Choisir une photo<input type="file" accept="image/*" id="bienPhotoInput" hidden></label>
+          </span></label>
       </div>
+      <div class="restyle-sub" style="margin-top:16px" id="bienComTitle">💶 Suivi commercial &amp; commissions</div>
+      <div class="mfields">
+        <label class="mf mf-wide"><span>État d'avancement</span><select name="v_etape">
+          <option value="">— (mandat en cours)</option>
+          <option>Mandat signé</option>
+          <option>En vente · diffusion</option>
+          <option>Visites en cours</option>
+          <option>Offre reçue</option>
+          <option>Offre acceptée</option>
+          <option>Compromis signé</option>
+          <option>Vente actée</option>
+        </select></label>
+        <label class="mf"><span>Prix de vente réel (€)</span><input name="v_prix" type="number" inputmode="numeric" placeholder="= prix affiché"></label>
+        <label class="mf"><span>Ce prix est…</span><select name="v_pmode"><option value="fai">FAI (honoraires inclus)</option><option value="net">Net vendeur</option></select></label>
+        <label class="mf"><span>Honoraires agence (€)</span><input name="v_hono" type="number" inputmode="numeric" placeholder="auto barème"></label>
+        <label class="mf" style="align-self:end"><button type="button" class="btn" id="bienBareme" style="width:100%;justify-content:center">↺ Barème agence</button></label>
+        <label class="mf mf-check"><input type="checkbox" name="v_rentree" checked><span>J'ai <b>rentré</b> le mandat <b style="color:var(--accent)">+25 %</b></span></label>
+        <label class="mf mf-check"><input type="checkbox" name="v_sortie"><span>J'ai <b>vendu</b> le bien <b style="color:var(--accent)">+25 %</b><br><small style="color:var(--ink-3)">décoché = vendu par un collègue</small></span></label>
+        <label class="mf"><span>Date compromis</span><input name="v_dcomp" type="date"></label>
+        <label class="mf"><span>Date de l'acte</span><input name="v_dacte" type="date"></label>
+      </div>
+      <div class="ventepart" id="bienPart">Ma commission : <b>—</b></div>
+      <div style="font-size:12px;color:var(--ink-3);margin-top:6px">Passe le statut en <b>Compromis</b> ou <b>Vendu</b> : la vente est créée/mise à jour automatiquement et alimente ton cockpit.</div>
       <div class="autherr" id="bienErr"></div>
       <div class="modal-ft">
         <button type="button" class="btn danger-o" id="bienDelete" style="margin-right:auto" hidden>Supprimer</button>
@@ -2033,7 +2063,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-170437';
+  var __BUILD='20260825-171207';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2258,7 +2288,11 @@
             '<div class="kv"><span>Honoraires agence</span><b class="tnum">'+h.toLocaleString('fr-FR')+' €</b></div>'+
             '<div class="kv"><span>Ma part si je rentre ET je vends (50 %)</span><b class="tnum" style="color:var(--good)">'+Math.round(h*0.5).toLocaleString('fr-FR')+' €</b></div>'+
             '<div class="kv"><span>Ma part rentrée OU sortie (25 %)</span><b class="tnum">'+Math.round(h*0.25).toLocaleString('fr-FR')+' €</b></div>'+
-            '<div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">Modifie le prix via « Modifier ce bien » — le calcul suit. Le barème se règle dans Paramètres &amp; objectifs.</div></div>';
+            (b.id?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+
+              ['Exclusif','Simple','Compromis','Vendu'].map(function(s){
+                return '<button type="button" class="chip drawer-st'+(b.st===s?' on':'')+'" data-st="'+s+'">'+s+'</button>';
+              }).join('')+'</div>'+
+              '<div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">Touche un statut pour le changer — « Compromis » et « Vendu » ouvrent la fiche pour saisir prix et honoraires réels.</div>':'')+'</div>';
         })()+
         (function(){ var m=acquerersFor(b); return '<div class="dsec"><div class="eyebrow">Acquéreurs correspondants (CRM) · '+m.length+'</div>'+
           (m.length?acquerersHtml(m):'<div style="color:var(--ink-3);font-size:13px">Aucun acquéreur du CRM ne correspond à ce bien pour l\'instant.</div>')+'</div>'; })()+
@@ -2286,6 +2320,26 @@
     if(dphoto) dphoto.addEventListener('change',function(){
       var f=this.files&&this.files[0]; if(!f) return;
       uploadBienPhoto(b,f);
+    });
+    drawer.querySelectorAll('.drawer-st').forEach(function(btn){
+      btn.addEventListener('click',async function(){
+        var st=btn.dataset.st;
+        if(st===b.st) return;
+        if(st==='Compromis'||st==='Vendu'){
+          // saisie des chiffres réels : on ouvre la fiche avec le bon statut présélectionné
+          contactReturn=null; closeDrawer(); openBienForm(b);
+          bienForm.elements.statut.value=st; bienComAdapt(); bienHonoAuto(false);
+          toast('Complète le prix et les honoraires réels, puis Enregistrer.');
+          return;
+        }
+        btn.disabled=true;
+        try{
+          var r=await sb.from('biens').update({statut:st}).eq('id',b.id);
+          if(r.error) throw r.error;
+          b.st=st; await syncBiens(); toast('Mandat → '+st+' ✓');
+          openDrawer(biens.findIndex(function(x){ return x.id===b.id; }));
+        }catch(err){ btn.disabled=false; if(!authFail(err)) toast('Changement impossible : '+((err&&err.message)||err)); }
+      });
     });
     drawer.querySelectorAll('.drawer-estim').forEach(function(el){
       el.addEventListener('click',function(){
@@ -2350,8 +2404,117 @@
     e.statut.value=b?(b.st||'Simple'):'Simple'; e.prix.value=(b&&b.px)?b.px:''; e.surface.value=(b&&b.m2)?b.m2:'';
     e.terrain.value=(b&&b.terr)?b.terr:''; e.pieces.value=(b&&b.pi)?b.pi:''; e.chambres.value=(b&&b.ch)?b.ch:''; e.annee.value=(b&&b.an)?b.an:'';
     e.dpe.value=b?(b.dpe||'D'):'D'; e.proprietaire.value=b?(b.owner||''):''; e.garage.checked=b?!!b.gar:false;
+    e.reference.value=b?(b.ref||''):''; e.nb_acquereurs.value=(b&&b.acq)?b.acq:'';
+    bienPhotoPending=null;
+    var pv=document.getElementById('bienPhotoPrev');
+    if(pv) pv.style.backgroundImage=(b&&b.photo)?('url('+b.photo+')'):'none';
+    // suivi commercial : on repart de la vente déjà liée à ce bien s'il y en a une
+    var v=b?venteForBien(b):null;
+    e.v_prix.value=(v&&v.prix)?v.prix:'';
+    e.v_hono.value=(v&&v.honoraires)?v.honoraires:'';
+    e.v_pmode.value='fai';
+    e.v_rentree.checked=v?!!v.rentree:true;
+    e.v_sortie.checked=v?!!v.sortie:false;
+    e.v_dcomp.value=(v&&v.statut!=='acte'&&v.date_vente)?v.date_vente:'';
+    e.v_dacte.value=(v&&v.statut==='acte'&&v.date_vente)?v.date_vente:'';
+    e.v_etape.value=etapeCourante(b);
+    delete e.v_hono.dataset.auto;
+    bienComAdapt();
     bienErr.classList.remove('show'); bienErr.textContent=''; bienModal.hidden=false;
   }
+  /* ---- suivi commercial du bien : honoraires au barème, ma part, vente liée ---- */
+  function venteForBien(b){
+    if(!b) return null;
+    var ad=(b.ad||'').trim().toLowerCase();
+    return (ventesData||[]).find(function(v){ return (v.bien||'').trim().toLowerCase()===ad; })||null;
+  }
+  // l'étape courante = dernière entrée de l'historique du bien (qui sert aussi de timeline)
+  var ETAPES=['Mandat signé','En vente · diffusion','Visites en cours','Offre reçue','Offre acceptée','Compromis signé','Vente actée'];
+  function etapeCourante(b){
+    if(!b || !Array.isArray(b.hist)) return '';
+    for(var i=b.hist.length-1;i>=0;i--){ var lbl=b.hist[i] && b.hist[i][0]; if(ETAPES.indexOf(lbl)>-1) return lbl; }
+    return '';
+  }
+  function bienComAdapt(){
+    var e=bienForm.elements, st=e.statut.value;
+    var vendu=(st==='Vendu'), comp=(st==='Compromis'), actif=(vendu||comp);
+    document.getElementById('bienComTitle').innerHTML = actif
+      ? '💶 '+(vendu?'Vente actée':'Compromis signé')+' — honoraires &amp; ma commission'
+      : '💶 Commission potentielle <small style="text-transform:none;letter-spacing:0">(si ce mandat se vend)</small>';
+    // les dates n'apparaissent que quand elles ont un sens
+    e.v_dcomp.closest('label').hidden=!actif;
+    e.v_dacte.closest('label').hidden=!vendu;
+    if(vendu && !e.v_dacte.value) e.v_dacte.value=isoD(new Date());
+    if(comp && !e.v_dcomp.value) e.v_dcomp.value=isoD(new Date());
+    if(vendu && !e.v_sortie.checked && !venteForBien({ad:e.adresse.value})) e.v_sortie.checked=true;
+    bienComPreview();
+  }
+  function bienHonoAuto(force){
+    var e=bienForm.elements;
+    var px=parseFloat(e.v_prix.value)||parseFloat(e.prix.value)||0;
+    if(!px) return;
+    if(force || !e.v_hono.value || e.v_hono.dataset.auto==='1'){
+      e.v_hono.value=honorairesPour(px, e.v_pmode.value);
+      e.v_hono.dataset.auto='1';
+    }
+    bienComPreview();
+  }
+  function bienComPreview(){
+    var e=bienForm.elements, box=document.getElementById('bienPart'); if(!box) return;
+    var px=parseFloat(e.v_prix.value)||parseFloat(e.prix.value)||0;
+    var h=parseFloat(e.v_hono.value)|| (px?honorairesPour(px,e.v_pmode.value):0);
+    var pct=((e.v_rentree.checked?25:0)+(e.v_sortie.checked?25:0));
+    var part=Math.round(h*pct/100);
+    var bm=bareme(), net=(e.v_pmode.value==='net')?px:Math.max(0,px-h);
+    var role=(e.v_rentree.checked&&e.v_sortie.checked)?'rentrée + vente'
+      :(e.v_rentree.checked?'rentrée seule (vendu par un collègue)'
+      :(e.v_sortie.checked?'vente seule (mandat d\'un collègue)':'aucune part'));
+    box.innerHTML='<div style="font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em">Ma part · '+role+'</div>'+
+      '<div style="font-size:26px;font-weight:800;color:var(--accent);margin:2px 0 4px" class="tnum">'+part.toLocaleString('fr-FR')+' €</div>'+
+      '<small style="color:var(--ink-3)">'+pct+' % de '+Math.round(h).toLocaleString('fr-FR')+' € d\'honoraires · net vendeur '+net.toLocaleString('fr-FR')+' € · barème '+bm.fix.toLocaleString('fr-FR')+' € + '+String(bm.pct).replace('.',',')+' %</small>';
+  }
+  /* ---- tâche automatique selon l'état d'avancement du bien ---- */
+  var ETAPE_TACHE={
+    'Offre reçue':{j:2, t:'Répondre à l\'offre'},
+    'Offre acceptée':{j:7, t:'Préparer le compromis'},
+    'Compromis signé':{j:90, t:'Suivi acte notarié'},
+    'En vente · diffusion':{j:14, t:'Point diffusion / retours annonces'},
+    'Visites en cours':{j:7, t:'Débriefer les visites avec le vendeur'}
+  };
+  async function etapeTacheAuto(etape, adresse, client){
+    var cfg=ETAPE_TACHE[etape]; if(!cfg||!sb) return;
+    var titre=cfg.t+' — '+adresse;
+    try{
+      var ex=await sb.from('taches').select('id').eq('titre',titre).eq('deleted',false).eq('fait',false).limit(1);
+      if(ex.data && ex.data.length) return;   // déjà créée
+      var d=new Date(); d.setDate(d.getDate()+cfg.j);
+      var r=await sb.from('taches').insert({ titre:titre, lien:client||null, echeance:isoD(d), fait:false, deleted:false });
+      if(!r.error){ syncTaches(); setTimeout(function(){ toast('✅ Tâche « '+cfg.t+' » créée pour le '+frDay(isoD(d))); },2200); }
+    }catch(e){ console.warn('[ESTIMAKE] tâche étape', e); }
+  }
+  var bienPhotoPending=null;   // photo choisie dans le formulaire, envoyée à l'enregistrement
+  (function(){
+    var inp=document.getElementById('bienPhotoInput');
+    if(inp) inp.addEventListener('change',function(){
+      var f=this.files&&this.files[0]; if(!f) return;
+      bienPhotoPending=f;
+      var rd=new FileReader();
+      rd.onload=function(ev){ var pv=document.getElementById('bienPhotoPrev'); if(pv) pv.style.backgroundImage='url('+ev.target.result+')'; };
+      rd.readAsDataURL(f);
+      toast('Photo prête — Enregistrer pour la conserver.');
+    });
+  })();
+  (function(){
+    var e=bienForm.elements;
+    e.statut.addEventListener('change',bienComAdapt);
+    e.prix.addEventListener('input',function(){ bienHonoAuto(false); });
+    e.v_prix.addEventListener('input',function(){ bienHonoAuto(false); });
+    e.v_pmode.addEventListener('change',function(){ bienHonoAuto(false); });
+    e.v_hono.addEventListener('input',function(){ delete this.dataset.auto; bienComPreview(); });
+    e.v_rentree.addEventListener('change',bienComPreview);
+    e.v_sortie.addEventListener('change',bienComPreview);
+    document.getElementById('bienBareme').addEventListener('click',function(){ bienHonoAuto(true); toast('Honoraires recalculés au barème.'); });
+  })();
   function closeBienForm(){ bienModal.hidden=true; mandatFlow=null; if(typeof returnToContact==='function') returnToContact(); }
   /* ---------- MANDAT SIGNÉ : l'estimation devient un bien du portefeuille, tout interlié ---------- */
   var mandatFlow=null;   // {photo, client, estimId} pendant la création du bien depuis une estimation
@@ -2394,21 +2557,59 @@
   bienForm.addEventListener('submit',async function(ev){
     ev.preventDefault();
     var e=bienForm.elements, num=function(v){ v=parseInt(v,10); return isNaN(v)?null:v; };
-    var row={ type:e.type.value, adresse:e.adresse.value.trim(), secteur:e.secteur.value.trim(),
+    // étape d'avancement : ajoutée à l'historique du bien (timeline) si elle a changé
+    var bCur=editingBienId?(biens||[]).find(function(x){return x.id===editingBienId;}):null;
+    var etapeNew=e.v_etape.value, etapeOld=etapeCourante(bCur), etapeChanged=(etapeNew && etapeNew!==etapeOld);
+    var histNew=(bCur&&Array.isArray(bCur.hist))?bCur.hist.slice():[];
+    if(etapeChanged) histNew.push([etapeNew, new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})]);
+    // l'étape pilote le statut du mandat quand elle est décisive
+    if(etapeNew==='Compromis signé' && e.statut.value!=='Vendu') e.statut.value='Compromis';
+    if(etapeNew==='Vente actée') e.statut.value='Vendu';
+    var row={ type:e.type.value, adresse:e.adresse.value.trim(), secteur:e.secteur.value.trim(), historique:histNew,
       prix:num(e.prix.value), surface:num(e.surface.value), terrain:num(e.terrain.value),
       pieces:num(e.pieces.value), chambres:num(e.chambres.value), annee:num(e.annee.value),
-      dpe:e.dpe.value, garage:e.garage.checked, statut:e.statut.value, proprietaire:e.proprietaire.value.trim() };
+      dpe:e.dpe.value, garage:e.garage.checked, statut:e.statut.value, proprietaire:e.proprietaire.value.trim(),
+      reference:e.reference.value.trim()||null, nb_acquereurs:num(e.nb_acquereurs.value)||0 };
     if(!row.adresse){ bienErr.textContent='L\'adresse est obligatoire.'; bienErr.classList.add('show'); return; }
     var save=document.getElementById('bienSave'); save.disabled=true; var old=save.textContent; save.textContent='Enregistrement…';
     try{
       if(sb){
         var res;
         if(!editingBienId && mandatFlow && mandatFlow.photo){ row.photo_url=mandatFlow.photo; }   // la photo de l'estimation habille le bien
+        var savedId=editingBienId;
         if(editingBienId){ res=await sb.from('biens').update(row).eq('id',editingBienId); }
-        else { row.reference='EST-'+String(Date.now()).slice(-4); res=await sb.from('biens').insert(row); }
+        else {
+          if(!row.reference) row.reference='EST-'+String(Date.now()).slice(-4);
+          res=await sb.from('biens').insert(row).select('id').single();
+          savedId=(res.data&&res.data.id)||null;
+        }
         if(res.error) throw res.error;
+        // photo choisie dans le formulaire → envoyée maintenant que le bien a un id
+        if(bienPhotoPending && savedId){
+          var pf=bienPhotoPending; bienPhotoPending=null;
+          await uploadBienPhoto({id:savedId, ad:row.adresse, photo:''}, pf);
+        }
         await syncBiens();
         toast(editingBienId?'Bien modifié ✓':'Bien ajouté ✓');
+        // étape → tâche de suivi automatique (répondre à l'offre, préparer le compromis, suivi acte…)
+        if(etapeChanged) etapeTacheAuto(etapeNew, row.adresse, row.proprietaire);
+        // STATUT Compromis/Vendu → la vente liée est créée ou mise à jour (le cockpit suit, zéro double saisie)
+        if(row.statut==='Compromis' || row.statut==='Vendu'){
+          var vv=venteForBien({ad:row.adresse});
+          var pxV=parseInt(e.v_prix.value,10)||row.prix||null;
+          var hoV=parseInt(e.v_hono.value,10)||(pxV?honorairesPour(pxV,e.v_pmode.value):null);
+          var vRow={ bien:row.adresse, client:row.proprietaire||null, prix:pxV, honoraires:hoV,
+            rentree:e.v_rentree.checked, sortie:e.v_sortie.checked,
+            statut:(row.statut==='Vendu')?'acte':'compromis',
+            date_vente:((row.statut==='Vendu')?e.v_dacte.value:e.v_dcomp.value)||isoD(new Date()) };
+          try{
+            var vRes = vv ? await sb.from('ventes').update(vRow).eq('id',vv.id) : await sb.from('ventes').insert(vRow);
+            if(vRes.error) throw vRes.error;
+            await syncVentes();
+            var partV=Math.round((hoV||0)*((vRow.rentree?0.25:0)+(vRow.sortie?0.25:0)));
+            setTimeout(function(){ toast('💶 '+(row.statut==='Vendu'?'Vente actée':'Compromis')+' enregistré · ma commission '+partV.toLocaleString('fr-FR')+' € ✓'); },1300);
+          }catch(eV){ setTimeout(function(){ toast('⚠ Vente non synchronisée : '+((eV&&eV.message)||eV)); },1300); }
+        }
         // flux MANDAT : la fiche client passe au statut mandat correspondant + relance datée
         if(!editingBienId && mandatFlow){
           var mfC=(mandatFlow.client||row.proprietaire||'').trim();
