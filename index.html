@@ -1834,7 +1834,7 @@
       <div class="mfields">
         <label class="mf mf-wide"><span>Tâche</span><input name="t_titre" required placeholder="Rappeler M. Martin, préparer le compromis…"></label>
         <label class="mf"><span>Date butoir (optionnel)</span><input name="t_echeance" type="date"></label>
-        <label class="mf"><span>Lié à (optionnel)</span><input name="t_lien" list="taskLienOptions" placeholder="Contact…"><datalist id="taskLienOptions"></datalist></label>
+        <label class="mf"><span>Lié à (optionnel)</span><input name="t_lien" list="taskLienOptions" placeholder="Contact…" autocomplete="off"><datalist id="taskLienOptions"></datalist><div class="addrsug" id="taskLienSug"></div></label>
         <label class="mf mf-wide"><span>Note</span><input name="t_note" placeholder="Détail…"></label>
       </div>
       <div class="autherr" id="taskErr"></div>
@@ -1966,7 +1966,7 @@
         <label class="mf"><span>Type</span><select name="type"><option>Estimation</option><option>Visite</option><option>Signature</option><option>Appel</option><option>Autre</option></select></label>
         <label class="mf"><span>Date</span><input name="date" type="date" required></label>
         <label class="mf"><span>Heure</span><input name="heure" type="time"></label>
-        <label class="mf"><span>Lié à (client / bien) — optionnel</span><input name="lien" list="rdvLienOptions" placeholder="Tape un nom, ou choisis un existant…"><datalist id="rdvLienOptions"></datalist></label>
+        <label class="mf"><span>Lié à (client / bien) — optionnel</span><input name="lien" list="rdvLienOptions" placeholder="Tape un nom, ou choisis un existant…" autocomplete="off"><datalist id="rdvLienOptions"></datalist><div class="addrsug" id="rdvLienSug"></div></label>
         <label class="mf mf-wide"><span>Note</span><input name="note" placeholder="Apporter les diagnostics"></label>
       </div>
       <div class="autherr" id="rdvErr"></div>
@@ -2019,7 +2019,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-151242';
+  var __BUILD='20260825-154211';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2055,12 +2055,11 @@
     setInterval(checkUpdate, 30*60*1000);
     setTimeout(checkUpdate, 8000);
   })();
-  // en-têtes des API d'IA : jeton de connexion Supabase (les API le vérifient côté serveur)
-  async function aiHeaders(){
-    var h={'content-type':'application/json'};
-    try{ var s=await sb.auth.getSession(); var t=s&&s.data&&s.data.session&&s.data.session.access_token;
-      if(t) h.Authorization='Bearer '+t; }catch(e){}
-    return h;
+  // Jeton Supabase pour les API d'IA — envoyé dans le CORPS de la requête (body._auth) :
+  // le JWT contient user_metadata (photo de profil) → trop gros pour un en-tête (erreur 494 Vercel)
+  async function aiHeaders(){ return {'content-type':'application/json'}; }
+  async function aiToken(){
+    try{ var s=await sb.auth.getSession(); return (s&&s.data&&s.data.session&&s.data.session.access_token)||null; }catch(e){ return null; }
   }
   // échappement HTML pour tout texte externe injecté via innerHTML (RDV Google, saisies libres)
   var escH=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
@@ -3183,7 +3182,7 @@
       if(t.length<10){ toast('Écris d\u2019abord quelques phrases sur le bien.'); return; }
       b.disabled=true; var old=b.textContent; b.textContent='Correction en cours…'; msg.hidden=true;
       try{
-        var r=await fetch('/api/texte',{method:'POST',headers:await aiHeaders(),body:JSON.stringify({text:t})});
+        var r=await fetch('/api/texte',{method:'POST',headers:await aiHeaders(),body:JSON.stringify({text:t,_auth:await aiToken()})});
         var j=await r.json().catch(function(){return {};});
         if(!r.ok || !j.text){ throw new Error(j.error||('Erreur '+r.status)); }
         ta.value=j.text; toast('Texte corrigé ✓');
@@ -3232,7 +3231,7 @@
     b.addEventListener('click',async function(){
       b.disabled=true; var old=b.textContent; b.textContent='Analyse de l’estimation…'; msg.hidden=true;
       try{
-        var payload={ mode:'rediger', bien:collectEstimation(), text:ta.value.trim()||null };
+        var payload={ mode:'rediger', bien:collectEstimation(), text:ta.value.trim()||null, _auth:await aiToken() };
         var r=await fetch('/api/texte',{method:'POST',headers:await aiHeaders(),body:JSON.stringify(payload)});
         var j=await r.json().catch(function(){return {};});
         if(!r.ok || !j.text){ throw new Error(j.error||('Erreur '+r.status)); }
@@ -3356,7 +3355,34 @@
     tb.addEventListener('click',function(e){ var b=e.target.closest('[data-tt]'); if(!b) return; todoTab=b.dataset.tt; renderTodoAgenda(); }); })();
   (function(){ var ab=document.getElementById('todoAddBtn'); if(ab) ab.addEventListener('click',function(){ openTaskForm(null); }); })();
   function tasksOn(ds){ return (tachesData||[]).filter(function(t){ return t.echeance===ds; }); }
+  // Autocomplete contacts VISIBLE (les <datalist> sont quasi invisibles sur Safari iOS)
+  function attachContactSuggest(inp, sug){
+    if(!inp||!sug) return;
+    function hide(){ sug.innerHTML=''; }
+    function show(){
+      var q=(inp.value||'').trim().toLowerCase();
+      var list=(contactsData||[]).filter(function(c){
+        return c.nom && (!q || (c.nom+' '+(c.detail||'')).toLowerCase().indexOf(q)>-1);
+      }).slice(0,6);
+      if(!list.length || (list.length===1 && list[0].nom===inp.value)){ hide(); return; }
+      sug.innerHTML=list.map(function(c){
+        return '<button type="button" data-n="'+escH(c.nom)+'">'+escH(c.nom)+'<small>'+escH([c.role==='acquereur'?'acquéreur':(c.role==='prospect'?'prospect vendeur':'vendeur'),c.detail].filter(Boolean).join(' · '))+'</small></button>';
+      }).join('');
+    }
+    inp.addEventListener('input',show);
+    inp.addEventListener('focus',show);
+    sug.addEventListener('mousedown',function(e){
+      var b=e.target.closest('button'); if(!b) return;
+      e.preventDefault();
+      inp.value=b.dataset.n; hide();
+      inp.dispatchEvent(new Event('input',{bubbles:true}));   // déclenche les autofills existants
+      setTimeout(hide,0);
+    });
+    inp.addEventListener('blur',function(){ setTimeout(hide,250); });
+  }
   var taskModal=document.getElementById('taskModal'), taskForm=document.getElementById('taskForm'), editingTaskId=null;
+  attachContactSuggest(taskForm.elements.t_lien, document.getElementById('taskLienSug'));
+  (function(){ var rf=document.getElementById('rdvForm'); if(rf) attachContactSuggest(rf.elements.lien, document.getElementById('rdvLienSug')); })();
   function openTaskForm(t, presetLien){
     editingTaskId=(t&&t.id)||null;
     document.getElementById('taskModalTitle').textContent=t?'Modifier la t\u00e2che':'Nouvelle t\u00e2che';
@@ -4776,7 +4802,7 @@
       msg.hidden=true; out.hidden=true; var old=btn.textContent; btn.disabled=true; btn.textContent='Génération en cours… (15–30 s)';
       try{
         var small=await scale(p.before);
-        var r=await fetch('/api/restyle',{ method:'POST', headers:await aiHeaders(), body:JSON.stringify({ image:small, style:style, room:room, notes:notes }) });
+        var r=await fetch('/api/restyle',{ method:'POST', headers:await aiHeaders(), body:JSON.stringify({ image:small, style:style, room:room, notes:notes, _auth:await aiToken() }) });
         var j=await r.json().catch(function(){ return { error:'Réponse invalide du serveur.' }; });
         if(!r.ok || !j.image){ throw new Error(j.error || ('Erreur '+r.status)); }
         p.after=j.image;

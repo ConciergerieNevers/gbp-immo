@@ -8,10 +8,12 @@
 export const config = { maxDuration: 30 };
 
 // L'API consomme des crédits Anthropic → réservée aux utilisateurs connectés (JWT Supabase).
-async function requireUser(req){
+// NB : le jeton arrive dans le CORPS (body._auth) — le JWT Supabase peut être trop gros
+// pour un en-tête (la photo de profil vit dans user_metadata → 494 REQUEST_HEADER_TOO_LARGE).
+async function requireUser(req, body){
   var SB = process.env.SB_URL, SK = process.env.SB_SERVICE_KEY;
   if(!SB || !SK) return true;   // pas configuré → on ne casse pas l'app
-  var tok = String(req.headers.authorization||'').replace(/^Bearer\s+/i,'');
+  var tok = String(req.headers.authorization||'').replace(/^Bearer\s+/i,'') || String((body&&body._auth)||'');
   if(!tok) return false;
   try{
     var r = await fetch(SB.replace(/\/$/,'')+'/auth/v1/user', { headers:{ apikey:SK, Authorization:'Bearer '+tok } });
@@ -21,12 +23,13 @@ async function requireUser(req){
 
 export default async function handler(req, res){
   if(req.method !== 'POST'){ res.status(405).json({ error: 'Méthode non autorisée' }); return; }
-  if(!(await requireUser(req))){ res.status(401).json({ error: 'Connexion requise — reconnecte-toi dans l\'app.' }); return; }
+  var body0 = req.body;
+  if(typeof body0 === 'string'){ try{ body0 = JSON.parse(body0); }catch(e){ body0 = {}; } }
+  if(!(await requireUser(req, body0))){ res.status(401).json({ error: 'Connexion requise — reconnecte-toi dans l\'app.' }); return; }
   var KEY = process.env.ANTHROPIC_API_KEY;
   if(!KEY){ res.status(503).json({ error: 'Correction IA non configurée : ajoute ANTHROPIC_API_KEY dans Vercel.' }); return; }
   try{
-    var body = req.body;
-    if(typeof body === 'string'){ try{ body = JSON.parse(body); }catch(e){ body = {}; } }
+    var body = body0;
     var prompt;
     if(body && body.mode === 'rediger'){
       // « Aide-moi à rédiger » : Claude rédige la description à partir des données de l'estimation
