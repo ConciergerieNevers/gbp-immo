@@ -702,7 +702,9 @@
   .acq .av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:640;font-size:12px;flex:none}
   .acq .g{flex:1} .acq b{font-size:13.5px;font-weight:580;display:block} .acq small{color:var(--ink-3);font-size:12px}
   .tl{list-style:none;margin:0;padding:0}
-  .tl li{display:flex;gap:11px;padding-bottom:14px;position:relative}
+  .tl li{display:flex;gap:11px;padding-bottom:14px;position:relative;align-items:flex-start}
+  .tl li .tx{flex:1;min-width:0}
+  .tl li .hist-del{flex:none;margin-top:-2px}
   .tl li::before{content:"";position:absolute;left:5px;top:16px;bottom:0;width:1.5px;background:var(--line)}
   .tl li:last-child::before{display:none}
   .tl .dot{width:11px;height:11px;border-radius:50%;background:var(--brand);flex:none;margin-top:3px;z-index:1;
@@ -2071,7 +2073,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-174557';
+  var __BUILD='20260825-174842';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2315,7 +2317,11 @@
             }).join('')+'</div>';
         })()+
         '<div class="dsec"><div class="eyebrow">Historique</div><ul class="tl">'+
-          b.hist.map(function(h){return '<li><span class="dot"></span><div class="tx"><b>'+h[0]+'</b><small>'+h[1]+'</small></div></li>';}).join('')+
+          b.hist.map(function(h,hi){
+            var isEtape=(ETAPES.indexOf(h&&h[0])>-1);
+            return '<li><span class="dot"></span><div class="tx"><b>'+escH(h[0])+'</b><small>'+escH(h[1]||'')+'</small></div>'+
+              ((isEtape&&b.id)?'<button type="button" class="cadjdel hist-del" data-hi="'+hi+'" title="Retirer cette étape">✕</button>':'')+'</li>';
+          }).join('')+
           '</ul></div>'+
         '<div style="display:grid;grid-template-columns:'+(b.id?'1fr auto':'1fr')+';gap:10px">'+
           '<button class="btn pri" id="drawerEdit" style="justify-content:center">Modifier ce bien</button>'+
@@ -2327,6 +2333,38 @@
     if(dphoto) dphoto.addEventListener('change',function(){
       var f=this.files&&this.files[0]; if(!f) return;
       uploadBienPhoto(b,f);
+    });
+    drawer.querySelectorAll('.hist-del').forEach(function(btn){
+      btn.addEventListener('click',async function(ev){
+        ev.stopPropagation();
+        var hi=parseInt(btn.dataset.hi,10);
+        var lbl=(b.hist[hi]||[])[0]||'cette étape';
+        if(!window.confirm('Retirer « '+lbl+' » de l\'historique ? Le statut et le cockpit seront recalculés.')) return;
+        btn.disabled=true;
+        try{
+          var h2=b.hist.slice(); h2.splice(hi,1);
+          var etNew=''; for(var i=h2.length-1;i>=0;i--){ if(ETAPES.indexOf(h2[i]&&h2[i][0])>-1){ etNew=h2[i][0]; break; } }
+          var stNew = (etNew==='Vente actée')?'Vendu' : (etNew==='Compromis signé')?'Compromis'
+            : ((b.st==='Compromis'||b.st==='Vendu')?'Exclusif':b.st);
+          var r=await sb.from('biens').update({historique:h2, statut:stNew}).eq('id',b.id);
+          if(r.error) throw r.error;
+          // la vente liée suit l'état du bien
+          var vL=venteForBien(b);
+          if(vL && vL.id){
+            if(stNew==='Vendu' || stNew==='Compromis'){
+              await sb.from('ventes').update({statut:(stNew==='Vendu')?'acte':'compromis'}).eq('id',vL.id);
+            } else {
+              await sb.from('ventes').update({deleted:true}).eq('id',vL.id);
+            }
+            await syncVentes();
+          }
+          b.hist=h2; b.st=stNew;
+          await syncBiens();
+          toast('« '+lbl+' » retiré — statut : '+stNew+' ✓');
+          var ni=biens.findIndex(function(x){ return x.id===b.id; });
+          if(ni>-1) openDrawer(ni); else closeDrawer();
+        }catch(err){ btn.disabled=false; if(!authFail(err)) toast('Impossible : '+((err&&err.message)||err)); }
+      });
     });
     drawer.querySelectorAll('.drawer-st').forEach(function(btn){
       btn.addEventListener('click',async function(){
