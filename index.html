@@ -1220,21 +1220,21 @@
         </div>
         <div class="grid kpigrid">
           <div class="card kpi kpi-click" data-stat="ca">
-            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 2.5L21 6"/></svg> CA réalisé · <span id="kCaYear">2026</span></div>
-            <div class="val tnum" id="kCaVal">218 400 <span class="unit">€</span></div>
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 2.5L21 6"/></svg> Mes commissions · <span id="kCaYear">2026</span></div>
+            <div class="val tnum" id="kCaVal">21 840 <span class="unit">€</span></div>
             <div class="meta" id="kCaMeta"><span class="trend up">▲ 14 %</span> vs 2025</div>
             <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 28 20 26 40 24 60 22 80 18 100 20 120 14 140 12 160 9 180 6 200 4" fill="none" stroke="var(--brand)" stroke-width="2"/><path d="M0 28 20 26 40 24 60 22 80 18 100 20 120 14 140 12 160 9 180 6 200 4 200 34 0 34Z" fill="var(--brand-soft)" opacity=".5"/></svg>
           </div>
           <div class="card kpi kpi-click" data-stat="prev">
-            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> CA prévisionnel</div>
-            <div class="val tnum" id="kPrevVal">96 800 <span class="unit">€</span></div>
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Commissions à venir</div>
+            <div class="val tnum" id="kPrevVal">9 680 <span class="unit">€</span></div>
             <div class="meta" id="kPrevMeta">7 compromis en cours · signés d'ici déc.</div>
             <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 24 25 25 50 20 75 22 100 16 125 18 150 11 175 13 200 7" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/></svg>
           </div>
           <div class="card kpi kpi-click" data-stat="com">
-            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg> Commissions</div>
-            <div class="val tnum" id="kComVal">21 840 <span class="unit">€</span></div>
-            <div class="meta" id="kComMeta"><span class="pill good dot">encaissées</span> <span style="color:var(--ink-3)">+ 9 680 € à venir</span></div>
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg> Volume de ventes</div>
+            <div class="val tnum" id="kComVal">218 400 <span class="unit">€</span></div>
+            <div class="meta" id="kComMeta"><span class="pill good dot">actées</span> <span style="color:var(--ink-3)">+ 96 800 € en compromis</span></div>
           </div>
           <div class="card kpi kpi-click" data-stat="mand">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16v4H4zM4 12h10M4 17h7"/></svg> Mandats actifs</div>
@@ -1870,8 +1870,8 @@
       <button class="modal-x" id="goalsX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <form class="modal-body" id="goalsForm">
       <div class="mfields">
-        <label class="mf"><span>Objectif CA annuel (€)</span><input name="g_ca" type="number" step="10000" placeholder="300000"></label>
-        <label class="mf"><span>Objectif commissions annuelles (€)</span><input name="g_com" type="number" step="1000" placeholder="30000"></label>
+        <label class="mf"><span>Objectif commissions annuelles — mon CA (€)</span><input name="g_com" type="number" step="1000" placeholder="30000"></label>
+        <label class="mf"><span>Objectif volume de ventes annuel (€)</span><input name="g_ca" type="number" step="10000" placeholder="2000000"></label>
         <label class="mf"><span>Objectif mandats / mois</span><input name="g_mand" type="number" placeholder="4"></label>
         <label class="mf"><span>Objectif ventes / an</span><input name="g_vte" type="number" placeholder="15"></label>
       </div>
@@ -2019,7 +2019,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-150714';
+  var __BUILD='20260825-151242';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3550,12 +3550,13 @@
     var fVend=nowIn?fichesStatut('Vendu').filter(function(c){ return !venteForClient(c.nom); }):[];
     var caPrevF=fComp.reduce(function(a,c){ return a+estimPrixClient(c.nom); },0);
     caPrev+=caPrevF;
-    document.getElementById('kCaVal').innerHTML=ca.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
+    // Pour Jimmy, \u00ab mon CA \u00bb = MES COMMISSIONS (le volume de ventes est un indicateur secondaire)
+    document.getElementById('kCaVal').innerHTML=com.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
     document.getElementById('kCaMeta').textContent=actees.length+' vente'+(actees.length>1?'s':'')+' act\u00e9e'+(actees.length>1?'s':'')+' \u00b7 '+ckLabelTxt(rg);
-    document.getElementById('kPrevVal').innerHTML=caPrev.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
+    document.getElementById('kPrevVal').innerHTML=comPrev.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
     document.getElementById('kPrevMeta').textContent=(compromis.length+fComp.length)+' compromis'+(fComp.length?' \u00b7 dont '+fComp.length+' fiche'+(fComp.length>1?'s':'')+' sans vente saisie':' sur la p\u00e9riode');
-    document.getElementById('kComVal').innerHTML=com.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
-    document.getElementById('kComMeta').innerHTML='<span class="pill good dot">act\u00e9es</span> <span style="color:var(--ink-3)">+ '+comPrev.toLocaleString('fr-FR')+' \u20ac \u00e0 venir</span>';
+    document.getElementById('kComVal').innerHTML=ca.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
+    document.getElementById('kComMeta').innerHTML='<span class="pill good dot">act\u00e9es</span> <span style="color:var(--ink-3)">+ '+caPrev.toLocaleString('fr-FR')+' \u20ac en compromis</span>';
     var actifs=(biens||[]).filter(function(b){ return b.st!=='Vendu'; });
     var rentres=(biens||[]).filter(function(b){ return b.crea && ckInRange(b.crea,rg); }).length;
     document.getElementById('kMandVal').textContent=actifs.length;
@@ -3676,7 +3677,7 @@
   });
   /* --- statistiques par période (KPI cliquables) --- */
   var statState={mode:'mois', ref:new Date(), tab:'ca'};
-  var STAT_TITLES={ca:'CA r\u00e9alis\u00e9', prev:'CA pr\u00e9visionnel', com:'Mes commissions', mand:'Mandats'};
+  var STAT_TITLES={ca:'Mes commissions (CA)', prev:'Commissions \u00e0 venir', com:'Volume de ventes', mand:'Mandats'};
   function statRange(){
     var r=new Date(statState.ref), from, to;
     if(statState.mode==='jour'){ from=new Date(r); to=new Date(r); }
@@ -5340,8 +5341,8 @@
         '<div style="font-size:12px;color:var(--ink-3);margin-top:5px">'+pct+' % atteint</div></div>';
     }
     card.innerHTML='<div class="eyebrow">Objectifs</div><div style="margin-top:14px">'+
-      line('Annuel \u00b7 CA',caY,g.ca?parseInt(g.ca,10):0,' \u20ac','')+
-      line('Annuel \u00b7 commissions',comY,g.com?parseInt(g.com,10):0,' \u20ac',' g')+
+      line('Annuel \u00b7 mes commissions (CA)',comY,g.com?parseInt(g.com,10):0,' \u20ac',' g')+
+      line('Annuel \u00b7 volume de ventes',caY,g.ca?parseInt(g.ca,10):0,' \u20ac','')+
       line('Mois \u00b7 mandats',mandM,g.mand?parseInt(g.mand,10):0,'','')+
       line('Annuel \u00b7 ventes',vteY,g.vte?parseInt(g.vte,10):0,'',' g')+'</div>';
   }
