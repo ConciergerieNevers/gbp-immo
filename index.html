@@ -2019,7 +2019,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-160516';
+  var __BUILD='20260825-160729';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5046,7 +5046,7 @@
       '<p>Valeur issue de la méthode par comparaison : médiane au m² de '+(nbC||'—')+' vente'+(nbC>1?'s':'')+' réellement enregistrée'+(nbC>1?'s':'')+' autour du bien (données DVF de la DGFiP), corrigée de l\'emplacement, de l\'état intérieur, du DPE et des équipements'+((typeof loyersMensuels==='function'&&loyersMensuels())?', croisée avec l\'approche par le revenu locatif':'')+'.</p></div>'+
       '<div><div class="m-lbl" style="margin-top:0">Validité de l\'avis</div>'+
       '<p>Cet avis de valeur est établi au '+dateStr+' et reste pertinent pour une durée indicative de trois mois, sous réserve d\'évolution notable du marché ou de la consistance du bien. Il ne constitue pas une expertise au sens réglementaire.</p></div></div>';
-    var estimBody=eyebrow('04','L\'estimation')+
+    var estimBody=
       '<h1 class="m-h1">Notre conclusion <i>de valeur</i></h1>'+
       darkPanel+adjCards+methHtml;
 
@@ -5152,13 +5152,14 @@
     var TOT=6+K;
 
     /* ---- page 2 · démarche + sommaire (numéros calculés) ---- */
+    // ordre voulu : le marché → l'analyse détaillée → la CONCLUSION DE VALEUR (elle suit la lecture)
     var somRows=[
       ['01','Notre démarche','Méthode, engagements et déroulé de l\'étude','02'],
       ['02','Votre bien','Caractéristiques, atouts et photographies','03'],
-      ['03','Le marché','Tendances locales et biens comparables','04'],
-      ['04','L\'estimation','Valeur retenue, fourchette et ajustements','05']
+      ['03','Le marché','Tendances locales et biens comparables','04']
     ];
-    if(K) somRows.push(['05','Annexes &amp; détails','Comparables, lots, risques et galerie','06']);
+    if(K) somRows.push(['04','Analyse détaillée','Comparables, lots, risques et galerie','05']);
+    somRows.push([K?'05':'04','L\'estimation','Conclusion de valeur, fourchette et ajustements',('0'+(5+K)).slice(-2)]);
     somRows.push([K?'06':'05','Et maintenant ?','Stratégie de mise en vente et contacts',('0'+TOT).slice(-2)]);
     var somHtml='<div class="m-som"><h4>Sommaire</h4>'+somRows.map(function(r){
       return '<div class="m-somrow"><span class="n">'+r[0]+'</span><div class="t"><b>'+r[1]+'</b><span>'+r[2]+'</span></div><span class="p">p. '+r[3]+'</span></div>'; }).join('')+'</div>';
@@ -5214,12 +5215,14 @@
     var pagesHtml=coverHtml+
       page(demarcheBody,2,TOT)+
       page(bienBody,3,TOT)+
-      page(marcheBody,4,TOT)+
-      page(estimBody,5,TOT);
+      page(marcheBody,4,TOT);
+    // l'analyse détaillée prolonge la lecture du marché…
     sheetsArr.forEach(function(parts,i){
-      var head=(i===0)?(eyebrow('05','Annexes')+'<h1 class="m-h1">Analyse <i>détaillée</i></h1>'):'';
-      pagesHtml+=page(head+parts.join(''),6+i,TOT);
+      var head=(i===0)?(eyebrow('04','Analyse')+'<h1 class="m-h1">Analyse <i>détaillée</i></h1>'):'';
+      pagesHtml+=page(head+parts.join(''),5+i,TOT);
     });
+    // …et la CONCLUSION DE VALEUR arrive après, en synthèse
+    pagesHtml+=page(eyebrow(K?'05':'04','L\'estimation')+estimBody,5+K,TOT);
     pagesHtml+=page(finBody,TOT,TOT);
     g('dossier').innerHTML=pagesHtml;
   }
