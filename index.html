@@ -2083,12 +2083,22 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260825-181839';
+  var B='20260825-182040';
+  function busy(){
+    // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
+    var a=document.activeElement;
+    if(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return true;
+    var g=document.getElementById('authgate');
+    if(g && g.classList.contains('show')) return true;
+    if(document.querySelector('.modal:not([hidden])')) return true;
+    return false;
+  }
   function check(){
     try{
+      if(busy()) return;
       fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
         var m=t.match(/var B='([^']+)'/);
-        if(m && m[1] && m[1]!==B){
+        if(m && m[1] && m[1]!==B && !busy()){
           var k='estimake_reload_'+m[1];
           try{ if(sessionStorage.getItem(k)) return; sessionStorage.setItem(k,'1'); }catch(e){}
           location.reload();
@@ -2153,7 +2163,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-181839';
+  var __BUILD='20260825-182040';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -6218,10 +6228,22 @@
     var email=document.getElementById('authemail').value.trim();
     var pass=document.getElementById('authpass').value;
     err.classList.remove('show'); btn.disabled=true; var old=btn.textContent; btn.textContent='Connexion…';
-    var r=await sb.auth.signInWithPassword({ email:email, password:pass });
+    var r;
+    try{
+      r=await sb.auth.signInWithPassword({ email:email, password:pass });
+    }catch(ex){
+      btn.disabled=false; btn.textContent=old;
+      err.textContent='Connexion impossible (réseau) : '+((ex&&ex.message)||ex); err.classList.add('show');
+      return;
+    }
     btn.disabled=false; btn.textContent=old;
     if(r.error){
-      err.textContent='E-mail ou mot de passe incorrect.'; err.classList.add('show');
+      var m=(r.error.message||'').toLowerCase();
+      err.textContent = /invalid login/.test(m) ? 'E-mail ou mot de passe incorrect.'
+        : /email not confirmed/.test(m) ? 'Adresse non confirmée — vérifie ta boîte mail.'
+        : /rate|too many/.test(m) ? 'Trop de tentatives — patiente une minute.'
+        : ('Erreur : '+(r.error.message||'inconnue'));
+      err.classList.add('show');
       document.getElementById('authpass').value='';
     }
     // succès géré par onAuthStateChange → showApp
