@@ -2083,7 +2083,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260825-183020';
+  var B='20260825-183211';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2155,6 +2155,19 @@
     auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage, detectSessionInUrl: true }
   }) : null;
 
+  // client de secours SANS jeton : si une lecture échoue avec la session, on relit avec celui-ci
+  var sbRead = (SB_URL && SB_KEY && window.supabase) ? window.supabase.createClient(SB_URL, SB_KEY, {
+    auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
+  }) : null;
+  async function readTable(table, build){
+    var q = build(sb.from(table));
+    var res = await q;
+    if(res.error && sbRead){
+      console.warn('[ESTIMAKE] lecture '+table+' via session KO ('+res.error.message+') → relecture sans jeton');
+      res = await build(sbRead.from(table));
+    }
+    return res;
+  }
   var houseSVG='<svg class="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>';
   var checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
   var euro=function(n){return Math.round(n).toLocaleString('fr-FR')+' €';};
@@ -2163,7 +2176,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-183020';
+  var __BUILD='20260825-183211';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3028,7 +3041,7 @@
   async function syncContacts(){
     if(!sb) return;
     try{
-      var res=await sb.from('contacts').select('*').eq('deleted',false).order('created_at',{ascending:true});
+      var res=await readTable('contacts',function(t){ return t.select('*').eq('deleted',false).order('created_at',{ascending:true}); });
       if(res.error) throw res.error;
       if(res.data){                     // la base a répondu → vraies données, même vides
         contactsData=res.data.map(function(r){ return {id:r.id, role:r.role, nom:r.nom, detail:r.detail,
@@ -3450,7 +3463,7 @@
   })();
   async function syncAgenda(){
     if(!sb) return;
-    try{ var res=await sb.from('rdv').select('*').order('date',{ascending:true});
+    try{ var res=await readTable('rdv',function(t){ return t.select('*').order('date',{ascending:true}); });
       if(res.error) throw res.error;
       if(res.data){ agendaData=res.data.filter(function(r){ return !r.deleted; }).map(function(r){ return {id:r.id,titre:r.titre,type:r.type,date:r.date,heure:r.heure,lien:r.lien,note:r.note}; }); renderAgenda(); if(typeof renderToday==='function') renderToday(); }
     }catch(e){ console.warn('[ESTIMAKE] Supabase rdv → démo', e); }
@@ -3803,7 +3816,7 @@
   async function syncTaches(){
     if(!sb) return;
     try{
-      var res=await sb.from('taches').select('*').eq('deleted',false).eq('fait',false).order('echeance',{ascending:true,nullsFirst:false});
+      var res=await readTable('taches',function(t){ return t.select('*').eq('deleted',false).eq('fait',false).order('echeance',{ascending:true,nullsFirst:false}); });
       if(res.error) throw res.error;
       tachesData=res.data||[];
       try{ var rf=await sb.from('taches').select('*').eq('deleted',false).eq('fait',true).order('created_at',{ascending:false}).limit(200);
@@ -4058,7 +4071,7 @@
   async function syncVentes(){
     if(!sb) return;
     try{
-      var res=await sb.from('ventes').select('*').eq('deleted',false).order('date_vente',{ascending:false});
+      var res=await readTable('ventes',function(t){ return t.select('*').eq('deleted',false).order('date_vente',{ascending:false}); });
       if(res.error) throw res.error;
       ventesData=res.data||[];
       updateKpis();
@@ -4473,7 +4486,7 @@
   async function loadEstimations(){
     if(!sb) return;
     try{
-      var res=await sb.from('estimations').select('id,adresse,type,surface,valeur_basse,valeur_haute,prix_conseille,prix_final,client,created_at,cover:data->cover,archive:data->>archive').eq('deleted',false).order('created_at',{ascending:false}).limit(200);
+      var res=await readTable('estimations',function(t){ return t.select('id,adresse,type,surface,valeur_basse,valeur_haute,prix_conseille,prix_final,client,created_at,cover:data->cover,archive:data->>archive').eq('deleted',false).order('created_at',{ascending:false}).limit(200); });
       if(res.error) throw res.error;
       var list=document.getElementById('estimList'); if(!list) return;
       var rows=res.data||[];
@@ -6023,7 +6036,7 @@
   async function syncBiens(){
     if(!sb) return;                       // pas de config → on reste sur la démo
     try{
-      var res=await sb.from('biens').select('*').eq('deleted',false).order('prix',{ascending:false});
+      var res=await readTable('biens',function(t){ return t.select('*').eq('deleted',false).order('prix',{ascending:false}); });
       if(res.error) throw res.error;
       if(res.data){                     // la base a répondu → vraies données, même vides
         biens=res.data.map(mapBien);
