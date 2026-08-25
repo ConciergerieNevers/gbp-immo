@@ -1262,7 +1262,6 @@
       <!-- ============ BIENS ============ -->
       <section class="screen" id="biens">
         <div class="subtabs">
-          <button class="subtab" data-go="estimation" type="button">Estimation</button>
           <button class="subtab on" type="button">Mes estimations</button>
           <button class="subtab" data-go="portefeuille" type="button">Portefeuille</button>
         </div>
@@ -1275,7 +1274,6 @@
       <!-- ============ PORTEFEUILLE ============ -->
       <section class="screen" id="portefeuille">
         <div class="subtabs">
-          <button class="subtab" data-go="estimation" type="button">Estimation</button>
           <button class="subtab" data-go="biens" type="button">Mes estimations</button>
           <button class="subtab on" type="button">Portefeuille</button>
         </div>
@@ -1322,7 +1320,6 @@
       <section class="screen active" id="estimation">
         <button type="button" class="btn" id="backContactBtn" hidden style="margin-bottom:12px">← Retour fiche</button>
         <div class="subtabs">
-          <button class="subtab on" type="button">Estimation</button>
           <button class="subtab" data-go="biens" type="button">Mes estimations</button>
           <button class="subtab" data-go="portefeuille" type="button">Portefeuille</button>
         </div>
@@ -2072,7 +2069,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-171709';
+  var __BUILD='20260825-171808';
   (function(){
     var checking=false;
     function modalOpen(){
