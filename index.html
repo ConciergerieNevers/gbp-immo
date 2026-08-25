@@ -1308,6 +1308,7 @@
 
       <!-- ============ ESTIMATION ============ -->
       <section class="screen active" id="estimation">
+        <button type="button" class="btn" id="backContactBtn" hidden style="margin-bottom:12px">← Retour fiche</button>
         <div class="subtabs">
           <button class="subtab on" type="button">Estimation</button>
           <button class="subtab" data-go="biens" type="button">Mes estimations</button>
@@ -1666,10 +1667,30 @@
         <label class="mf"><span>Téléphone</span><input name="telephone" type="tel" placeholder="06 12 34 56 78"></label>
         <label class="mf"><span>E-mail</span><input name="email" type="email" placeholder="contact@mail.fr"></label>
         <label class="mf"><span>Type</span><select name="role"><option value="vendeur">Vendeur</option><option value="acquereur">Acquéreur</option><option value="prospect">Prospect vendeur</option></select></label>
-        <label class="mf"><span>Statut</span><input name="statut" placeholder="Exclusif · Chaud · Tiède…"></label>
+        <label class="mf"><span>Statut</span><select name="statut" id="ctStatut">
+          <option value="">—</option>
+          <option>À qualifier</option><option>Estimation en cours</option><option>Avis de valeur envoyé</option>
+          <option>Mandat simple</option><option>Mandat exclusif</option><option>Compromis</option>
+          <option>Vendu</option><option>Sans suite</option>
+        </select></label>
         <label class="mf mf-wide"><span>Détail (bien lié / origine)</span><input name="detail" placeholder="12 rue des Récollets · recommandation…"></label>
         <label class="mf"><span>Dernière relance</span><input name="derniere_relance" placeholder="hier · il y a 3 j"></label>
-        <label class="mf mf-wide"><span>Prochaine action</span><input name="prochaine_action" placeholder="Rappeler jeudi"></label>
+        <label class="mf"><span>Prochaine action</span><select name="pa_sel" id="paSel">
+          <option value="">—</option>
+          <option>Appeler</option><option>Relancer</option><option>Envoyer l'avis de valeur</option>
+          <option>RDV estimation</option><option>Signature mandat</option><option>Signature compromis</option>
+          <option>Signature acte</option><option>Envoyer des biens</option>
+          <option value="__autre">Autre…</option>
+        </select></label>
+        <label class="mf mf-wide" id="paAutreWrap" hidden><span>Autre action (libre)</span><input name="pa_autre" placeholder="Décris ce que tu veux faire…"></label>
+        <label class="mf"><span>⏰ Date butoir → tâche auto</span><select name="pa_delai" id="paDelai">
+          <option value="">Pas de tâche auto</option>
+          <option value="1">Demain</option><option value="7">Dans 1 semaine</option>
+          <option value="14">Dans 2 semaines</option><option value="30">Dans 1 mois</option>
+          <option value="60">Dans 2 mois</option><option value="90">Dans 3 mois (délai compromis)</option>
+          <option value="custom">Choisir la date…</option>
+        </select></label>
+        <label class="mf" id="paDateWrap" hidden><span>Date choisie</span><input type="date" name="pa_date"></label>
       </div>
       <div id="acqSection" hidden>
         <div class="acq-title">🎯 Fiche de découverte acquéreur</div>
@@ -1715,6 +1736,7 @@
           <label class="mf mf-wide"><span>Notes de découverte</span><textarea name="r_notes" class="restyle-notes" rows="2" placeholder="Contexte, visites déjà faites, remarques…"></textarea></label>
         </div>
       </div>
+      <div id="cliBiens"></div>
       <div id="cliEstims"></div>
       <div id="cliRdvs"></div>
       <div id="cliTaches"></div>
@@ -2185,7 +2207,8 @@
       return '<div class="acq"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+ini+'</div><div class="g"><b>'+(c.nom||'')+'</b><small>'+sub+'</small></div><span class="pill info">Match</span></div>';
     }).join('')+(list.length>4?'<div style="color:var(--ink-3);font-size:12px;padding-top:6px">+ '+(list.length-4)+' autre'+(list.length-4>1?'s':'')+' dans le CRM</div>':'');
   }
-  function closeDrawer(){scrim.classList.remove('open');drawer.classList.remove('open');}
+  function closeDrawer(){scrim.classList.remove('open');drawer.classList.remove('open');
+    if(typeof returnToContact==='function') setTimeout(returnToContact,150);}
 
   /* ---------- formulaire bien : ajout / édition ---------- */
   var bienModal=document.getElementById('bienModal'), bienForm=document.getElementById('bienForm'),
@@ -2403,15 +2426,36 @@
     var sec=document.getElementById('acqSection');
     if(sec) sec.hidden = contactForm.elements.role.value!=='acquereur';
   }
+  var contactCurrent=null;      // fiche ouverte (pour le « retour fiche »)
+  var contactReturn=null;       // fiche à rouvrir à la fermeture d'un élément ouvert depuis elle
+  function returnToContact(){
+    if(!contactReturn) return false;
+    var c=contactReturn; contactReturn=null;
+    go('crm'); openContactForm(c); return true;
+  }
   function openContactForm(c){
+    contactCurrent=c||null;
     editingContactId = (c && c.id) ? c.id : null;
     var cd=document.getElementById('contactDelete'); if(cd) cd.hidden=!editingContactId;
     document.getElementById('contactModalTitle').textContent = c ? 'Modifier le contact' : 'Nouveau contact';
     var e=contactForm.elements;
     e.nom.value=c?(c.nom||''):''; e.role.value=c?(c.role||'vendeur'):'vendeur';
-    e.statut.value=c?(c.statut||''):''; e.detail.value=c?(c.detail||''):'';
+    // statut : menu déroulant — si la valeur existante n'est pas dans la liste, on l'ajoute
+    var stSel=e.statut, stVal=c?(c.statut||''):'';
+    if(stVal && ![].some.call(stSel.options,function(o){return o.value===stVal||o.text===stVal;})){
+      var op=document.createElement('option'); op.textContent=stVal; stSel.appendChild(op);
+    }
+    stSel.value=stVal;
+    e.detail.value=c?(c.detail||''):'';
     e.budget.value=(c&&c.budget)?c.budget:''; e.derniere_relance.value=c?(c.relance||''):'';
-    e.prochaine_action.value=c?(c.action||''):'';
+    // prochaine action : menu déroulant + « Autre » libre
+    var act=c?(c.action||''):'';
+    var paSel=e.pa_sel, known=[].some.call(paSel.options,function(o){return o.value!=='__autre'&&o.text===act;});
+    paSel.value = act ? (known?act:'__autre') : '';
+    e.pa_autre.value = (act&&!known)?act:'';
+    document.getElementById('paAutreWrap').hidden = paSel.value!=='__autre';
+    e.pa_delai.value=''; e.pa_date.value='';
+    document.getElementById('paDateWrap').hidden=true;
     e.telephone.value=c?(c.tel||''):''; e.email.value=c?(c.email||''):'';
     var r=(c&&c.recherche)||{};
     e.r_projet.value=r.projet||'Résidence principale';
@@ -2430,10 +2474,40 @@
       b.classList.toggle('on', Array.isArray(r.must)&&r.must.indexOf(b.dataset.m)>-1);
     });
     toggleAcqSection();
+    renderCliBiens(c);
     renderCliEstims(c);
     renderCliRdvs(c);
     renderCliTaches(c);
     contactErr.classList.remove('show'); contactErr.textContent=''; contactModal.hidden=false;
+  }
+  (function(){
+    var paSel=contactForm.elements.pa_sel, paDelai=contactForm.elements.pa_delai;
+    paSel.addEventListener('change',function(){ document.getElementById('paAutreWrap').hidden=(paSel.value!=='__autre'); });
+    paDelai.addEventListener('change',function(){ document.getElementById('paDateWrap').hidden=(paDelai.value!=='custom'); });
+  })();
+  function renderCliBiens(c){
+    var box=document.getElementById('cliBiens'); if(!box) return;
+    box.innerHTML='';
+    if(!c || !c.nom) return;
+    var nom=c.nom.trim().toLowerCase(), det=(c.detail||'').trim().toLowerCase();
+    var linked=(biens||[]).filter(function(b){
+      if(!b) return false;
+      var ad=(b.ad||'').toLowerCase(), ow=(b.owner||'').toLowerCase();
+      if(ow && (ow.indexOf(nom)>-1 || nom.indexOf(ow)>-1)) return true;              // par propriétaire
+      if(det && ad && (det.indexOf(ad)>-1 || ad.indexOf(det)>-1)) return true;       // par adresse (champ Détail)
+      return false;
+    });
+    if(!linked.length) return;
+    box.innerHTML='<div class="restyle-sub">Biens liés ('+linked.length+')</div>'+linked.map(function(b){
+      var i=biens.indexOf(b);
+      return '<div class="cadjrow clibien" data-bi="'+i+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">🏠 '+escH(b.ad||'—')+' · '+escH(b.st||'')+'</span><b class="tnum" style="color:var(--accent)">'+(b.px?b.px.toLocaleString('fr-FR')+' €':'—')+'</b></div>';
+    }).join('');
+    box.querySelectorAll('.clibien').forEach(function(el){
+      el.addEventListener('click',function(){
+        contactReturn=contactCurrent; contactModal.hidden=true;
+        openDrawer(parseInt(el.dataset.bi,10));
+      });
+    });
   }
   function renderCliTaches(c){
     var box=document.getElementById('cliTaches'); if(!box) return;
@@ -2466,7 +2540,7 @@
     box.querySelectorAll('.clirdv').forEach(function(el){
       el.addEventListener('click',function(){
         var r=(agendaData||[]).find(function(x){ return String(x.id)===el.dataset.rid; });
-        if(r){ contactModal.hidden=true; openRdvForm(r); }
+        if(r){ contactReturn=contactCurrent; contactModal.hidden=true; openRdvForm(r); }
       });
     });
   }
@@ -2482,12 +2556,26 @@
     box.innerHTML='<div class="restyle-sub">Estimations li\u00e9es ('+linked.length+')</div>'+linked.map(function(r){
       var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
       var prix=(r.prix_final||r.prix_conseille);
-      return '<div class="cadjrow cliestim" data-eid="'+r.id+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+(r.adresse||'\u2014')+' \u00b7 '+(r.type||'')+' \u00b7 '+d+'</span><b class="tnum" style="color:var(--accent)">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</b></div>';
+      return '<div class="cadjrow cliestim" data-eid="'+r.id+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+(r.adresse||'\u2014')+' \u00b7 '+(r.type||'')+' \u00b7 '+d+'</span><b class="tnum" style="color:var(--accent)">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</b>'+
+        '<button type="button" class="cadjdel cliestimdel" data-edel="'+r.id+'" title="Mettre \u00e0 la corbeille">\u2715</button></div>';
     }).join('');
+    box.querySelectorAll('.cliestimdel').forEach(function(btn){
+      btn.addEventListener('click',async function(ev){
+        ev.stopPropagation();
+        if(!window.confirm('Mettre cette estimation \u00e0 la corbeille ?')) return;
+        try{ var rr2=await sb.from('estimations').update({deleted:true}).eq('id',btn.dataset.edel);
+          if(rr2.error) throw rr2.error;
+          toast('Estimation d\u00e9plac\u00e9e dans la corbeille \u2713');
+          if(typeof loadEstimations==='function') loadEstimations();
+          renderCliEstims(contactCurrent);
+        }catch(err){ if(!authFail(err)) toast('Suppression impossible.'); }
+      });
+    });
     box.querySelectorAll('.cliestim').forEach(function(row){
-      row.addEventListener('click',function(){
+      row.addEventListener('click',function(e2){
+        if(e2.target.closest('.cliestimdel')) return;
         var r=(all||[]).find(function(x){ return x.id===row.dataset.eid; });
-        if(r){ contactModal.hidden=true; hydrateEstimation(r); }
+        if(r){ estimReturn=contactCurrent; contactModal.hidden=true; hydrateEstimation(r); }
       });
     });
   }
@@ -2499,6 +2587,7 @@
   document.getElementById('cNewEstim').addEventListener('click',function(){
     var e=contactForm.elements;
     var nom=e.nom.value.trim(), mail=e.email.value.trim();
+    estimReturn=contactCurrent; updateBackContact();
     contactModal.hidden=true;
     var cn=document.getElementById('cliNom'), cm=document.getElementById('cliMail');
     if(cn) cn.value=nom; if(cm) cm.value=mail;
@@ -2508,11 +2597,13 @@
   });
   document.getElementById('cNewTask').addEventListener('click',function(){
     var nom=contactForm.elements.nom.value.trim();
+    contactReturn=contactCurrent;
     contactModal.hidden=true;
     openTaskForm(null, nom);
   });
   document.getElementById('cNewRdv').addEventListener('click',function(){
     var nom=contactForm.elements.nom.value.trim();
+    contactReturn=contactCurrent;
     contactModal.hidden=true;
     openRdvForm(null);
     var lf=document.getElementById('rdvForm');
@@ -2536,9 +2627,11 @@
         etage_max:parseInt(e.r_etage.value,10)||null, redhibitoires:e.r_redhib.value.trim(), notes:e.r_notes.value.trim(),
         must:[].map.call(document.querySelectorAll('#acqMust .rst.on'),function(b){return b.dataset.m;}) };
     }
+    // prochaine action : valeur du menu, ou texte libre si « Autre… »
+    var paVal=(e.pa_sel.value==='__autre') ? e.pa_autre.value.trim() : e.pa_sel.value.trim();
     var row={ role:e.role.value, nom:e.nom.value.trim(), detail:e.detail.value.trim(),
       statut:e.statut.value.trim()||null, budget:budget, derniere_relance:e.derniere_relance.value.trim(),
-      prochaine_action:e.prochaine_action.value.trim(),
+      prochaine_action:paVal,
       couleur:(function(){ if(editingContactId){ var ex=contactsData.find(function(x){return x.id===editingContactId;}); if(ex&&ex.couleur) return ex.couleur; } return CPAL[contactsData.length%CPAL.length]; })(),
       telephone:e.telephone.value.trim()||null, email:e.email.value.trim()||null, recherche:recherche };
     if(!row.nom){ contactErr.textContent='Le nom est obligatoire.'; contactErr.classList.add('show'); return; }
@@ -2551,6 +2644,18 @@
         if(res.error) throw res.error;
         await syncContacts(); showTab();
         toast(editingContactId?'Contact modifié ✓':'Contact ajouté ✓');
+        // tâche automatique avec date butoir (ex. « Signature compromis » dans 3 mois)
+        var delai=e.pa_delai.value;
+        if(delai){
+          var ech=null;
+          if(delai==='custom'){ ech=e.pa_date.value||null; }
+          else { var dEch=new Date(); dEch.setDate(dEch.getDate()+parseInt(delai,10)); ech=isoD(dEch); }
+          if(ech){
+            var tRes=await sb.from('taches').insert({ titre:(paVal||'Relance')+' — '+row.nom, lien:row.nom, echeance:ech, fait:false });
+            if(tRes.error){ setTimeout(function(){ toast('⚠ Tâche auto impossible : '+tRes.error.message); },1400); }
+            else { var echTxt=frDay(ech); setTimeout(function(){ toast('⏰ Tâche « '+(paVal||'Relance')+' » créée pour le '+echTxt+' ✓'); },1400); if(typeof syncTaches==='function') syncTaches(); }
+          }
+        }
       } else {
         var obj={ id:editingContactId||('c'+Date.now()), role:row.role, nom:row.nom, detail:row.detail,
           statut:row.statut, budget:row.budget, relance:row.derniere_relance, action:row.prochaine_action, couleur:row.couleur };
@@ -2719,7 +2824,7 @@
     document.getElementById('rdvDelete').hidden = !editingRdvId;
     rdvErr.classList.remove('show'); rdvErr.textContent=''; rdvModal.hidden=false;
   }
-  function closeRdvForm(){ rdvModal.hidden=true; }
+  function closeRdvForm(){ rdvModal.hidden=true; if(typeof returnToContact==='function') returnToContact(); }
   document.getElementById('addRdvBtn').addEventListener('click',function(){ openRdvForm(null); });
   document.getElementById('rdvDelete').addEventListener('click',async function(){
     if(!editingRdvId) return; var id=editingRdvId;
@@ -3063,9 +3168,10 @@
     taskModal.hidden=false;
   }
   document.getElementById('addTaskBtn').addEventListener('click',function(){ openTaskForm(null); });
-  document.getElementById('taskX').addEventListener('click',function(){ taskModal.hidden=true; });
-  document.getElementById('taskCancel').addEventListener('click',function(){ taskModal.hidden=true; });
-  taskModal.addEventListener('click',function(e){ if(e.target===taskModal) taskModal.hidden=true; });
+  function closeTaskForm(){ taskModal.hidden=true; if(typeof returnToContact==='function') returnToContact(); }
+  document.getElementById('taskX').addEventListener('click',closeTaskForm);
+  document.getElementById('taskCancel').addEventListener('click',closeTaskForm);
+  taskModal.addEventListener('click',function(e){ if(e.target===taskModal) closeTaskForm(); });
   taskForm.addEventListener('submit',async function(ev){
     ev.preventDefault();
     var e=taskForm.elements;
@@ -3076,7 +3182,7 @@
       if(!sb) throw new Error('Base non connect\u00e9e');
       var res=editingTaskId ? await sb.from('taches').update(row).eq('id',editingTaskId) : await sb.from('taches').insert(row);
       if(res.error) throw res.error;
-      taskModal.hidden=true; toast(editingTaskId?'T\u00e2che modifi\u00e9e \u2713':'T\u00e2che ajout\u00e9e \u2713');
+      closeTaskForm(); toast(editingTaskId?'T\u00e2che modifi\u00e9e \u2713':'T\u00e2che ajout\u00e9e \u2713');
       syncTaches();
     }catch(err){
       if(authFail(err)){ taskModal.hidden=true; return; }
@@ -3088,7 +3194,7 @@
   document.getElementById('taskDelete').addEventListener('click',async function(){
     if(!editingTaskId||!sb) return;
     try{ var r=await sb.from('taches').update({deleted:true}).eq('id',editingTaskId); if(r.error) throw r.error;
-      taskModal.hidden=true; toast('T\u00e2che d\u00e9plac\u00e9e dans la corbeille \u2713'); syncTaches();
+      closeTaskForm(); toast('T\u00e2che d\u00e9plac\u00e9e dans la corbeille \u2713'); syncTaches();
     }catch(e){ toast('Suppression impossible.'); }
   });
   async function toggleTaskDone(id){
@@ -3562,6 +3668,7 @@
   (function(){ var se=document.getElementById('estimSearch'); if(se) se.addEventListener('input',renderEstimList); })();
   function resetEstimation(){
     editingEstimId=null;
+    estimReturn=null; if(typeof updateBackContact==='function') updateBackContact();
     estPhotos=[]; estLots=[]; state.custom=[]; state.override=null; state.overLow=null; state.overHigh=null;
     ['cliNom','cliMail','fDesc','fCompl','fLoyer'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
     // adresse + curseurs remis à zéro (sinon la nouvelle estimation hérite du client précédent)
@@ -3662,6 +3769,7 @@
     if(typeof renderLots==='function') renderLots();
     editingEstimId=r.id;
     compute();
+    if(typeof updateBackContact==='function') updateBackContact();
     go('estimation');
     toast('Estimation rechargée \u2014 '+(r.adresse||''));
   }
@@ -3678,6 +3786,19 @@
     im.onerror=function(){ res(null); }; im.src=dataURL; }); }
   var editingEstimId=null;   // estimation rechargée → enregistrer = mettre à jour
   var estVilleTxt=null;      // ville mémorisée (perdue sinon au rechargement d'une estimation)
+  var estimReturn=null;      // fiche contact d'origine (bouton « retour fiche » sur l'écran estimation)
+  function updateBackContact(){
+    var b=document.getElementById('backContactBtn'); if(!b) return;
+    if(estimReturn&&estimReturn.nom){ b.hidden=false; b.textContent='← Retour fiche '+estimReturn.nom; }
+    else b.hidden=true;
+  }
+  (function(){
+    var b=document.getElementById('backContactBtn'); if(!b) return;
+    b.addEventListener('click',function(){
+      var c=estimReturn; estimReturn=null; updateBackContact();
+      if(c){ go('crm'); openContactForm(c); }
+    });
+  })();
   async function saveEstimation(){
     if(!sb) { toast('Base non connectée.'); return false; }
     saveEstimation._lastErr=null;
