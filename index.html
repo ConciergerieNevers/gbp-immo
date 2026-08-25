@@ -2413,6 +2413,7 @@
           statut:r.statut, budget:r.budget, relance:r.derniere_relance, action:r.prochaine_action, couleur:r.couleur||'#6a9',
           tel:r.telephone, email:r.email, recherche:r.recherche||null}; });
         renderCrm();
+        if(typeof updateKpis==='function') try{ updateKpis(); }catch(e2){}   // statuts de fiches → stats cockpit
       }
     }catch(e){ console.warn('[ESTIMAKE] Supabase contacts → démo', e); }
   }
@@ -2656,6 +2657,22 @@
             else { var echTxt=frDay(ech); setTimeout(function(){ toast('⏰ Tâche « '+(paVal||'Relance')+' » créée pour le '+echTxt+' ✓'); },1400); if(typeof syncTaches==='function') syncTaches(); }
           }
         }
+        // statut passé à Compromis/Vendu sans vente saisie → formulaire Vente pré-rempli (stats cockpit à jour, zéro double saisie)
+        var stNew=(row.statut||'').trim().toLowerCase();
+        var stOld=((contactCurrent&&contactCurrent.statut)||'').trim().toLowerCase();
+        if((stNew==='compromis'||stNew==='vendu') && stNew!==stOld && !venteForClient(row.nom)){
+          var pxEst=estimPrixClient(row.nom);
+          setTimeout(function(){
+            openVenteForm(null);
+            var vf=venteForm.elements;
+            vf.client.value=row.nom;
+            if(row.detail && !vf.bien.value.trim()) vf.bien.value=row.detail;
+            vf.statut.value=(stNew==='vendu')?'acte':'compromis';
+            if(pxEst && !vf.prix.value) vf.prix.value=pxEst;
+            ventePartPreview();
+            toast('Statut « '+row.statut+' » → complète la vente (pré-remplie) pour tes stats.');
+          },500);
+        }
       } else {
         var obj={ id:editingContactId||('c'+Date.now()), role:row.role, nom:row.nom, detail:row.detail,
           statut:row.statut, budget:row.budget, relance:row.derniere_relance, action:row.prochaine_action, couleur:row.couleur };
@@ -2888,13 +2905,23 @@
   }
   function compute(){
     var surf=parseFloat(document.getElementById('fSurf').value)||127;
-    var base=state.baseM2*surf;
     var pctLoc=state.loc*10;           // quartier moyen −10 % / bon secteur 0 / recherché +10 %
-    var pct=state.etat+state.dpe+state.terr+pctLoc;
+    // IMMEUBLE avec lots valorisés : la SOMMATION DES LOTS devient le prix principal
+    // (chaque lot porte déjà son état/DPE/ajustements — les curseurs généraux et équipements ne s'appliquent pas)
+    var isImm=false, lotVals=null, lotTot=0;
+    if(document.getElementById('fType').value==='Immeuble' && estLots.length && typeof lotValue==='function'){
+      lotVals=estLots.map(function(l){ return lotValue(l); });
+      lotTot=lotVals.reduce(function(a,lv){ return a+((lv&&lv.v)||0); },0);
+      isImm=lotTot>0;
+    }
+    var base= isImm ? lotTot : state.baseM2*surf;
+    var pct= isImm ? pctLoc : state.etat+state.dpe+state.terr+pctLoc;
     var toggPct=0,toggEur=0;
-    for(var k in state.tgls){if(state.tgls[k]){var el=state.tgls[k];
-      if(el.pct)toggPct+=parseFloat(el.pct);if(el.eur)toggEur+=parseFloat(el.eur);}}
-    pct+=toggPct;
+    if(!isImm){
+      for(var k in state.tgls){if(state.tgls[k]){var el=state.tgls[k];
+        if(el.pct)toggPct+=parseFloat(el.pct);if(el.eur)toggEur+=parseFloat(el.eur);}}
+      pct+=toggPct;
+    }
     var customEur=0; state.custom.forEach(function(c){ customEur+=c.e; });
     var adjusted=base*(1+pct/100)+toggEur+customEur+parseFloat(state.trav);
     var low=adjusted*0.955, high=adjusted*1.045;
@@ -2912,20 +2939,30 @@
     var pos=Math.max(6,Math.min(94,(reco-low)/(high-low)*100));
     document.getElementById('gaugeMk').style.left=pos+'%';
     // breakdown
-    var bd=[['Base marché ('+Math.round(state.baseM2).toLocaleString('fr-FR')+' €/m² × '+surf+' m²)',base,false]];
-    if(pctLoc) bd.push(['Emplacement ('+(pctLoc>0?'+':'')+pctLoc+' %)',base*pctLoc/100,pctLoc>=0]);
-    if(state.etat) bd.push(['État intérieur ('+(state.etat>0?'+':'')+state.etat+' %)',base*state.etat/100,state.etat>=0]);
-    if(state.dpe) bd.push(['Qualité du DPE ('+(state.dpe>0?'+':'')+state.dpe+' %)',base*state.dpe/100,state.dpe>=0]);
-    if(state.terr) bd.push(['Terrain / exposition ('+(state.terr>0?'+':'')+state.terr+' %)',base*state.terr/100,state.terr>=0]);
-    for(var tk in state.tgls){ if(state.tgls[tk]){ var tg=state.tgls[tk];
-      var tval=tg.eur?parseFloat(tg.eur):base*parseFloat(tg.pct)/100;
-      bd.push([(tg.label||'Option').replace(/\s*·.*$/,''), tval, tval>=0]); } }
+    var bd;
+    if(isImm){
+      bd=estLots.map(function(l,i){
+        var lv=lotVals[i];
+        return ['Lot '+(i+1)+' — '+l.type+' · '+l.surf+' m²'+((lv&&lv.v)?'':' (non valorisé)'), (lv&&lv.v)||0, false, 'plain'];
+      });
+      if(pctLoc) bd.push(['Emplacement ('+(pctLoc>0?'+':'')+pctLoc+' %)',base*pctLoc/100,pctLoc>=0]);
+    } else {
+      bd=[['Base marché ('+Math.round(state.baseM2).toLocaleString('fr-FR')+' €/m² × '+surf+' m²)',base,false]];
+      if(pctLoc) bd.push(['Emplacement ('+(pctLoc>0?'+':'')+pctLoc+' %)',base*pctLoc/100,pctLoc>=0]);
+      if(state.etat) bd.push(['État intérieur ('+(state.etat>0?'+':'')+state.etat+' %)',base*state.etat/100,state.etat>=0]);
+      if(state.dpe) bd.push(['Qualité du DPE ('+(state.dpe>0?'+':'')+state.dpe+' %)',base*state.dpe/100,state.dpe>=0]);
+      if(state.terr) bd.push(['Terrain / exposition ('+(state.terr>0?'+':'')+state.terr+' %)',base*state.terr/100,state.terr>=0]);
+      for(var tk in state.tgls){ if(state.tgls[tk]){ var tg=state.tgls[tk];
+        var tval=tg.eur?parseFloat(tg.eur):base*parseFloat(tg.pct)/100;
+        bd.push([(tg.label||'Option').replace(/\s*·.*$/,''), tval, tval>=0]); } }
+    }
     state.custom.forEach(function(c){ bd.push([c.n, c.e, c.e>=0]); });
     if(parseFloat(state.trav))bd.push(['Travaux à prévoir',parseFloat(state.trav),false]);
     if(state.override)bd.push(['Prix final ajusté (plafond retenu)', state.override-Math.round(adjusted*1.02/1000)*1000, (state.override-Math.round(adjusted*1.02/1000)*1000)>=0]);
     document.getElementById('rBreak').innerHTML=bd.map(function(x,i){
-      var v=Math.round(x[1]);var sign=i===0?'':(v>0?'+':'');
-      var cls=i===0?'':(v>=0?'pos':'neg');
+      var v=Math.round(x[1]);var plain=(i===0||x[3]==='plain');
+      var sign=plain?'':(v>0?'+':'');
+      var cls=plain?'':(v>=0?'pos':'neg');
       return '<div class="li"><span>'+x[0]+'</span><b class="'+cls+' tnum">'+sign+v.toLocaleString('fr-FR')+' €</b></div>';
     }).join('');
     // bandeau prix mobile toujours visible
@@ -3200,8 +3237,23 @@
   async function toggleTaskDone(id){
     if(!sb) return;
     try{ var r=await sb.from('taches').update({fait:true}).eq('id',id); if(r.error) throw r.error;
-      toast('T\u00e2che termin\u00e9e \u2713'); syncTaches();
-    }catch(e){ toast('Impossible de valider.'); }
+      toast('T\u00e2che termin\u00e9e \u2713');
+      // relance automatique : la fiche du contact li\u00e9 est estampill\u00e9e \u00e0 aujourd'hui
+      var t=(tachesData||[]).find(function(x){ return x.id===id; });
+      if(t && t.lien) bumpRelance(t.lien);
+      syncTaches();
+    }catch(e){ if(!authFail(e)) toast('Impossible de valider.'); }
+  }
+  // met \u00e0 jour \u00ab Derni\u00e8re relance \u00bb du contact (date r\u00e9elle, plus de \u00ab il y a 3 j \u00bb fig\u00e9)
+  async function bumpRelance(nom){
+    if(!sb||!nom) return;
+    var c=(contactsData||[]).find(function(x){ return (x.nom||'').trim().toLowerCase()===nom.trim().toLowerCase(); });
+    if(!c || !c.id || String(c.id).length<5) return;   // contact d\u00e9mo \u2192 rien
+    try{
+      var d=new Date().toLocaleDateString('fr-FR');
+      var r=await sb.from('contacts').update({derniere_relance:d}).eq('id',c.id);
+      if(!r.error){ c.relance=d; renderCrm(); }
+    }catch(e){ console.warn('[ESTIMAKE] relance auto', e); }
   }
   document.addEventListener('click',function(e){
     var ck=e.target.closest('.task-ck');
@@ -3257,6 +3309,22 @@
   /* ---------- VENTES & COMMISSIONS (25 % rentrée + 25 % sortie) ---------- */
   var ventesData=[];
   function partVente(v){ return Math.round((v.honoraires||0)*(((v.rentree)?0.25:0)+((v.sortie)?0.25:0))); }
+  /* ---- pont fiches clients ↔ stats : un statut Compromis/Vendu sur une fiche compte, même sans vente saisie ---- */
+  function fichesStatut(st){
+    st=st.toLowerCase();
+    return (contactsData||[]).filter(function(c){
+      return (c.role==='vendeur'||c.role==='prospect') && (c.statut||'').trim().toLowerCase()===st && c.id && String(c.id).length>4;
+    });
+  }
+  function venteForClient(nom){
+    nom=(nom||'').trim().toLowerCase(); if(!nom) return null;
+    return (ventesData||[]).find(function(v){ return (v.client||'').trim().toLowerCase()===nom; })||null;
+  }
+  function estimPrixClient(nom){
+    nom=(nom||'').trim().toLowerCase(); if(!nom) return 0;
+    var l=(window.__estimsAll||[]).filter(function(r){ return (r.client||'').trim().toLowerCase()===nom; });
+    return l.length ? (l[0].prix_final||l[0].prix_conseille||0) : 0;   // __estimsAll trié du + récent au + ancien
+  }
   async function syncVentes(){
     if(!sb) return;
     try{
@@ -3302,10 +3370,16 @@
     var caPrev=compromis.reduce(function(a,v){return a+(v.prix||0);},0);
     var com=actees.reduce(function(a,v){return a+partVente(v);},0);
     var comPrev=compromis.reduce(function(a,v){return a+partVente(v);},0);
+    // fiches clients en Compromis/Vendu SANS vente saisie : compt\u00e9es si la p\u00e9riode inclut aujourd'hui
+    var nowD=new Date(), nowIn=(rg.from<=nowD && nowD<=rg.to);
+    var fComp=nowIn?fichesStatut('Compromis').filter(function(c){ var v=venteForClient(c.nom); return !v || v.statut==='acte'; }):[];
+    var fVend=nowIn?fichesStatut('Vendu').filter(function(c){ return !venteForClient(c.nom); }):[];
+    var caPrevF=fComp.reduce(function(a,c){ return a+estimPrixClient(c.nom); },0);
+    caPrev+=caPrevF;
     document.getElementById('kCaVal').innerHTML=ca.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
     document.getElementById('kCaMeta').textContent=actees.length+' vente'+(actees.length>1?'s':'')+' act\u00e9e'+(actees.length>1?'s':'')+' \u00b7 '+ckLabelTxt(rg);
     document.getElementById('kPrevVal').innerHTML=caPrev.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
-    document.getElementById('kPrevMeta').textContent=compromis.length+' compromis sur la p\u00e9riode';
+    document.getElementById('kPrevMeta').textContent=(compromis.length+fComp.length)+' compromis'+(fComp.length?' \u00b7 dont '+fComp.length+' fiche'+(fComp.length>1?'s':'')+' sans vente saisie':' sur la p\u00e9riode');
     document.getElementById('kComVal').innerHTML=com.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
     document.getElementById('kComMeta').innerHTML='<span class="pill good dot">act\u00e9es</span> <span style="color:var(--ink-3)">+ '+comPrev.toLocaleString('fr-FR')+' \u20ac \u00e0 venir</span>';
     var actifs=(biens||[]).filter(function(b){ return b.st!=='Vendu'; });
@@ -3318,8 +3392,8 @@
     if(tc){
       var nEst=(window.__estimsAll||[]).filter(function(r){ return ckInRange(r.created_at,rg); }).length;
       var nMand=rentres;
-      var nComp=compromis.length;
-      var nVend=actees.length;
+      var nComp=compromis.length+fComp.length;   // ventes compromis + fiches clients en Compromis
+      var nVend=actees.length+fVend.length;      // ventes actées + fiches clients en Vendu
       if(nEst||nMand||nComp||nVend){
         var mx=Math.max(nEst,nMand,nComp,nVend,1);
         function stg(nm,n,prev){
@@ -3413,9 +3487,9 @@
       if(res.error) throw res.error;
       venteModal.hidden=true;
       toast(editingVenteId?'Vente modifi\u00e9e \u2713':'Vente enregistr\u00e9e \u2713 \u00b7 ma part : '+partVente(row).toLocaleString('fr-FR')+' \u20ac');
-      if(row.client) ensureContact(row.client, 'vendeur', row.bien, 'Client');
+      if(row.client){ ensureContact(row.client, 'vendeur', row.bien, 'Client'); bumpRelance(row.client); }
       syncVentes();
-    }catch(err){ var el=document.getElementById('venteErr'); el.textContent='Erreur : '+((err&&err.message)||err); el.classList.add('show'); }
+    }catch(err){ if(authFail(err)){ venteModal.hidden=true; return; } var el=document.getElementById('venteErr'); el.textContent='Erreur : '+((err&&err.message)||err); el.classList.add('show'); }
   });
   document.getElementById('venteDelete').addEventListener('click',async function(){
     if(!editingVenteId||!sb) return;
