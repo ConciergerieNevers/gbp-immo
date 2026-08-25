@@ -2069,7 +2069,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-173915';
+  var __BUILD='20260825-174319';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2222,8 +2222,7 @@
      owner:'M. Girard',terr:300,an:1962,gar:false,acq:0,
      hist:[['Mandat simple','avr. 2026'],['Vente actée · 118 000 €','24 juil. 2026']]}
   ];
-  function statusPill(s){var c={Exclusif:'info',Simple:'',Compromis:'warn',Vendu:'good'}[s]||'';
-    return '<span class="pill '+c+'">'+s+'</span>';}
+  function statusPill(s){ s=s||'\u2014'; return '<span class="pill '+etatCls(s)+'">'+escH(s)+'</span>'; }
   function renderBiens(filter,q){
     var grid=document.getElementById('bienGrid');grid.innerHTML='';
     var list=biens.filter(function(b){
@@ -2239,12 +2238,12 @@
         : '<div class="ph" style="background:'+facades[idx%facades.length]+'">'+houseSVG;
       el.innerHTML=
         phOpen+
-          '<div class="top">'+statusPill(b.st)+'<span class="dpe" style="background:'+dpeColors[b.dpe]+'">DPE '+b.dpe+'</span></div>'+
+          '<div class="top">'+statusPill(etatBien(b)||b.st)+'<span class="dpe" style="background:'+(dpeColors[b.dpe]||'#8A938C')+'">DPE '+(b.dpe||'N/D')+'</span></div>'+
           '<div class="price tnum">'+euro(b.px)+'</div></div>'+
         '<div class="body"><div><div class="addr">'+escH(b.ad)+'</div><div class="town">'+escH(b.tw)+'</div></div>'+
           '<div class="specs"><span>'+b.ty+'</span>'+
-          '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 21V8l9-5 9 5v13"/></svg>'+b.m2+' m²</span>'+
-          '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 18v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5M3 15h18M6 11V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/></svg>'+b.ch+' ch.</span></div></div>';
+          '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 21V8l9-5 9 5v13"/></svg>'+(b.m2||'—')+' m²</span>'+
+          '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 18v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5M3 15h18M6 11V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/></svg>'+(b.ch||'—')+' ch.</span></div></div>';
       el.addEventListener('click',function(){ if(typeof contactReturn!=='undefined') contactReturn=null; openDrawer(idx); });
       grid.appendChild(el);
     });
@@ -2657,8 +2656,8 @@
         honoSave(savedId, e.v_hfix.value, e.v_hpct.value);
         // étape → tâche de suivi automatique (répondre à l'offre, préparer le compromis, suivi acte…)
         if(etapeChanged) etapeTacheAuto(etapeNew, row.adresse, row.proprietaire);
-        // RETOUR EN ARRIÈRE : la vente enregistrée n'a plus lieu d'être → corbeille (le cockpit se corrige)
-        if(recul && row.statut!=='Compromis' && row.statut!=='Vendu'){
+        // l'état du BIEN fait foi : s'il n'est plus en Compromis/Vendu, la vente liée est annulée
+        if(row.statut!=='Compromis' && row.statut!=='Vendu'){
           var vOld=venteForBien({ad:row.adresse});
           if(vOld && vOld.id){
             try{
@@ -4392,7 +4391,7 @@
   async function loadEstimations(){
     if(!sb) return;
     try{
-      var res=await sb.from('estimations').select('id,adresse,type,surface,valeur_basse,valeur_haute,prix_conseille,prix_final,client,created_at,cover:data->cover').eq('deleted',false).order('created_at',{ascending:false}).limit(200);
+      var res=await sb.from('estimations').select('id,adresse,type,surface,valeur_basse,valeur_haute,prix_conseille,prix_final,client,created_at,cover:data->cover,archive:data->>archive').eq('deleted',false).order('created_at',{ascending:false}).limit(200);
       if(res.error) throw res.error;
       var list=document.getElementById('estimList'); if(!list) return;
       var rows=res.data||[];
@@ -4405,9 +4404,17 @@
       var list=document.getElementById('estimList'); if(!list) return;
       var q=((document.getElementById('estimSearch')||{}).value||'').trim().toLowerCase();
       var all=window.__estimsAll||[];
-      var rows=q?all.filter(function(r){
+      var isM=function(r){ return r && r.archive==='mandat'; };
+      // compteurs des chips
+      var ch=document.getElementById('estimChips');
+      if(ch){ var nM=all.filter(isM).length;
+        var map={cours:all.length-nM, mandat:nM, all:all.length};
+        ch.querySelectorAll('.chip').forEach(function(x){ var c=x.querySelector('.c'); if(c) c.textContent=map[x.dataset.ef]; });
+      }
+      var pool=(estimFilter==='mandat')?all.filter(isM):(estimFilter==='all'?all:all.filter(function(r){ return !isM(r); }));
+      var rows=q?pool.filter(function(r){
         return ((r.adresse||'')+' '+(r.client||'')+' '+(r.type||'')).toLowerCase().indexOf(q)>-1;
-      }):all;
+      }):pool;
       document.getElementById('estimCount').textContent=all.length?(q?(rows.length+' / '+all.length):(all.length+' estimation'+(all.length>1?'s':''))):'';
       if(!rows.length){ list.innerHTML='<div class="estimempty">'+(q?'Aucune estimation ne correspond \u00e0 \u00ab '+escH(q)+' \u00bb.':'Aucune estimation enregistr\u00e9e pour l\u2019instant.')+'</div>'; window.__estims=[]; return; }
       window.__estims=rows;
@@ -4429,6 +4436,49 @@
       }).join('');
   }
   (function(){ var se=document.getElementById('estimSearch'); if(se) se.addEventListener('input',renderEstimList); })();
+  /* ---- retirer une estimation : on demande POURQUOI ---- */
+  var estimFilter='cours', estimDelId=null;
+  function openEstimDel(id){
+    estimDelId=id;
+    var r=(window.__estimsAll||[]).find(function(x){ return x.id===id; });
+    document.getElementById('edAdr').textContent=r?((r.adresse||'')+(r.client?' · '+r.client:'')):'';
+    document.getElementById('estimDelModal').hidden=false;
+  }
+  (function(){
+    var m=document.getElementById('estimDelModal'); if(!m) return;
+    function close(){ m.hidden=true; estimDelId=null; }
+    document.getElementById('edX').addEventListener('click',close);
+    document.getElementById('edCancel').addEventListener('click',close);
+    m.addEventListener('click',function(e){ if(e.target===m) close(); });
+    async function finir(mode){
+      if(!estimDelId||!sb) return close();
+      var id=estimDelId;
+      try{
+        if(mode==='mandat'){
+          // on GARDE l'estimation : elle est classée « Mandat signé »
+          var cur=await sb.from('estimations').select('data').eq('id',id).single();
+          var d=(cur.data&&cur.data.data)||{}; d.archive='mandat'; d.archive_date=isoD(new Date());
+          var r1=await sb.from('estimations').update({data:d}).eq('id',id);
+          if(r1.error) throw r1.error;
+          toast('✅ Classée dans « Mandats signés » — estimation conservée.');
+        } else {
+          var r2=await sb.from('estimations').update({deleted:true}).eq('id',id);
+          if(r2.error) throw r2.error;
+          toast(mode==='perdu'?'Estimation en corbeille — client non signé.':'Estimation en corbeille ✓');
+        }
+        close(); loadEstimations();
+      }catch(err){ if(!authFail(err)) toast('Action impossible : '+((err&&err.message)||err)); }
+    }
+    document.getElementById('edMandat').addEventListener('click',function(){ finir('mandat'); });
+    document.getElementById('edPerdu').addEventListener('click',function(){ finir('perdu'); });
+    document.getElementById('edErreur').addEventListener('click',function(){ finir('erreur'); });
+    var ch=document.getElementById('estimChips');
+    if(ch) ch.addEventListener('click',function(e){
+      var b=e.target.closest('.chip'); if(!b) return;
+      ch.querySelectorAll('.chip').forEach(function(x){ x.classList.toggle('on', x===b); });
+      estimFilter=b.dataset.ef; renderEstimList();
+    });
+  })();
   // remet TOUT l'écran estimation à zéro — utilisé par « Nouvelle estimation », le rechargement
   // d'une estimation (avant restauration) et « 🏠 Estimation » depuis une fiche contact
   function resetEstimState(){
@@ -4469,10 +4519,7 @@
   (function(){ var nb=document.getElementById('newEstimBtn'); if(nb) nb.addEventListener('click',resetEstimation); })();
   document.getElementById('estimList').addEventListener('click',async function(e){
     var del=e.target.closest('.estdel');
-    if(del){ e.stopPropagation();
-      if(!window.confirm('Mettre cette estimation à la corbeille ?')) return;
-      if(sb){ try{ var r=await sb.from('estimations').update({deleted:true}).eq('id',del.dataset.del); if(r.error) throw r.error; }catch(err){ if(!authFail(err)) toast('Suppression impossible.'); return; } }
-      toast('Estimation d\u00e9plac\u00e9e dans la corbeille \u2713'); loadEstimations(); return; }
+    if(del){ e.stopPropagation(); openEstimDel(del.dataset.del); return; }
     var it=e.target.closest('.estimcard'); if(!it||!window.__estims) return;
     var r=window.__estims[parseInt(it.dataset.i,10)]; if(!r) return;
     estimReturn=null;   // ouverte depuis « Mes estimations » : pas de bouton retour fiche périmé
