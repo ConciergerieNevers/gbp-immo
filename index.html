@@ -1115,13 +1115,22 @@
         <div class="subtabs">
           <button class="subtab" data-go="estimation" type="button">Estimation</button>
           <button class="subtab on" type="button">Mes estimations</button>
+          <button class="subtab" data-go="portefeuille" type="button">Portefeuille</button>
         </div>
         <div class="sectitle"><h2>Mes estimations</h2><div class="grow"></div><span class="eyebrow" id="estimCount"></span>
           <button class="btn pri" id="newEstimBtn" type="button" style="margin-left:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Nouvelle estimation</span></button></div>
         <div class="search" style="margin-bottom:13px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="estimSearch" placeholder="Rechercher une adresse, un client, un type…"></div>
         <div class="grid bienscol" id="estimList"><div class="estimempty">Aucune estimation enregistrée pour l'instant — elles apparaîtront ici dès que tu enregistres depuis l'écran Estimer.</div></div>
-        <div class="sectitle" style="margin-top:22px" hidden><h2>Portefeuille</h2></div>
-        <div class="toolbar" hidden>
+      </section>
+
+      <!-- ============ PORTEFEUILLE ============ -->
+      <section class="screen" id="portefeuille">
+        <div class="subtabs">
+          <button class="subtab" data-go="estimation" type="button">Estimation</button>
+          <button class="subtab" data-go="biens" type="button">Mes estimations</button>
+          <button class="subtab on" type="button">Portefeuille</button>
+        </div>
+        <div class="toolbar">
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="bienSearch" placeholder="Rechercher une adresse, une réf., un propriétaire…"></div>
           <button class="btn pri" id="addBienBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Ajouter un bien</span></button>
           <div class="chips" id="bienChips">
@@ -1132,7 +1141,7 @@
             <button class="chip" data-f="Vendu">Vendus <span class="c">3</span></button>
           </div>
         </div>
-        <div class="grid bienscol" id="bienGrid" hidden></div>
+        <div class="grid bienscol" id="bienGrid"></div>
       </section>
 
       <!-- ============ CRM ============ -->
@@ -1165,6 +1174,7 @@
         <div class="subtabs">
           <button class="subtab on" type="button">Estimation</button>
           <button class="subtab" data-go="biens" type="button">Mes estimations</button>
+          <button class="subtab" data-go="portefeuille" type="button">Portefeuille</button>
         </div>
         <div class="estwrap">
           <div class="steps">
@@ -1728,9 +1738,7 @@
 <div id="toast"></div>
 
 <!-- ======== CALCULETTE EXPRESS (bouton flottant) ======== -->
-<button class="fab" id="calcFab" title="Calculette express" aria-label="Calculette express">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15v3M8 18h4"/></svg>
-</button>
+<button class="fab" id="calcFab" title="Nouvelle estimation" aria-label="Nouvelle estimation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="width:26px;height:26px"><path d="M12 5v14M5 12h14"/></svg></button>
 <div class="calcpop" id="calcPop" hidden>
   <div class="calcpop-hd"><b>Calculette express</b><button id="calcClose" aria-label="Fermer">✕</button></div>
   <label class="calcfield">Adresse (géolocalisée)<input id="calcAddr" placeholder="Tape une adresse réelle…" autocomplete="off"></label>
@@ -1843,19 +1851,19 @@
   /* ---------- navigation ---------- */
   var titles={cockpit:['Cockpit','Lundi 11 août 2026 · vue du mois'],
     biens:['Mes estimations','Historique, recherche & reprise'],
+    portefeuille:['Portefeuille de biens','Mandats & suivi'],
     crm:['Contacts','Vendeurs, acquéreurs & prospects'],
     estimation:['Estimation','12 rue des Récollets, Nevers · en cours'],
     agenda:['Agenda','RDV, visites & signatures']};
   function go(id){
-    var navId=(id==='biens')?'estimation':id;   // Biens vit sous l'onglet Estimer
+    var navId=(id==='biens'||id==='portefeuille')?'estimation':id;   // sous-écrans de l'onglet Estimation
     document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('active',s.id===id);});
     document.querySelectorAll('.rail .navitem').forEach(function(b){b.classList.toggle('active',b.dataset.go===navId);});
     document.querySelectorAll('.mobnav button').forEach(function(b){b.classList.toggle('active',b.dataset.go===navId);});
     document.getElementById('pgTitle').textContent=titles[id][0];
     document.getElementById('pgSub').textContent=titles[id][1];
     var sp=document.getElementById('stickyPrice'); if(sp) sp.classList.toggle('show', id==='estimation');
-    var cf=document.getElementById('calcFab'); if(cf) cf.style.display=(id==='estimation')?'none':'';
-    var cp=document.getElementById('calcPop'); if(cp && id==='estimation') cp.hidden=true;
+
     window.scrollTo(0,0);
   }
   document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
@@ -4259,7 +4267,7 @@
         price=document.getElementById('calcPrice'), pm2El=document.getElementById('calcPm2');
     if(!fab) return;
     var pxm2=null;
-    fab.addEventListener('click',function(){ pop.hidden=!pop.hidden; if(!pop.hidden){ if(!pxm2 && state.baseM2) pxm2=state.baseM2; recalc(); } });
+    fab.addEventListener('click',function(){ if(typeof resetEstimation==='function'){ resetEstimation(); } }); if(!pop.hidden){ if(!pxm2 && state.baseM2) pxm2=state.baseM2; recalc(); } });
     close.addEventListener('click',function(){ pop.hidden=true; });
     var tmr;
     addr.addEventListener('input',function(){ clearTimeout(tmr); var q=this.value.trim(); if(q.length<3){ sug.innerHTML=''; return; }
