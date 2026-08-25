@@ -2069,7 +2069,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-173820';
+  var __BUILD='20260825-173915';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2610,12 +2610,12 @@
     var idxNew=ETAPES.indexOf(etapeNew), idxOld=ETAPES.indexOf(etapeOld);
     var recul=(etapeChanged && idxNew>-1 && idxOld>-1 && idxNew<idxOld);
     if(recul){
-      // retour en arrière : les étapes plus avancées sont retirées de l'historique
-      histNew=histNew.filter(function(h){ var i=ETAPES.indexOf(h&&h[0]); return i===-1 || i<=idxNew; });
+      // retour en arrière : les étapes plus avancées (et la nouvelle, réinscrite après) sont retirées
+      histNew=histNew.filter(function(h){ var i=ETAPES.indexOf(h&&h[0]); return i===-1 || i<idxNew; });
     }
     if(etapeChanged) histNew.push([etapeNew, new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})]);
     // l'étape pilote le statut du mandat, dans les deux sens
-    if(etapeNew==='Compromis signé' && e.statut.value!=='Vendu') e.statut.value='Compromis';
+    if(etapeNew==='Compromis signé') e.statut.value='Compromis';
     else if(etapeNew==='Vente actée') e.statut.value='Vendu';
     else if(recul && (e.statut.value==='Compromis'||e.statut.value==='Vendu')){
       e.statut.value=(e.v_rentree.value==='1')?'Exclusif':'Simple';   // le mandat redevient actif
