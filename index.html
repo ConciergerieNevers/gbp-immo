@@ -2066,10 +2066,12 @@
   var houseSVG='<svg class="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>';
   var checkSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
   var euro=function(n){return Math.round(n).toLocaleString('fr-FR')+' €';};
+  // étapes d'avancement d'un bien — déclarées tôt : utilisées dès le premier rendu du portefeuille
+  var ETAPES=['Mandat signé','En vente · diffusion','Visites en cours','Offre reçue','Offre acceptée','Compromis signé','Vente actée'];
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-174319';
+  var __BUILD='20260825-174557';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2437,7 +2439,6 @@
     return (ventesData||[]).find(function(v){ return (v.bien||'').trim().toLowerCase()===ad; })||null;
   }
   // l'étape courante = dernière entrée de l'historique du bien (qui sert aussi de timeline)
-  var ETAPES=['Mandat signé','En vente · diffusion','Visites en cours','Offre reçue','Offre acceptée','Compromis signé','Vente actée'];
   function etapeCourante(b){
     if(!b || !Array.isArray(b.hist)) return '';
     for(var i=b.hist.length-1;i>=0;i--){ var lbl=b.hist[i] && b.hist[i][0]; if(ETAPES.indexOf(lbl)>-1) return lbl; }
