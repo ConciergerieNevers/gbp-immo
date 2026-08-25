@@ -246,9 +246,10 @@
   .fab svg{width:25px;height:25px}
   .fab:hover{background:var(--brand-2)}
   @media (max-width:900px){
-    .fab{bottom:calc(80px + env(safe-area-inset-bottom));right:16px;width:52px;height:52px}
+    .fab{bottom:calc(96px + env(safe-area-inset-bottom));right:16px;width:52px;height:52px}
   }
   @media print{.fab{display:none!important}}
+  body.on-estim .fab,body.on-estim .fabmenu{display:none!important}   /* le + gêne sur l'écran Estimation */
   .content{padding:26px 30px 60px;max-width:1180px;width:100%}
   .screen{display:none;animation:fade .3s ease}
   .screen.active{display:block}
@@ -1992,6 +1993,7 @@
     document.getElementById('pgTitle').textContent=titles[id][0];
     document.getElementById('pgSub').textContent=titles[id][1];
     var sp=document.getElementById('stickyPrice'); if(sp) sp.classList.toggle('show', id==='estimation');
+    document.body.classList.toggle('on-estim', id==='estimation');
 
     window.scrollTo(0,0);
   }
@@ -4323,244 +4325,333 @@
   function buildDossier(){
     var g=function(id){return document.getElementById(id);};
     var txt=function(id){var e=g(id);return e?e.textContent.trim():'';};
-    var spec=function(v,l){return '<div class="dspec"><b>'+(v||'—')+'</b><small>'+l+'</small></div>';};
     var type=g('fType').value;
     var adresse=(document.querySelector('#estimation .addrbox .a')||{}).textContent||'';
     var ville=(document.querySelector('#estimation .addrbox small')||{}).textContent||'';
-    var compRows, compExtra=0;
-    if(dvfComps && dvfComps.some(function(c){return c.sel;})){
-      var selComps=dvfComps.filter(function(c){return c.sel && compFilterPass(c);});
-      compExtra=Math.max(0, selComps.length-15);
-      compRows=selComps.slice(0,15).map(function(c){
-        return '<tr><td>'+(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
-      }).join('');
-    } else {
-      var rows=comps[state.rayon]||[];
-      compRows=rows.filter(function(r){return !r[4];}).map(function(r){
-        return '<tr><td>'+r[0]+' · '+r[1]+'</td><td>'+r[2]+' m²</td><td>'+euro(r[3])+'</td><td>'+Math.round(r[3]/r[2]).toLocaleString('fr-FR')+'</td></tr>';
-      }).join('');
-    }
-    var breakRows=[].slice.call(document.querySelectorAll('#rBreak .li')).map(function(li){
-      var s=li.querySelector('span').textContent, bEl=li.querySelector('b');
-      var cls=bEl.classList.contains('pos')?'dpos':(bEl.classList.contains('neg')?'dneg':'');
-      return '<tr class="'+cls+'"><td>'+s+'</td><td><b>'+bEl.textContent+'</b></td></tr>';
-    }).join('');
-    var risks=[].slice.call(document.querySelectorAll('#estimation .risks .risk')).map(function(r){
-      return '<div class="drisk"><b>'+r.querySelector('b').textContent+'</b><small>'+r.querySelector('small').textContent+'</small></div>';
-    }).join('');
-    var cover = estPhotos.length ? (estPhotos[0].after||estPhotos[0].before) : '';
-    var pairs = estPhotos.filter(function(p){ return p.after; });
-    /* stagingHtml remplacé par la pagination pf() */
-    var reco=txt('rReco'), low=txt('rLow'), high=txt('rHigh'), pm2=txt('rPm2');
-    var dd=new Date(); var dateStr=dd.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
-    var cliN=(g('cliNom')&&g('cliNom').value.trim())||'Madame, Monsieur';
-    var cliM=(g('cliMail')&&g('cliMail').value.trim())||'';
-    var vClean=(ville.split('\u00b7')[0]||'').trim();
-    var mV=vClean.match(/^(\d{5})\s+(.+)$/); var vNom=vClean||'\u2014', vCp='';
+    var vClean=(ville.split('·')[0]||'').trim();
+    var mV=vClean.match(/^(\d{5})\s+(.+)$/); var vNom=vClean||'—', vCp='';
     if(mV){ vCp=mV[1]; vNom=mV[2]; }
     var villeAff=vNom+(vCp?' ('+vCp+')':'');
-    var villeMaj=vNom.toUpperCase()||'NEVERS';
-    function pf(titre, corps){ return '<div class="dsheet pageF"><div class="av-topbar"></div><div class="pf-body">'+
-      '<div class="p2hd"><img src="/logo-gb-app.png" alt=""><div><b>'+titre+'</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+corps+'</div></div>'; }
-    function pairHtml(list){ return list.map(function(p){ return '<div class="dpair"><figure><figcaption>Avant</figcaption><div class="dimg" style="background-image:url('+p.before+')"></div></figure><figure><figcaption>Apr\u00e8s (home staging)</figcaption><div class="dimg" style="background-image:url('+p.after+')"></div></figure></div>'; }).join(''); }
-    var stagingExtra=''; for(var sx=2; sx<pairs.length; sx+=3){ stagingExtra+=pf('Home staging \u2014 avant / apr\u00e8s', '<div class="dstaging">'+pairHtml(pairs.slice(sx,sx+3))+'</div>'); }
-    var ic=function(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>'; };
-    var icCal=ic('<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>');
-    var icUser=ic('<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.5-3.4 4.2-5 7.5-5s6 1.6 7.5 5"/>');
-    var icPin=ic('<path d="M12 21s-7-5.4-7-11a7 7 0 0 1 14 0c0 5.6-7 11-7 11Z"/><circle cx="12" cy="10" r="2.6"/>');
-    var icClip=ic('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h4"/>');
-    var icHome=ic('<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>');
-    var icCheck=ic('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16 9.5"/>');
-    var icMail=ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>');
-    var tpb=g('fType').value, specArr=[['','<b>'+(tpb||'—')+'</b>']];
-    function spx(lbl,val){ if(val) specArr.push([lbl,val]); }
-    if(tpb==='Immeuble'){
-      spx('Lots','<b>'+estLots.length+'</b>');
-      spx('Surface cumulée','<b>'+(g('fSurf').value||'—')+' m²</b>');
-      spx('Année','<b>'+(g('fAnnee').value||'—')+'</b>');
-      var occ=estLots.filter(function(l){return l.occ==='Loué';}).length;
-      if(estLots.length) spx('Occupation','<b>'+occ+'/'+estLots.length+' loué'+(occ>1?'s':'')+'</b>');
-    } else if(tpb==='Terrain'){
-      spx('Terrain','<b>'+(g('fTerr').value||'—')+' m²</b>');
-    } else if(['Local commercial','Bureaux','Fonds de commerce','Garage / Parking','Cave'].indexOf(tpb)>-1){
-      spx('Surface','<b>'+(g('fSurf').value||'—')+' m²</b>');
-      if(['Garage / Parking','Cave'].indexOf(tpb)<0) spx('Année','<b>'+(g('fAnnee').value||'—')+'</b>');
+    var reco=txt('rReco'), low=txt('rLow'), high=txt('rHigh');
+    var dd=new Date(); var dateStr=dd.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+    var yr=dd.getFullYear(), doy=Math.floor((dd-new Date(yr,0,0))/86400000);
+    var ref='EST-'+yr+'-'+('00'+doy).slice(-3);
+    var cliN=(g('cliNom')&&g('cliNom').value.trim())||'Madame, Monsieur';
+    var surfV=g('fSurf').value||'';
+    var recoN=parseInt(String(reco).replace(/[^0-9]/g,''),10)||0;
+    var lowN=parseInt(String(low).replace(/[^0-9]/g,''),10)||0;
+    var highN=parseInt(String(high).replace(/[^0-9]/g,''),10)||0;
+    var pm2N=(recoN&&parseFloat(surfV))?Math.round(recoN/parseFloat(surfV)):0;
+    var compl1=(g('fCompl')&&g('fCompl').value.trim())||'';
+    var photos=(estPhotos||[]).map(function(p){return p.after||p.before;}).filter(Boolean);
+    var pairs=(estPhotos||[]).filter(function(p){ return p.after; });
+
+    /* ---- gabarit ---- */
+    function hd(){ return '<div class="m-hd"><img src="/logo-gb-app.png" alt=""><div class="m-hdname">GB IMMOBILIER<span>Agence immobilière — Nevers</span></div><div class="m-ref">RÉF. '+ref+'</div></div>'; }
+    function ft(n,tot){ return '<div class="m-ft"><span>GB Immobilier — Rapport d\'estimation confidentiel</span><b>'+('0'+n).slice(-2)+' / '+('0'+tot).slice(-2)+'</b></div>'; }
+    function page(body,n,tot){ return '<div class="dsheet mpage">'+hd()+'<div class="m-body">'+body+'</div>'+ft(n,tot)+'</div>'; }
+    function eyebrow(num,lbl){ return '<div class="m-eyebrow"><em>'+num+'</em>'+lbl+'</div>'; }
+
+    /* ---- couverture ---- */
+    var coverPh = photos[0]
+      ? '<div class="mc-photo" style="background-image:url('+photos[0]+')"></div>'
+      : '<div class="mc-phold"><img src="/logo-gb-app.png" alt=""><span>Vos photographies ici</span></div>';
+    var line1=(type||'Bien')+(surfV?' — '+surfV+' m²':'');
+    var specsBits=[];
+    if(type==='Immeuble'&&estLots.length){
+      specsBits.push(estLots.length+' lots');
+      var occN=estLots.filter(function(l){return l.occ==='Loué';}).length;
+      if(occN) specsBits.push(occN+' loué'+(occN>1?'s':''));
     } else {
-      spx('Surface','<b>'+(g('fSurf').value||'—')+' m²</b>');
-      if(tpb!=='Appartement') spx('Terrain','<b>'+(g('fTerr').value||'—')+' m²</b>');
-      spx('Pièces','<b>'+(g('fPieces').value||'—')+'</b>');
-      spx('Chambres','<b>'+(g('fChambres').value||'—')+'</b>');
-      spx('Salles de bain','<b>'+((g('fSdb')&&g('fSdb').value)||'—')+'</b>');
-      spx('Année','<b>'+(g('fAnnee').value||'—')+'</b>');
+      if(g('fPieces').value) specsBits.push(g('fPieces').value+' pièces');
+      if(g('fChambres').value) specsBits.push(g('fChambres').value+' chambres');
+      if(g('fTerr').value&&g('fTerr').value!=='0') specsBits.push('terrain de '+g('fTerr').value+' m²');
     }
-    var specs='<div class="av-specs">'+specArr.map(function(x){ return '<span>'+(x[0]?x[0]+' : ':'')+x[1]+'</span>'; }).join('')+'</div>';
-    var arg='Au regard des ventes réellement enregistrées autour du bien (données DVF de la DGFiP) et de leur médiane au m², corrigée de l\'état intérieur, du DPE, de la qualité de l\'emplacement et des équipements, la valeur de marché de ce bien s\'établit dans une fourchette de '+low+' à '+high+'. Compte tenu du positionnement retenu et d\'un marché local stable, nous recommandons un prix de mise en vente de '+reco+', cohérent avec les biens comparables du secteur tout en préservant une marge de négociation raisonnable.';
-      /* ============ ANNEXES — flux continu, sans blancs ============ */
-      var FOOTER_HTML='<footer class="av-ft">'+
-          '<span class="ic">'+icMail+'</span>'+
-          '<p>Vous remerciant de la confiance que vous voulez bien nous t\u00e9moigner et restant \u00e0 votre disposition pour participer \u00e0 la n\u00e9gociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments d\u00e9vou\u00e9s.</p>'+
-          '<div class="who"><b style="display:block">Jimmy Garcia</b><span style="display:block">Conseiller Immobilier</span><small style="display:block">06.78.86.56.12</small><small style="display:block">garciaj@gbimmobilier.net</small></div>'+
-          '<div class="av-sign">Jimmy Garcia<small>Conseiller immobilier</small></div>'+
-        '</footer>'+
-        '<div class="av-bottom">Cet avis de valeur est \u00e9tabli \u00e0 titre indicatif&nbsp;&nbsp;\u2014&nbsp;&nbsp;Il ne peut en aucun cas se substituer \u00e0 une expertise'+
-        '<span>Siren 6718 417 RCS Nevers \u00b7 Cartes Transaction N\u00b0113 et Gestion N\u00b0112 \u00b7 Caisse de Garantie de l\'Immobilier FNAIM, 89 rue de la Bo\u00e9tie \u2014 75008 Paris</span></div>';
-      var blocks=[];
-      function blk(h,html){ blocks.push({h:h,html:html}); }
-      if(window.__market){
-        var mk=window.__market, lastA=mk.annees[mk.annees.length-1];
-        blk(9,'<h2>March\u00e9 de la commune \u00b7 5 ans (DVF)</h2>');
-        blk(22,'<div class="pmtiles">'+
-          '<div class="pmtile"><small>Prix m\u00e9dian secteur</small><b>'+(lastA?Math.round(lastA.median).toLocaleString('fr-FR')+' \u20ac/m\u00b2':'\u2014')+'</b></div>'+
-          '<div class="pmtile"><small>\u00c9volution 1 an</small><b style="color:'+(mk.evo1>0?'#2F6E4F':(mk.evo1<0?'#9E3E2A':'#111'))+'">'+((mk.evo1>0?'+':'')+(mk.evo1!==null?String(mk.evo1).replace('.',','):'\u2014'))+' %</b></div>'+
-          '<div class="pmtile"><small>\u00c9volution 5 ans</small><b style="color:'+(mk.evo5>0?'#2F6E4F':(mk.evo5<0?'#9E3E2A':'#111'))+'">'+((mk.evo5>0?'+':'')+(mk.evo5!==null?String(mk.evo5).replace('.',','):'\u2014'))+' %</b></div>'+
-          '<div class="pmtile"><small>Ventes / an</small><b>'+Math.round(mk.annees.reduce(function(a,x){return a+x.ventes;},0)/mk.annees.length)+'</b></div></div>');
-        if(window.__trend) blk(12,'<p class="dnote">'+window.__trend+'</p>');
-        if(window.__poi){ blk(9,'<h2>Commodit\u00e9s \u00e0 proximit\u00e9</h2>'); blk(18,'<div class="poichips pmpoi">'+window.__poi+'</div>'); }
-        blk(66,'<div id="dMapSlot"></div>');
-      }
-      var compCount=(compRows.match(/<tr/g)||[]).length;
-      blk(9,'<h2>Ventes comparables \u00b7 DVF</h2>');
-      blk(12+compCount*7,'<table class="dtable"><thead><tr><th>Adresse \u00b7 date</th><th>Surface</th><th>Prix vendu</th><th>\u20ac/m\u00b2</th></tr></thead><tbody>'+compRows+'</tbody></table>');
-      blk(12,'<p class="dnote">'+txt('compSummary').replace(/ \u00b7 touche une vente.*$/,'')+(compExtra?' Les 15 ventes les plus proches sont pr\u00e9sent\u00e9es ci-dessus ; '+compExtra+' autres ventes retenues entrent dans le calcul de la m\u00e9diane.':'')+'</p>');
-      var brCount=(breakRows.match(/<tr/g)||[]).length;
-      blk(9,'<h2>Analyse &amp; positionnement du prix</h2>');
-      blk(6+brCount*7,'<table class="dtable"><tbody>'+breakRows+'</tbody></table>');
-      blk(12,'<p class="dnote">Prix de mise en vente conseill\u00e9 : <b>'+reco+'</b> \u00b7 '+pm2+'</p>');
-      if(estLots.length && g('fType').value==='Immeuble'){
-        blk(9,'<h2>D\u00e9tail des lots de l\u2019immeuble</h2>');
-        var totLV=0, totLL=0, allLV=true;
-        var lotRows=estLots.map(function(l,i){
-          var det=[]; if(lotIsHab(l.type)){ if(l.pieces) det.push(l.pieces+' p.'); if(l.ch) det.push(l.ch+' ch.'); if(l.sdb) det.push(l.sdb+' sdb'); if(l.dpe) det.push('DPE '+l.dpe); }
-          if(lotIsCom(l.type)&&l.activite) det.push(l.activite);
-          var pcts=(typeof lotPcts==='function')?lotPcts(l):{etat:0,dpe:0,adj:0};
-          if(pcts.etat) det.push('\u00e9tat '+(pcts.etat>0?'+':'')+pcts.etat+' %');
-          if(pcts.dpe) det.push('DPE '+(pcts.dpe>0?'+':'')+pcts.dpe+' %');
-          if(pcts.adj) det.push((pcts.adj>0?'+':'')+pcts.adj.toLocaleString('fr-FR')+' \u20ac'+(l.adjMotif?' ('+l.adjMotif+')':''));
-          if(l.note) det.push(l.note);
-          var lv=(typeof lotValue==='function')?lotValue(l):null;
-          var loyA=(parseFloat(l.loyer)||0)*12; totLL+=loyA;
-          if(lv){ totLV+=lv.v; } else { allLV=false; }
-          var rdt=(lv&&loyA)?(loyA/lv.v*100):null;
-          return '<tr><td>Lot '+(i+1)+' \u2014 '+l.type+(l.etage?' \u00b7 '+l.etage:'')+(det.length?'<br><span style="color:#8A8272;font-size:8.6px">'+det.join(' \u00b7 ')+'</span>':'')+'</td>'+
-            '<td>'+l.surf+' m\u00b2 \u00b7 '+(l.etat||'')+'</td>'+
-            '<td>'+(lv?lv.v.toLocaleString('fr-FR')+' \u20ac':'\u2014')+(lv?'<br><span style="color:#8A8272;font-size:8.2px">'+lv.src+'</span>':'')+'</td>'+
-            '<td>'+(l.loyer?parseFloat(l.loyer).toLocaleString('fr-FR')+' \u20ac/mois':'\u2014')+(rdt?'<br><span style="color:#2F6E4F;font-weight:700">'+rdt.toFixed(1).replace('.',',')+' %</span>':'<br><span style="color:#8A8272;font-size:8.6px">'+(l.occ||'')+'</span>')+'</td></tr>';
-        }).join('');
-        var immRdtP=(totLV&&totLL)?(totLL/totLV*100):null;
-        lotRows+='<tr class="tot"><td>Immeuble complet \u2014 sommation des lots'+(allLV?'':' (partielle)')+'</td><td></td>'+
-          '<td>'+(totLV?totLV.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</td>'+
-          '<td>'+(totLL?Math.round(totLL/12).toLocaleString('fr-FR')+' \u20ac/mois':'')+(immRdtP?'<br><span style="color:#2F6E4F;font-weight:700">'+immRdtP.toFixed(1).replace('.',',')+' %</span>':'')+'</td></tr>';
-        blk(20+estLots.length*13,'<table class="dtable"><thead><tr><th>Lot</th><th>Surface \u00b7 \u00e9tat</th><th>Valeur estim\u00e9e</th><th>Loyer \u00b7 rendement</th></tr></thead><tbody>'+lotRows+'</tbody></table>');
-        // photos des lots
-        estLots.forEach(function(l,i){
-          if(Array.isArray(l.photos)&&l.photos.length){
-            var ph=l.photos.map(function(p){ return '<div class="dimg" style="background-image:url('+p+')"></div>'; }).join('');
-            blk(9,'<h2>Lot '+(i+1)+' \u2014 '+l.type+(l.etage?' \u00b7 '+l.etage:'')+' \u00b7 photos</h2>');
-            for(var pi=0; pi<l.photos.length; pi+=2){
-              var pair=l.photos.slice(pi,pi+2).map(function(p){ return '<div class="dimg" style="background-image:url('+p+')"></div>'; }).join('');
-              blk(52,'<div class="dpair" style="grid-template-columns:repeat('+Math.min(2,l.photos.length-pi)+',1fr)">'+pair+'</div>');
-            }
-          }
-        });
-      }
-      var loyM=(typeof loyersMensuels==='function')?loyersMensuels():0;
-      if(loyM>0){
-        var recoN=parseInt(String(reco).replace(/[^0-9]/g,''),10)||0;
-        var loyA=loyM*12, rdt=recoN?(loyA/recoN*100):0;
-        blk(9,'<h2>Approche locative</h2>');
-        blk(22,'<div class="pmtiles">'+
-          '<div class="pmtile"><small>Loyers mensuels</small><b>'+loyM.toLocaleString('fr-FR')+' \u20ac</b></div>'+
-          '<div class="pmtile"><small>Loyers annuels</small><b>'+loyA.toLocaleString('fr-FR')+' \u20ac</b></div>'+
-          '<div class="pmtile"><small>Rendement brut</small><b style="color:#2F6E4F">'+(rdt?rdt.toFixed(1).replace('.',',')+' %':'\u2014')+'</b></div>'+
-          '<div class="pmtile"><small>Prix pour 9 %</small><b>'+Math.round(loyA/0.09/1000)+' k\u20ac</b></div></div>');
-        blk(12,'<p class="dnote">Au prix de pr\u00e9sentation conseill\u00e9, le bien offre un rendement locatif brut de <b>'+rdt.toFixed(1).replace('.',',')+' %</b>. Plus le rendement est \u00e9lev\u00e9, plus le prix est attractif pour un investisseur.</p>');
-      }
-      blk(9,'<h2>Environnement &amp; risques \u00b7 G\u00e9orisques</h2>');
-      blk(30,'<div class="drisks">'+risks+'</div>');
-      if(pairs.length){
-        blk(9,'<h2>Home staging \u2014 avant / apr\u00e8s</h2>');
-        pairs.forEach(function(p){ blk(56,'<div class="dstaging">'+pairHtml([p])+'</div>'); });
-      }
-      var galPhotos=(estPhotos||[]).filter(function(p){ return !p.after; }).map(function(p){ return p.before; });
-      if(galPhotos.length>1){
-        blk(9,'<h2>Galerie du bien</h2>');
-        for(var gp=1; gp<galPhotos.length; gp+=2){   // la 1re est déjà la photo de couverture
-          var pr=galPhotos.slice(gp,gp+2).map(function(p){ return '<div class="dimg" style="background-image:url('+p+')"></div>'; }).join('');
-          blk(52,'<div class="dpair" style="grid-template-columns:repeat('+Math.min(2,galPhotos.length-gp)+',1fr)">'+pr+'</div>');
-        }
-      }
-      var descV=(g('fDesc')&&g('fDesc').value.trim())||'';
-      if(descV){
-        blk(9,'<h2>Description du bien</h2>');
-        blk(Math.min(64,10+Math.ceil(descV.length/95)*4),'<p class="darg">'+descV.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</p>');
-      }
-      blk(9,'<h2>Argumentaire</h2>');
-      blk(36,'<p class="darg">'+arg+'</p>');
-      // packing glouton : capacité utile ~246 mm par feuille, ~44 mm réservés pour la signature finale
-      var CAP=246, FOOT=44;
-      var sheetsArr=[[]], usedArr=[0];
-      blocks.forEach(function(b){
-        var i=sheetsArr.length-1;
-        if(usedArr[i]+b.h>CAP){ sheetsArr.push([]); usedArr.push(0); i++; }
-        sheetsArr[i].push(b.html); usedArr[i]+=b.h;
-      });
-      if(usedArr[usedArr.length-1]>CAP-FOOT){ sheetsArr.push(['<h2>Conclusion</h2>']); usedArr.push(9); }
-      var annexHtml=sheetsArr.map(function(parts,i){
-        var last=(i===sheetsArr.length-1);
-        return '<div class="dsheet pageF"><div class="av-topbar"></div><div class="pf-body">'+
-          '<div class="p2hd"><img src="/logo-gb-app.png" alt=""><div><b>'+(i===0?'Analyse &amp; annexes':'Annexes \u2014 suite')+'</b><span>'+adresse+' \u00b7 '+villeAff+' \u00b7 '+dateStr+'</span></div></div>'+
-          parts.join('')+'</div>'+
-          (last?FOOTER_HTML:'<div class="pgnum">GB Immobilier \u2014 Avis de valeur \u00b7 page '+(i+2)+'</div>')+
-        '</div>';
+    var coverHtml='<div class="dsheet mcover">'+
+      '<img class="mc-logo" src="/logo-gb-app.png" alt="GB Immobilier">'+
+      '<div class="mc-name">GB IMMOBILIER</div>'+
+      '<div class="mc-sub">Agence immobilière — Nevers</div>'+
+      '<div class="mc-eyebrow">Avis de valeur — Rapport confidentiel</div>'+
+      '<div class="mc-title">Estimation<i>immobilière</i></div>'+
+      '<div class="mc-div"><i></i></div>'+
+      coverPh+
+      '<div class="mc-line1">'+escH(line1)+'</div>'+
+      '<div class="mc-addr">'+escH(adresse)+(compl1?' · '+escH(compl1):'')+' · '+escH(villeAff)+'</div>'+
+      (specsBits.length?'<div class="mc-specs">'+escH(specsBits.join(' · ')).toUpperCase()+'</div>':'')+
+      '<div class="mc-meta">'+
+        '<div><small>Préparé pour</small><b>'+escH(cliN)+'</b></div>'+
+        '<div><small>Date du rapport</small><b>'+dateStr+'</b></div>'+
+        '<div><small>Référence</small><b>'+ref+'</b></div>'+
+      '</div>'+
+    '</div>';
+
+    /* ---- page 3 · votre bien ---- */
+    var descV=(g('fDesc')&&g('fDesc').value.trim())||'';
+    var descClamped=descV.length>620;
+    var descShort=descClamped?(descV.slice(0,600).replace(/\s+\S*$/,'')+'…'):descV;
+    var introBien=descShort?escH(descShort).replace(/\n/g,'<br>')
+      :('Ce bien de type '+escH(type)+(surfV?' de '+surfV+' m² habitables':'')+', situé '+escH(adresse)+' à '+escH(vNom)+', a fait l\'objet d\'une visite et d\'une analyse détaillée de ses caractéristiques, de ses prestations et de son environnement immédiat.');
+    var photoBlock='';
+    if(photos.length===1){ photoBlock='<div class="m-ph big" style="height:56mm;margin-bottom:5.5mm;background-image:url('+photos[0]+')"></div>'; }
+    else if(photos.length>1){
+      photoBlock='<div class="m-photos"><div class="m-ph big" style="background-image:url('+photos[0]+')"></div>'+
+        '<div class="side">'+photos.slice(1,3).map(function(p){return '<div class="m-ph" style="background-image:url('+p+')"></div>';}).join('')+
+        (photos.length===2?'<div></div>':'')+'</div></div>';
+    }
+    var specPairs=[];
+    function spx(l,v){ if(v) specPairs.push([l,v]); }
+    if(type==='Immeuble'){
+      spx('Type de bien',type); spx('Nombre de lots',estLots.length||null);
+      spx('Surface cumulée',surfV?surfV+' m²':null); spx('Année',g('fAnnee').value);
+      var occ2=estLots.filter(function(l){return l.occ==='Loué';}).length;
+      if(estLots.length) spx('Occupation',occ2+' / '+estLots.length+' loués');
+      var loyT=estLots.reduce(function(a,l){return a+(parseFloat(l.loyer)||0);},0);
+      if(loyT) spx('Loyers actuels',loyT.toLocaleString('fr-FR')+' € / mois');
+    } else if(type==='Terrain'){
+      spx('Type de bien',type); spx('Surface du terrain',(g('fTerr').value||surfV)?((g('fTerr').value||surfV)+' m²'):null);
+    } else {
+      spx('Type de bien',type);
+      spx('Surface habitable',surfV?surfV+' m²':null);
+      if(type!=='Appartement') spx('Surface du terrain',(g('fTerr').value&&g('fTerr').value!=='0')?g('fTerr').value+' m²':null);
+      spx('Pièces / chambres',(g('fPieces').value||g('fChambres').value)?((g('fPieces').value||'—')+' / '+(g('fChambres').value||'—')):null);
+      spx('Salles de bain',(g('fSdb')&&g('fSdb').value)||null);
+      spx('Année de construction',g('fAnnee').value);
+      var loyM0=(typeof loyersMensuels==='function')?loyersMensuels():0;
+      if(loyM0) spx('Loyer potentiel',loyM0.toLocaleString('fr-FR')+' € / mois');
+    }
+    var half=Math.ceil(specPairs.length/2);
+    function spCol(arr){ return arr.map(function(x){ return '<div class="m-sprow"><span>'+escH(x[0])+'</span><b>'+escH(String(x[1]))+'</b></div>'; }).join(''); }
+    var specTbl='<div class="m-spectbl"><div>'+spCol(specPairs.slice(0,half))+'</div><div>'+spCol(specPairs.slice(half))+'</div></div>';
+    var chipLbls=Object.keys(state.tgls).filter(function(k){return state.tgls[k];}).map(function(k){ return (state.tgls[k].label||'').replace(/\s*·.*$/,'').trim(); }).filter(Boolean);
+    var chipsHtml=chipLbls.length?('<div class="m-chips">'+chipLbls.slice(0,6).map(function(c){return '<span><i></i>'+escH(c)+'</span>';}).join('')+'</div>'):'';
+    var bienBody=eyebrow('02','Votre bien')+
+      '<h1 class="m-h1">'+escH(type==='Immeuble'?'Votre immeuble':(type==='Terrain'?'Votre terrain':'Votre '+type.toLowerCase()))+' <i>à '+escH(vNom)+'</i></h1>'+
+      '<p class="m-p">'+introBien+'</p>'+photoBlock+specTbl+chipsHtml;
+
+    /* ---- page 4 · marché ---- */
+    var mk=window.__market||null;
+    var med=state.baseM2?Math.round(state.baseM2):null;
+    var evo1=(mk&&mk.evo1!==null&&mk.evo1!==undefined)?mk.evo1:null;
+    var volMoy=mk?Math.round(mk.annees.reduce(function(a,x){return a+x.ventes;},0)/mk.annees.length):null;
+    var tiles='<div class="m-tiles">'+
+      '<div class="m-tile"><b>'+(med?med.toLocaleString('fr-FR'):'—')+' <em>€/m²</em></b><small>Prix médian — '+escH(type==='Appartement'?'appartements':'maisons')+'</small></div>'+
+      '<div class="m-tile"><b>'+(evo1!==null?((evo1>0?'+':'')+String(evo1).replace('.',','))+' <em>%</em>':'—')+'</b><small>Évolution sur 12 mois</small></div>'+
+      '<div class="m-tile"><b>'+(volMoy!==null?volMoy:'—')+'</b><small>Ventes par an — commune</small></div>'+
+    '</div>';
+    var selComps=[];
+    if(dvfComps && dvfComps.some(function(c){return c.sel;})) selComps=dvfComps.filter(function(c){return c.sel && compFilterPass(c);});
+    else selComps=(comps[state.rayon]||comps[1000]||[]).filter(function(r){return !r[4];}).map(function(r){ return {adresse:r[0],date:r[1],surface:r[2],prix:r[3],pm2:Math.round(r[3]/r[2])}; });
+    function compTr(c){ return '<tr><td>'+escH(c.adresse||'Adresse non communiquée')+'</td><td>'+c.surface+' m²</td><td><b>'+euro(c.prix)+'</b></td><td>'+c.pm2.toLocaleString('fr-FR')+' €/m²</td><td>'+escH(fmtDate(c.date))+'</td></tr>'; }
+    var rowsP4=selComps.slice(0,9), rowsAnnex=selComps.slice(9,20), extraC=Math.max(0,selComps.length-20);
+    var hlRow='<tr class="hl"><td>◆ Votre bien — '+escH(adresse)+'</td><td>'+(surfV||'—')+' m²</td><td><b>'+reco+'</b></td><td>'+(pm2N?pm2N.toLocaleString('fr-FR')+' €/m²':'—')+'</td><td>Estimation</td></tr>';
+    var compTable='<div class="m-lbl">Transactions comparables récentes (DVF — données notariées)</div>'+
+      '<table class="m-comp"><thead><tr><th>Bien</th><th>Surface</th><th>Prix de vente</th><th>Prix / m²</th><th>Date</th></tr></thead><tbody>'+
+      rowsP4.map(compTr).join('')+hlRow+'</tbody></table>';
+    var scaleHtml='';
+    var pmVals=selComps.map(function(c){return c.pm2;}).filter(function(v){return v>0;});
+    if(pmVals.length&&pm2N){
+      var mn=Math.min.apply(null,pmVals.concat([pm2N])), mx=Math.max.apply(null,pmVals.concat([pm2N]));
+      var span=Math.max(1,mx-mn); mn=mn-span*0.08; mx=mx+span*0.08; span=mx-mn;
+      var posB=Math.max(2,Math.min(98,Math.round((pm2N-mn)/span*100)));
+      var dots=pmVals.slice(0,12).map(function(v){ var p=Math.max(1,Math.min(99,Math.round((v-mn)/span*100))); return '<span class="dot" style="left:'+p+'%"></span>'; }).join('');
+      scaleHtml='<div class="m-lbl">Positionnement — prix au m²</div><div class="m-scale"><span class="you" style="left:'+posB+'%">Votre bien — '+pm2N.toLocaleString('fr-FR')+' €/m²</span><span class="ln"></span>'+dots+
+        '<span class="dia" style="left:'+posB+'%"></span><span class="lo">'+Math.round(mn).toLocaleString('fr-FR')+' €</span><span class="hi">'+Math.round(mx).toLocaleString('fr-FR')+' €</span></div>';
+    }
+    var envRows=(poiList||[]).slice(0,7).map(function(p){
+      var d=(p.m>=1000)?((p.m/1000).toFixed(1).replace('.',',')+' km'):(p.m+' m');
+      return '<div class="m-envrow"><span>'+escH(p.label)+'</span><b>'+d+'</b></div>'; }).join('');
+    var envHtml='<div class="m-env" style="margin-top:4mm"><div id="dMapSlot"></div><div><div class="m-lbl" style="margin-top:0">Environnement &amp; accès</div>'+
+      (envRows||'<p class="m-p" style="font-size:8px;color:#9a917f">Commodités non renseignées pour cette adresse.</p>')+'</div></div>';
+    var marcheBody=eyebrow('03','Le marché')+
+      '<h1 class="m-h1">Lecture du marché <i>'+escH(vNom.toLowerCase()==='nevers'?'néversois':('de '+vNom))+'</i></h1>'+
+      tiles+compTable+scaleHtml+envHtml;
+
+    /* ---- page 5 · estimation ---- */
+    var posG=(highN>lowN&&recoN)?Math.max(4,Math.min(96,Math.round((recoN-lowN)/(highN-lowN)*100))):50;
+    var darkPanel='<div class="m-dark">'+
+      '<div class="lb1">Valeur vénale estimée</div>'+
+      '<div class="px">'+reco+'</div>'+
+      (pm2N?'<div class="pm">soit '+pm2N.toLocaleString('fr-FR')+' € par m² habitable</div>':'')+
+      '<div class="lb2">Valeur conseillée</div>'+
+      '<div class="m-gauge"><span class="tr"></span><span class="fi" style="width:'+posG+'%"></span><span class="dia" style="left:'+posG+'%"></span></div>'+
+      '<div class="m-fourch">'+
+        '<div><small>Fourchette basse</small><b>'+low+'</b><i>Vente rapide — moins de 60 jours</i></div>'+
+        '<div><small>Fourchette haute</small><b>'+high+'</b><i>Marché patient — au-delà de 120 jours</i></div>'+
+      '</div></div>';
+    var posItems=[], negItems=[];
+    [].slice.call(document.querySelectorAll('#rBreak .li')).forEach(function(li,i){
+      if(i===0) return;
+      var s=li.querySelector('span').textContent, b=li.querySelector('b');
+      if(b.classList.contains('pos')) posItems.push([s,b.textContent]);
+      else if(b.classList.contains('neg')) negItems.push([s,b.textContent]);
+    });
+    function adjRows(arr){ return arr.length?arr.map(function(x){ return '<div class="m-adjrow"><span>'+escH(x[0])+'</span><b>'+escH(x[1])+'</b></div>'; }).join(''):'<div class="m-adjrow"><span style="color:#9a917f">Aucun ajustement retenu</span></div>'; }
+    var adjCards='<div class="m-adj">'+
+      '<div class="m-adjcard v"><h5>Éléments de valorisation</h5>'+adjRows(posItems)+'</div>'+
+      '<div class="m-adjcard m"><h5>Éléments de modération</h5>'+adjRows(negItems)+'</div></div>';
+    var nbC=selComps.length;
+    var methHtml='<div class="m-meth"><div><div class="m-lbl" style="margin-top:0">Méthode retenue</div>'+
+      '<p>Valeur issue de la méthode par comparaison : médiane au m² de '+(nbC||'—')+' vente'+(nbC>1?'s':'')+' réellement enregistrée'+(nbC>1?'s':'')+' autour du bien (données DVF de la DGFiP), corrigée de l\'emplacement, de l\'état intérieur, du DPE et des équipements'+((typeof loyersMensuels==='function'&&loyersMensuels())?', croisée avec l\'approche par le revenu locatif':'')+'.</p></div>'+
+      '<div><div class="m-lbl" style="margin-top:0">Validité de l\'avis</div>'+
+      '<p>Cet avis de valeur est établi au '+dateStr+' et reste pertinent pour une durée indicative de trois mois, sous réserve d\'évolution notable du marché ou de la consistance du bien. Il ne constitue pas une expertise au sens réglementaire.</p></div></div>';
+    var estimBody=eyebrow('04','L\'estimation')+
+      '<h1 class="m-h1">Notre conclusion <i>de valeur</i></h1>'+
+      darkPanel+adjCards+methHtml;
+
+    /* ---- annexes (flux continu, packing) ---- */
+    var blocks=[];
+    function blk(h,html){ blocks.push({h:h,html:html}); }
+    if(mk){
+      var lastA=mk.annees[mk.annees.length-1];
+      blk(9,'<h2>Marché de la commune · 5 ans (DVF)</h2>');
+      blk(22,'<div class="pmtiles">'+
+        '<div class="pmtile"><small>Prix médian secteur</small><b>'+(lastA?Math.round(lastA.median).toLocaleString('fr-FR')+' €/m²':'—')+'</b></div>'+
+        '<div class="pmtile"><small>Évolution 1 an</small><b style="color:'+(mk.evo1>0?'#2F7D5B':(mk.evo1<0?'#A33B2E':'#111'))+'">'+((mk.evo1>0?'+':'')+(mk.evo1!==null?String(mk.evo1).replace('.',','):'—'))+' %</b></div>'+
+        '<div class="pmtile"><small>Évolution 5 ans</small><b style="color:'+(mk.evo5>0?'#2F7D5B':(mk.evo5<0?'#A33B2E':'#111'))+'">'+((mk.evo5>0?'+':'')+(mk.evo5!==null?String(mk.evo5).replace('.',','):'—'))+' %</b></div>'+
+        '<div class="pmtile"><small>Ventes / an</small><b>'+(volMoy!==null?volMoy:'—')+'</b></div></div>');
+      if(window.__trend) blk(12,'<p class="dnote">'+window.__trend+'</p>');
+    }
+    if(rowsAnnex.length){
+      blk(9,'<h2>Ventes comparables — suite</h2>');
+      blk(12+rowsAnnex.length*7,'<table class="m-comp"><thead><tr><th>Bien</th><th>Surface</th><th>Prix de vente</th><th>Prix / m²</th><th>Date</th></tr></thead><tbody>'+rowsAnnex.map(compTr).join('')+'</tbody></table>');
+      if(extraC) blk(10,'<p class="dnote">'+extraC+' autres ventes retenues entrent dans le calcul de la médiane.</p>');
+    }
+    if(estLots.length && type==='Immeuble'){
+      blk(9,'<h2>Détail des lots de l\'immeuble</h2>');
+      var totLV=0, totLL=0, allLV=true;
+      var lotRows=estLots.map(function(l,i){
+        var det=[]; if(lotIsHab(l.type)){ if(l.pieces) det.push(l.pieces+' p.'); if(l.ch) det.push(l.ch+' ch.'); if(l.sdb) det.push(l.sdb+' sdb'); if(l.dpe) det.push('DPE '+l.dpe); }
+        if(lotIsCom(l.type)&&l.activite) det.push(l.activite);
+        var pcts=(typeof lotPcts==='function')?lotPcts(l):{etat:0,dpe:0,adj:0};
+        if(pcts.etat) det.push('état '+(pcts.etat>0?'+':'')+pcts.etat+' %');
+        if(pcts.dpe) det.push('DPE '+(pcts.dpe>0?'+':'')+pcts.dpe+' %');
+        if(pcts.adj) det.push((pcts.adj>0?'+':'')+pcts.adj.toLocaleString('fr-FR')+' €'+(l.adjMotif?' ('+l.adjMotif+')':''));
+        if(l.note) det.push(l.note);
+        var lv=(typeof lotValue==='function')?lotValue(l):null;
+        var loyA=(parseFloat(l.loyer)||0)*12; totLL+=loyA;
+        if(lv){ totLV+=lv.v; } else { allLV=false; }
+        var rdt=(lv&&loyA)?(loyA/lv.v*100):null;
+        return '<tr><td>Lot '+(i+1)+' — '+escH(l.type)+(l.etage?' · '+escH(l.etage):'')+(det.length?'<br><span style="color:#8A8272;font-size:8.6px">'+escH(det.join(' · '))+'</span>':'')+'</td>'+
+          '<td>'+l.surf+' m² · '+escH(l.etat||'')+'</td>'+
+          '<td>'+(lv?lv.v.toLocaleString('fr-FR')+' €':'—')+(lv?'<br><span style="color:#8A8272;font-size:8.2px">'+escH(lv.src)+'</span>':'')+'</td>'+
+          '<td>'+(l.loyer?parseFloat(l.loyer).toLocaleString('fr-FR')+' €/mois':'—')+(rdt?'<br><span style="color:#2F7D5B;font-weight:700">'+rdt.toFixed(1).replace('.',',')+' %</span>':'<br><span style="color:#8A8272;font-size:8.6px">'+escH(l.occ||'')+'</span>')+'</td></tr>';
       }).join('');
-      /* ============ PAGE 1 — AVIS DE VALEUR (V5, orientée client) ============ */
-      var compl1=(g('fCompl')&&g('fCompl').value.trim())?(' \u00b7 '+g('fCompl').value.trim()):'';
-      var infosCle;
-      if(g('fType').value==='Immeuble' && estLots.length){
-        var _surfT=estLots.reduce(function(a,l){return a+(parseFloat(l.surf)||0);},0);
-        var _loyT=estLots.reduce(function(a,l){return a+(parseFloat(l.loyer)||0);},0);
-        infosCle=['Immeuble \u00b7 '+estLots.length+' lots', _surfT+' m\u00b2 cumul\u00e9s', (_loyT?_loyT.toLocaleString('fr-FR')+' \u20ac/mois de loyers':'')].filter(Boolean).join('  \u00b7  ');
-      } else {
-        infosCle=[g('fType').value, (g('fSurf').value?g('fSurf').value+' m\u00b2 habitables':''), (g('fTerr').value&&g('fTerr').value!=='0'?g('fTerr').value+' m\u00b2 de terrain':''), (g('fPieces').value?g('fPieces').value+' pi\u00e8ces':''), (g('fChambres').value?g('fChambres').value+' chambres':'')].filter(Boolean).join('  \u00b7  ');
+      var immRdtP=(totLV&&totLL)?(totLL/totLV*100):null;
+      lotRows+='<tr class="tot"><td>Immeuble complet — sommation des lots'+(allLV?'':' (partielle)')+'</td><td></td>'+
+        '<td>'+(totLV?totLV.toLocaleString('fr-FR')+' €':'—')+'</td>'+
+        '<td>'+(totLL?Math.round(totLL/12).toLocaleString('fr-FR')+' €/mois':'')+(immRdtP?'<br><span style="color:#2F7D5B;font-weight:700">'+immRdtP.toFixed(1).replace('.',',')+' %</span>':'')+'</td></tr>';
+      blk(20+estLots.length*13,'<table class="dtable"><thead><tr><th>Lot</th><th>Surface · état</th><th>Valeur estimée</th><th>Loyer · rendement</th></tr></thead><tbody>'+lotRows+'</tbody></table>');
+      estLots.forEach(function(l,i){
+        if(Array.isArray(l.photos)&&l.photos.length){
+          blk(9,'<h2>Lot '+(i+1)+' — '+escH(l.type)+(l.etage?' · '+escH(l.etage):'')+' · photos</h2>');
+          for(var pi=0; pi<l.photos.length; pi+=2){
+            var pair=l.photos.slice(pi,pi+2).map(function(p){ return '<div class="dimg m-ph" style="background-image:url('+p+')"></div>'; }).join('');
+            blk(52,'<div class="dpair" style="grid-template-columns:repeat('+Math.min(2,l.photos.length-pi)+',1fr)">'+pair+'</div>');
+          }
+        }
+      });
+    }
+    var loyM=(typeof loyersMensuels==='function')?loyersMensuels():0;
+    if(loyM>0 && recoN){
+      var loyA2=loyM*12, rdt2=loyA2/recoN*100;
+      blk(9,'<h2>Approche locative</h2>');
+      blk(22,'<div class="pmtiles">'+
+        '<div class="pmtile"><small>Loyers mensuels</small><b>'+loyM.toLocaleString('fr-FR')+' €</b></div>'+
+        '<div class="pmtile"><small>Loyers annuels</small><b>'+loyA2.toLocaleString('fr-FR')+' €</b></div>'+
+        '<div class="pmtile"><small>Rendement brut</small><b style="color:#2F7D5B">'+rdt2.toFixed(1).replace('.',',')+' %</b></div>'+
+        '<div class="pmtile"><small>Prix pour 9 %</small><b>'+Math.round(loyA2/0.09/1000)+' k€</b></div></div>');
+      blk(12,'<p class="dnote">Au prix de présentation conseillé, le bien offre un rendement locatif brut de <b>'+rdt2.toFixed(1).replace('.',',')+' %</b>.</p>');
+    }
+    var risks=[].slice.call(document.querySelectorAll('#estimation .risks .risk')).map(function(r){
+      return '<div class="drisk"><b>'+escH(r.querySelector('b').textContent)+'</b><small>'+escH(r.querySelector('small').textContent)+'</small></div>'; }).join('');
+    if(risks){ blk(9,'<h2>Environnement &amp; risques · Géorisques</h2>'); blk(30,'<div class="drisks">'+risks+'</div>'); }
+    if(pairs.length){
+      blk(9,'<h2>Home staging — avant / après</h2>');
+      pairs.forEach(function(p){ blk(56,'<div class="dstaging"><div class="dpair"><figure><figcaption>Avant</figcaption><div class="dimg m-ph" style="background-image:url('+p.before+')"></div></figure><figure><figcaption>Après (home staging)</figcaption><div class="dimg m-ph" style="background-image:url('+p.after+')"></div></figure></div></div>'); });
+    }
+    var galPhotos=photos.slice(3);
+    if(galPhotos.length){
+      blk(9,'<h2>Galerie du bien</h2>');
+      for(var gp=0; gp<galPhotos.length; gp+=2){
+        var pr=galPhotos.slice(gp,gp+2).map(function(p){ return '<div class="dimg m-ph" style="background-image:url('+p+')"></div>'; }).join('');
+        blk(52,'<div class="dpair" style="grid-template-columns:repeat('+Math.min(2,galPhotos.length-gp)+',1fr)">'+pr+'</div>');
       }
-      g('dossier').innerHTML=
-      '<div class="dsheet av">'+
-        '<div class="av-topbar"></div>'+
-        '<div class="av-body">'+
-          '<header class="av-hd">'+
-            '<img class="av-logo" src="/logo-gb-app.png" alt="GB Immobilier">'+
-            '<div class="av-ttl"><h1>AVIS DE VALEUR</h1><div class="av-script">Estimation immobili\u00e8re</div></div>'+
-            '<div class="av-agence"><b>GB Immobilier \u2014 Nevers</b><span>26 Avenue Pierre B\u00e9r\u00e9govoy \u00b7 58000 Nevers</span><span>03 86 61 14 15 \u00b7 nevers@gbinimmobilier.net</span></div>'+
-          '</header>'+
-          '<div class="av-meta"><span>\u00c9tabli \u00e0 Nevers le <b>'+dateStr+'</b></span><span>\u00c0 l\u2019attention de <b>'+cliN+'</b>'+(cliM?' \u00b7 '+cliM:'')+'</span></div>'+
-          '<div class="av-addr"><b>'+adresse+compl1+'</b><small>'+villeAff+(infosCle?'  \u2014  '+infosCle:'')+'</small></div>'+
-          '<div class="av-result">'+
-            '<div class="r"><small>Valeur basse</small><b>'+low+'</b></div>'+
-            '<div class="r main"><small>Prix de pr\u00e9sentation conseill\u00e9</small><b>'+reco+'</b><span>'+pm2+'</span></div>'+
-            '<div class="r"><small>Valeur haute</small><b>'+high+'</b></div>'+
-          '</div>'+
-          (cover?'<div class="av-cover" style="background-image:url('+cover+')"></div>':'')+
-          '<div class="av-cols">'+
-            '<div class="av-col">'+
-              '<div class="av-sec"><h3>Mission</h3>'+
-                '<p>Cet avis de valeur est r\u00e9alis\u00e9 \u00e0 la demande de '+cliN+' afin de d\u00e9terminer la valeur v\u00e9nale de ce bien. Cette indication de prix ne peut \u00eatre assimil\u00e9e \u00e0 une expertise et ne peut engager la responsabilit\u00e9 de l\'agence.</p></div>'+
-              '<div class="av-sec"><h3>Visite des lieux</h3>'+
-                '<p>La visite des lieux a \u00e9t\u00e9 effectu\u00e9e le '+dateStr+' par Jimmy Garcia, conseiller immobilier.</p></div>'+
-              '<div class="av-sec"><h3>Descriptif du bien</h3>'+specs+'</div>'+
-            '</div>'+
-            '<div class="av-col">'+
-              '<div class="av-sec"><h3>Conclusions</h3>'+
-                '<p>Compte tenu du march\u00e9 immobilier actuel et sous r\u00e9serve du r\u00e9sultat des diagnostics obligatoires ou des examens plus approfondis (certificat d\'urbanisme, titre de propri\u00e9t\u00e9, etc.) permettant de d\u00e9celer servitude ou engagement contractuel, la valeur v\u00e9nale de votre bien est comprise entre <b>'+low+'</b> et <b>'+high+'</b>.</p></div>'+
-              '<div class="av-crit"><h3>Crit\u00e8res pris en compte</h3>'+
-                '<p>Cette estimation tient compte de la situation g\u00e9ographique et de l\'environnement, de l\'anciennet\u00e9, de la v\u00e9tust\u00e9 et de l\'\u00e9tat des diff\u00e9rents corps d\'\u00e9tat composant le b\u00e2timent, des \u00e9l\u00e9ments de confort et d\'\u00e9quipement, ainsi que des tendances du march\u00e9 immobilier de la ville de '+villeMaj+' et du d\u00e9partement de la Ni\u00e8vre. Le d\u00e9tail complet du calcul figure en annexe.</p></div>'+
-            '</div>'+
-          '</div>'+
+    }
+    if(descClamped){
+      blk(9,'<h2>Description complète du bien</h2>');
+      blk(Math.min(80,10+Math.ceil(descV.length/95)*4),'<p class="darg">'+escH(descV).replace(/\n/g,'<br>')+'</p>');
+    }
+    var CAPX=225;
+    var sheetsArr=[], usedArr=[];
+    blocks.forEach(function(b){
+      if(!sheetsArr.length || usedArr[usedArr.length-1]+b.h>CAPX){ sheetsArr.push([]); usedArr.push(0); }
+      sheetsArr[sheetsArr.length-1].push(b.html); usedArr[usedArr.length-1]+=b.h;
+    });
+    var K=sheetsArr.length;
+    var TOT=6+K;
+
+    /* ---- page 2 · démarche + sommaire (numéros calculés) ---- */
+    var somRows=[
+      ['01','Notre démarche','Méthode, engagements et déroulé de l\'étude','02'],
+      ['02','Votre bien','Caractéristiques, atouts et photographies','03'],
+      ['03','Le marché','Tendances locales et biens comparables','04'],
+      ['04','L\'estimation','Valeur retenue, fourchette et ajustements','05']
+    ];
+    if(K) somRows.push(['05','Annexes &amp; détails','Comparables, lots, risques et galerie','06']);
+    somRows.push([K?'06':'05','Et maintenant ?','Stratégie de mise en vente et contacts',('0'+TOT).slice(-2)]);
+    var somHtml='<div class="m-som"><h4>Sommaire</h4>'+somRows.map(function(r){
+      return '<div class="m-somrow"><span class="n">'+r[0]+'</span><div class="t"><b>'+r[1]+'</b><span>'+r[2]+'</span></div><span class="p">p. '+r[3]+'</span></div>'; }).join('')+'</div>';
+    var icM=function(p){ return '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>'; };
+    var demarcheBody=eyebrow('01','Notre démarche')+
+      '<h1 class="m-h1">La justesse d\'un prix,<br><i>l\'art de la méthode</i></h1>'+
+      '<div class="m-two"><div>'+
+        '<p class="m-p">Estimer un bien, c\'est bien plus qu\'avancer un chiffre. C\'est comprendre une histoire, mesurer un emplacement, lire un marché. Ce rapport a été établi à la suite de l\'étude de votre propriété, sur la base d\'une analyse détaillée de ses caractéristiques, des transactions récentes observées dans votre secteur (données notariées DVF) et des dynamiques actuelles du marché.</p>'+
+        '<p class="m-p">Notre engagement : vous remettre une évaluation sincère, argumentée et exploitable — celle qui permet de vendre dans les meilleures conditions, au juste prix et dans des délais maîtrisés.</p>'+
+        '<div class="m-quote">« Un bien bien estimé est un bien déjà à moitié vendu. »</div>'+
+      '</div>'+somHtml+'</div>'+
+      '<div class="m-3cards">'+
+        '<div>'+icM('<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>')+'<b>Visite &amp; analyse</b><p>Étude approfondie du bien : surfaces, état, prestations, environnement immédiat.</p></div>'+
+        '<div>'+icM('<path d="M4 20h16"/><path d="M6 16v4M10 12v8M14 14v6M18 8v12"/>')+'<b>Étude du marché</b><p>Ventes réelles enregistrées, tendances du secteur et positionnement au m².</p></div>'+
+        '<div>'+icM('<path d="M12 3l7 6-7 12L5 9z"/><path d="M5 9h14"/>')+'<b>Valorisation</b><p>Croisement des méthodes, ajustements précis et conclusion de valeur argumentée.</p></div>'+
+      '</div>'+
+      '<div class="m-signrow"><div class="nm"><b>Jimmy Garcia</b><span>Conseiller immobilier — Nevers &amp; Nièvre</span></div>'+
+      '<div style="font-size:7.4px;letter-spacing:.2em;color:#9a917f;text-transform:uppercase">Rapport établi le '+dateStr+'</div></div>';
+
+    /* ---- page finale · et maintenant ---- */
+    var finBody=eyebrow(K?'06':'05','Et maintenant ?')+
+      '<h1 class="m-h1">De l\'estimation <i>à la vente réussie</i></h1>'+
+      '<div class="m-steps">'+
+        '<div class="m-step"><div class="num"><i>1</i></div><b>Stratégie &amp; mandat</b><p>Définition ensemble du prix de présentation, du calendrier et de la stratégie de commercialisation adaptée à vos objectifs.</p></div>'+
+        '<div class="m-step"><div class="num"><i>2</i></div><b>Mise en valeur</b><p>Reportage photographique, home staging virtuel et dossier de vente complet pour présenter votre bien sous son meilleur jour.</p></div>'+
+        '<div class="m-step"><div class="num"><i>3</i></div><b>Commercialisation</b><p>Diffusion ciblée, visites qualifiées et accompagnées, négociation et suivi jusqu\'à la signature de l\'acte authentique.</p></div>'+
+      '</div>'+
+      '<div class="m-contact">'+
+        '<div class="lg"><img src="/logo-gb-app.png" alt=""><b>GB IMMOBILIER</b><span>Nevers</span></div>'+
+        '<div class="inf"><h3>Parlons de votre projet.</h3>'+
+          '<div class="m-crow"><small>Votre conseiller</small><b>Jimmy Garcia</b></div>'+
+          '<div class="m-crow"><small>Téléphone</small><b class="gold">06 78 86 56 12</b></div>'+
+          '<div class="m-crow"><small>E-mail</small><b>garciaj@gbimmobilier.net</b></div>'+
+          '<div class="m-crow"><small>Agence</small><b>26 Avenue Pierre Bérégovoy · 58000 Nevers · 03 86 61 14 15</b></div>'+
         '</div>'+
-        '<div class="pgnum">GB Immobilier \u2014 Avis de valeur \u00b7 page 1</div>'+
-      '</div>'+ annexHtml;
+        '<div class="sg"><div class="av-sign" style="color:#EDE6D4">Jimmy Garcia<small style="color:#9A917C">Conseiller immobilier</small></div></div>'+
+      '</div>'+
+      '<div class="m-svc"><span><i></i>Avis de valeur</span><span><i></i>Photographie</span><span><i></i>Home staging</span><span><i></i>Visites accompagnées</span><span><i></i>Négociation</span><span><i></i>Suivi jusqu\'à l\'acte</span></div>'+
+      '<p class="m-legal">Vous remerciant de la confiance que vous voulez bien nous témoigner et restant à votre disposition pour participer à la négociation de votre bien, recevez, Madame, Monsieur, l\'expression de mes sentiments dévoués.<br>'+
+      'Cet avis de valeur est établi à titre indicatif — il ne peut en aucun cas se substituer à une expertise et ne constitue ni un engagement d\'achat ou de vente. Estimation offerte, sans engagement. '+
+      'Siren 6718 417 RCS Nevers · Cartes Transaction N°113 et Gestion N°112 · Caisse de Garantie de l\'Immobilier FNAIM, 89 rue de la Boétie — 75008 Paris.</p>';
 
-
-
+    /* ---- assemblage ---- */
+    var pagesHtml=coverHtml+
+      page(demarcheBody,2,TOT)+
+      page(bienBody,3,TOT)+
+      page(marcheBody,4,TOT)+
+      page(estimBody,5,TOT);
+    sheetsArr.forEach(function(parts,i){
+      var head=(i===0)?(eyebrow('05','Annexes')+'<h1 class="m-h1">Analyse <i>détaillée</i></h1>'):'';
+      pagesHtml+=page(head+parts.join(''),6+i,TOT);
+    });
+    pagesHtml+=page(finBody,TOT,TOT);
+    g('dossier').innerHTML=pagesHtml;
   }
   document.getElementById('genBtn').addEventListener('click',function(){
     var b=this;var old=b.innerHTML;
