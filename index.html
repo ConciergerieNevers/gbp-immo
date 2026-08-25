@@ -2069,7 +2069,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-172824';
+  var __BUILD='20260825-173310';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2781,10 +2781,42 @@
     {id:'c12',role:'prospect',nom:'Mme Roy',detail:'Porte-à-porte',statut:'À qualifier',budget:null,relance:'il y a 7 j',action:'Envoyer plaquette GBP',couleur:'#b78'},
     {id:'c13',role:'prospect',nom:'SCI Vauban',detail:'Réseau',statut:'Chaud',budget:null,relance:'il y a 2 j',action:'Proposer estimation loc.',couleur:'#a86'}
   ];
+  function biensForContact(c){
+    if(!c || !c.nom) return [];
+    var nom=c.nom.trim().toLowerCase(), det=(c.detail||'').trim().toLowerCase();
+    return (biens||[]).filter(function(b){
+      if(!b) return false;
+      var ad=(b.ad||'').toLowerCase(), ow=(b.owner||'').toLowerCase();
+      if(ow.length>=3 && nom.length>=3 && (ow.indexOf(nom)>-1 || nom.indexOf(ow)>-1)) return true;
+      if(det.length>=5 && ad.length>=5 && (det.indexOf(ad)>-1 || ad.indexOf(det)>-1)) return true;
+      return false;
+    });
+  }
+  // état d'avancement réel d'un bien (étape saisie, sinon statut du mandat)
+  function etatBien(b){
+    var s=(typeof loadSuivi==='function')?loadSuivi(b):{};
+    var e=(typeof etapeCourante==='function'?etapeCourante(b):'')||s.etape||'';
+    if(e) return e;
+    return b.st||'';
+  }
+  function etatCls(lbl){
+    if(/vendu|actée|acte/i.test(lbl)) return 'good';
+    if(/compromis|offre acceptée/i.test(lbl)) return 'warn';
+    if(/offre reçue|visites/i.test(lbl)) return 'crit';
+    return 'info';
+  }
   function contactTag(c){
     if(c.role==='acquereur') return '<b class="tnum" style="font-size:14px">'+(c.budget?euro(c.budget):'—')+'</b>';
+    // priorité au VRAI état des biens du client (un badge par bien)
+    var bs=biensForContact(c);
+    if(bs.length){
+      return '<span style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">'+bs.slice(0,3).map(function(b){
+        var lbl=etatBien(b)||'En cours';
+        return '<span class="pill '+etatCls(lbl)+'" title="'+escH(b.ad||'')+'">'+escH(lbl)+'</span>';
+      }).join('')+(bs.length>3?'<span class="pill">+'+(bs.length-3)+'</span>':'')+'</span>';
+    }
     var st=c.statut||''; var cls={'Exclusif':'info','Mandat exclusif':'info','Compromis':'warn','Vendu':'good','Chaud':'crit','Tiède':'warn'}[st]||'';
-    return '<span class="pill '+cls+'">'+escH(st)+'</span>';
+    return st?'<span class="pill '+cls+'">'+escH(st)+'</span>':'';
   }
   var crmTab='vendeurs';
   function renderCrm(tab){
@@ -2976,18 +3008,11 @@
     var box=document.getElementById('cliBiens'); if(!box) return;
     box.innerHTML='';
     if(!c || !c.nom) return;
-    var nom=c.nom.trim().toLowerCase(), det=(c.detail||'').trim().toLowerCase();
-    var linked=(biens||[]).filter(function(b){
-      if(!b) return false;
-      var ad=(b.ad||'').toLowerCase(), ow=(b.owner||'').toLowerCase();
-      if(ow.length>=3 && nom.length>=3 && (ow.indexOf(nom)>-1 || nom.indexOf(ow)>-1)) return true;   // par propriétaire (noms ≥ 3 car.)
-      if(det.length>=5 && ad.length>=5 && (det.indexOf(ad)>-1 || ad.indexOf(det)>-1)) return true;   // par adresse (champ Détail)
-      return false;
-    });
+    var linked=biensForContact(c);
     if(!linked.length) return;
     box.innerHTML='<div class="restyle-sub">Biens liés ('+linked.length+')</div>'+linked.map(function(b){
       var i=biens.indexOf(b);
-      return '<div class="cadjrow clibien" data-bi="'+i+'" data-ad="'+escH(b.ad||'')+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">🏠 '+escH(b.ad||'—')+' · '+escH(b.st||'')+'</span><b class="tnum" style="color:var(--accent)">'+(b.px?b.px.toLocaleString('fr-FR')+' €':'—')+'</b></div>';
+      return '<div class="cadjrow clibien" data-bi="'+i+'" data-ad="'+escH(b.ad||'')+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">🏠 '+escH(b.ad||'—')+' · <span class="pill '+etatCls(etatBien(b))+'">'+escH(etatBien(b)||'—')+'</span></span><b class="tnum" style="color:var(--accent)">'+(b.px?b.px.toLocaleString('fr-FR')+' €':'—')+'</b></div>';
     }).join('');
     box.querySelectorAll('.clibien').forEach(function(el){
       el.addEventListener('click',function(){
@@ -5801,6 +5826,7 @@
         var f=document.querySelector('#bienChips .chip.on');
         renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
         if(typeof updateKpis==='function') updateKpis();
+        if(typeof renderCrm==='function') try{ renderCrm(); }catch(e2){}   // les badges d'état du CRM suivent les biens
       }
     }catch(e){ console.warn('[ESTIMAKE] Supabase indisponible → données de démonstration', e); }
   }
