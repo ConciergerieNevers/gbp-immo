@@ -91,6 +91,7 @@
     background:var(--rail); color:var(--rail-ink); display:flex; flex-direction:column;
     padding:22px 16px; position:sticky; top:0; height:100vh; gap:4px;
   }
+  .tb-logo{width:40px;height:40px;border-radius:10px;object-fit:cover;flex:none;margin-right:12px;box-shadow:var(--shadow)}
   .brandmark{display:flex; align-items:center; gap:11px; padding:6px 8px 20px}
   .brandmark .logo{
     width:38px;height:38px;border-radius:11px;flex:none;
@@ -915,6 +916,155 @@
   .pmpoi .poi b{color:#111;font-weight:600}
   #dMapSlot .dmapimg{width:100%;height:58mm;border-radius:3mm;border:.25mm solid var(--hair);margin-top:3mm;background-size:cover;background-position:center}
   .pgnum{position:absolute;bottom:3.4mm;left:0;right:0;text-align:center;font-size:6.2px;letter-spacing:.34em;color:#BBB;text-transform:uppercase}
+  /* ============ CHARTE V6 — « MODÈLE À PRENDRE » (crème · noir · or) ============ */
+  #dossier{--cream:#F8F6F0;--ink2:#161310;--gold:#A8853B;--goldL:#C9A96B;--hair2:#E4DCC9;--sable:#F1EBDD;--vert:#2F7D5B;--rouge:#A33B2E}
+  .mcover,.mpage{width:210mm;height:296mm;background:var(--cream);display:flex;flex-direction:column;overflow:hidden;page-break-after:always;position:relative}
+  /* --- gabarit pages intérieures --- */
+  .m-hd{flex:none;display:flex;align-items:center;gap:3.5mm;margin:8mm 14mm 0;padding-bottom:4mm}
+  .m-hd img{width:9.5mm;height:9.5mm;border-radius:2.2mm;object-fit:cover}
+  .m-hdname{font-size:9px;letter-spacing:.34em;font-weight:600;color:var(--ink2)}
+  .m-hdname span{display:block;font-size:5.6px;letter-spacing:.3em;color:var(--gold);font-weight:600;margin-top:1mm;text-transform:uppercase}
+  .m-ref{margin-left:auto;font-size:6.8px;letter-spacing:.26em;color:#7d715a;font-weight:600}
+  .m-body{flex:1;min-height:0;overflow:hidden;padding:7mm 14mm 3mm}
+  .m-ft{flex:none;display:flex;justify-content:space-between;align-items:center;margin:0 14mm;padding:3mm 0 6mm;border-top:.25mm solid var(--hair2);font-size:6.2px;letter-spacing:.24em;color:#9a917f;text-transform:uppercase}
+  .m-ft b{color:var(--gold);font-weight:600;font-family:var(--serifP);font-size:9px;letter-spacing:.14em}
+  .m-eyebrow{font-size:7.6px;letter-spacing:.3em;color:var(--gold);font-weight:700;text-transform:uppercase;margin-bottom:3.2mm}
+  .m-eyebrow em{font-style:normal;font-family:var(--serifP);font-size:11px;letter-spacing:.12em;margin-right:2.5mm;color:var(--gold)}
+  .m-h1{font-family:var(--serifP);font-size:24px;font-weight:500;color:var(--ink2);letter-spacing:.05em;line-height:1.22;margin:0 0 5mm;text-transform:uppercase}
+  .m-h1 i{font-style:normal;color:var(--gold)}
+  .m-p{font-size:9.6px;line-height:1.78;color:#37301f;margin:0 0 3.4mm}
+  .m-p b{color:var(--ink2)}
+  /* --- couverture --- */
+  .mcover{align-items:center;text-align:center;padding:14mm 16mm 0}
+  .mc-logo{width:16mm;height:16mm;border-radius:3.4mm;object-fit:cover;margin-top:4mm}
+  .mc-name{font-family:var(--serifP);font-size:17px;letter-spacing:.5em;color:var(--ink2);margin-top:4mm;text-indent:.5em}
+  .mc-sub{font-size:6.4px;letter-spacing:.34em;color:var(--gold);font-weight:600;text-transform:uppercase;margin-top:1.8mm}
+  .mc-eyebrow{font-size:6.8px;letter-spacing:.32em;color:#8d8168;font-weight:600;text-transform:uppercase;margin-top:8mm}
+  .mc-title{font-family:var(--serifP);font-size:33px;letter-spacing:.16em;color:var(--ink2);line-height:1.2;margin-top:4mm;text-transform:uppercase;text-indent:.16em}
+  .mc-title i{font-style:normal;color:var(--gold);display:block}
+  .mc-div{display:flex;align-items:center;gap:3mm;margin:6mm auto 7mm;width:52mm}
+  .mc-div:before,.mc-div:after{content:'';flex:1;height:.25mm;background:var(--goldL)}
+  .mc-div i{width:2.2mm;height:2.2mm;background:var(--gold);transform:rotate(45deg);flex:none}
+  .mc-photo{width:158mm;height:76mm;background-size:cover;background-position:center;border:.4mm solid var(--goldL);box-shadow:0 0 0 1.6mm var(--cream), 0 0 0 1.85mm var(--hair2)}
+  .mc-phold{width:158mm;height:76mm;background:linear-gradient(150deg,#1b1712,#0f0d09);border:.4mm solid var(--goldL);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm}
+  .mc-phold img{width:15mm;height:15mm;border-radius:3mm;opacity:.9}
+  .mc-phold span{font-size:6.4px;letter-spacing:.34em;color:#C9A96B;text-transform:uppercase}
+  .mc-line1{font-family:var(--serifP);font-style:italic;font-size:16px;color:var(--ink2);margin-top:7mm}
+  .mc-addr{font-size:8.4px;letter-spacing:.28em;color:var(--gold);font-weight:600;text-transform:uppercase;margin-top:2.6mm}
+  .mc-specs{font-size:7px;letter-spacing:.26em;color:#8d8168;font-weight:500;text-transform:uppercase;margin-top:2mm}
+  .mc-meta{margin-top:auto;width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6mm;border-top:.3mm solid var(--hair2);padding:4.5mm 0 9mm;text-align:left}
+  .mc-meta div:nth-child(2){text-align:center}
+  .mc-meta div:nth-child(3){text-align:right}
+  .mc-meta small{display:block;font-size:6px;letter-spacing:.3em;color:#9a917f;font-weight:600;text-transform:uppercase;margin-bottom:1.8mm}
+  .mc-meta b{font-family:var(--serifP);font-size:12.5px;font-weight:500;color:var(--ink2)}
+  .mc-meta div:nth-child(3) b{color:var(--gold)}
+  /* --- page 2 : démarche + sommaire --- */
+  .m-two{display:grid;grid-template-columns:1.18fr 1fr;gap:9mm}
+  .m-quote{border-left:.7mm solid var(--gold);padding:1.5mm 0 1.5mm 4.5mm;font-family:var(--serifP);font-style:italic;font-size:12.5px;color:#4c4331;margin:4.5mm 0}
+  .m-som h4{font-size:7px;letter-spacing:.3em;color:#7d715a;font-weight:700;text-transform:uppercase;margin:0 0 2mm}
+  .m-somrow{display:flex;align-items:baseline;gap:3.5mm;border-top:.25mm solid var(--hair2);padding:3.2mm 0 2.6mm}
+  .m-somrow .n{font-family:var(--serifP);font-size:11px;color:var(--gold);flex:none;width:6mm}
+  .m-somrow .t{flex:1;min-width:0}
+  .m-somrow .t b{display:block;font-family:var(--serifP);font-size:11.5px;font-weight:600;color:var(--ink2)}
+  .m-somrow .t span{display:block;font-size:6.8px;color:#9a917f;letter-spacing:.06em;margin-top:.8mm}
+  .m-somrow .p{font-size:8px;color:#7d715a;font-family:var(--serifP)}
+  .m-3cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm;margin-top:7mm}
+  .m-3cards>div{background:var(--sable);padding:6mm 5mm;text-align:center}
+  .m-3cards svg{width:7mm;height:7mm;stroke:var(--gold);fill:none;stroke-width:1.6}
+  .m-3cards b{display:block;font-size:7.4px;letter-spacing:.24em;color:var(--ink2);font-weight:700;text-transform:uppercase;margin:2.6mm 0 2mm}
+  .m-3cards p{font-size:7.6px;line-height:1.6;color:#6c6250;margin:0}
+  .m-signrow{display:flex;align-items:flex-end;justify-content:space-between;border-top:.3mm solid var(--hair2);margin-top:8mm;padding-top:5mm}
+  .m-signrow .nm b{display:block;font-family:var(--serifP);font-size:13px;font-weight:700;color:var(--ink2)}
+  .m-signrow .nm span{font-size:6.6px;letter-spacing:.28em;color:var(--gold);font-weight:600;text-transform:uppercase;display:block;margin-top:1.2mm}
+  /* --- page 3 : votre bien --- */
+  .m-photos{display:grid;grid-template-columns:1.55fr 1fr;gap:4.5mm;margin-bottom:5.5mm}
+  .m-photos .big{height:62mm}
+  .m-photos .side{display:grid;grid-template-rows:1fr 1fr;gap:4.5mm}
+  .m-ph{background-size:cover;background-position:center;border:.35mm solid var(--goldL);box-shadow:0 0 0 1.2mm var(--cream),0 0 0 1.45mm var(--hair2)}
+  .m-spectbl{display:grid;grid-template-columns:1fr 1fr;column-gap:10mm}
+  .m-sprow{display:flex;justify-content:space-between;align-items:baseline;border-top:.25mm solid var(--hair2);padding:2.8mm 0 2.4mm}
+  .m-sprow span{font-size:7px;letter-spacing:.22em;color:#7d715a;font-weight:600;text-transform:uppercase}
+  .m-sprow b{font-family:var(--serifP);font-size:11.5px;font-weight:700;color:var(--ink2);text-align:right}
+  .m-chips{display:flex;flex-wrap:wrap;gap:5mm;margin-top:4.5mm;border-top:.3mm solid var(--goldL);padding-top:3.6mm}
+  .m-chips span{font-size:7.2px;letter-spacing:.18em;color:var(--ink2);font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:1.8mm}
+  .m-chips i{width:1.8mm;height:1.8mm;background:var(--gold);transform:rotate(45deg);flex:none}
+  /* --- page 4 : marché --- */
+  .m-tiles{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:.3mm solid var(--hair2);border-bottom:.3mm solid var(--hair2);margin-bottom:6mm}
+  .m-tile{padding:5.5mm 3mm;text-align:center;border-left:.25mm solid var(--hair2)}
+  .m-tile:first-child{border-left:0}
+  .m-tile b{font-family:var(--serifP);font-size:23px;font-weight:500;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .m-tile b em{font-style:normal;font-size:11px;color:var(--gold)}
+  .m-tile small{display:block;font-size:6.2px;letter-spacing:.26em;color:#7d715a;font-weight:600;text-transform:uppercase;margin-top:2mm}
+  .m-lbl{font-size:7px;letter-spacing:.28em;color:var(--gold);font-weight:700;text-transform:uppercase;margin:5mm 0 2.4mm}
+  .m-comp{width:100%;border-collapse:collapse;font-size:8.8px;font-variant-numeric:tabular-nums}
+  .m-comp th{font-size:6.2px;letter-spacing:.22em;color:#7d715a;font-weight:600;text-transform:uppercase;text-align:right;padding:0 2mm 2mm}
+  .m-comp th:first-child,.m-comp td:first-child{text-align:left}
+  .m-comp td{text-align:right;padding:2.5mm 2mm;border-top:.25mm solid var(--hair2);color:#37301f}
+  .m-comp td b{font-family:var(--serifP);font-size:10.5px;color:var(--ink2)}
+  .m-comp tr.hl td{background:#EDE4CF;font-weight:600;color:var(--ink2)}
+  .m-comp tr.hl td b{color:var(--gold)}
+  .m-scale{position:relative;height:14mm;margin:8mm 1mm 2mm}
+  .m-scale .ln{position:absolute;left:0;right:0;top:7mm;height:.3mm;background:#c9bfa6}
+  .m-scale .dot{position:absolute;top:6.2mm;width:1.9mm;height:1.9mm;border-radius:50%;background:#37301f}
+  .m-scale .dia{position:absolute;top:4.9mm;width:4.4mm;height:4.4mm;background:var(--goldL);border:.4mm solid var(--ink2);transform:rotate(45deg);margin-left:-2.2mm}
+  .m-scale .you{position:absolute;top:0;transform:translateX(-50%);font-size:6.4px;letter-spacing:.22em;color:var(--ink2);font-weight:700;white-space:nowrap}
+  .m-scale .lo,.m-scale .hi{position:absolute;top:9.6mm;font-size:7.4px;color:#7d715a}
+  .m-scale .hi{right:0}
+  .m-env{display:grid;grid-template-columns:1fr 1.15fr;gap:7mm;align-items:start}
+  .m-envrow{display:flex;justify-content:space-between;border-top:.25mm solid var(--hair2);padding:2.6mm 0 2.2mm;font-size:8.6px;color:#37301f}
+  .m-envrow b{font-family:var(--serifP);font-size:10px;color:var(--gold);font-weight:600}
+  .m-env .dmapimg{height:52mm!important;margin-top:0!important;border:.35mm solid var(--goldL)!important;border-radius:0!important}
+  /* --- page 5 : estimation --- */
+  .m-dark{background:linear-gradient(155deg,#1e1a13,#0d0b08);padding:9mm 11mm 8mm;text-align:center;color:#EDE6D4;margin-bottom:6mm}
+  .m-dark .lb1{font-size:6.6px;letter-spacing:.34em;color:#9A917C;font-weight:600;text-transform:uppercase}
+  .m-dark .px{font-family:var(--serifP);font-size:39px;color:#D9B96A;margin:3mm 0 1mm;font-variant-numeric:tabular-nums}
+  .m-dark .pm{font-family:var(--serifP);font-style:italic;font-size:11px;color:#BFB49B}
+  .m-dark .lb2{font-size:6.2px;letter-spacing:.3em;color:#9A917C;font-weight:600;text-transform:uppercase;margin-top:5.5mm}
+  .m-gauge{position:relative;height:5mm;margin:3.5mm 2mm 4mm}
+  .m-gauge .tr{position:absolute;left:0;right:0;top:2.2mm;height:.6mm;background:rgba(255,255,255,.18)}
+  .m-gauge .fi{position:absolute;left:0;top:2.2mm;height:.6mm;background:linear-gradient(90deg,#8a6d33,#D9B96A)}
+  .m-gauge .dia{position:absolute;top:0;width:4.6mm;height:4.6mm;background:#D9B96A;border:.45mm solid #0d0b08;transform:rotate(45deg);margin-left:-2.3mm;box-shadow:0 0 0 .3mm #D9B96A}
+  .m-fourch{display:flex;justify-content:space-between;text-align:left}
+  .m-fourch div:last-child{text-align:right}
+  .m-fourch small{display:block;font-size:6px;letter-spacing:.28em;color:#9A917C;font-weight:600;text-transform:uppercase;margin-bottom:1.6mm}
+  .m-fourch b{font-family:var(--serifP);font-size:16px;color:#EDE6D4;font-weight:500}
+  .m-fourch i{display:block;font-style:normal;font-size:6.8px;color:#8d8168;margin-top:1mm}
+  .m-adj{display:grid;grid-template-columns:1fr 1fr;gap:5.5mm;margin-bottom:6mm}
+  .m-adjcard{background:var(--sable);padding:4.5mm 5.5mm 3mm}
+  .m-adjcard h5{font-size:7px;letter-spacing:.26em;font-weight:700;text-transform:uppercase;margin:0 0 1.5mm}
+  .m-adjcard.v h5{color:var(--vert)} .m-adjcard.m h5{color:var(--rouge)}
+  .m-adjrow{display:flex;justify-content:space-between;align-items:baseline;gap:4mm;border-top:.25mm solid #E0D6BE;padding:2.4mm 0 2mm;font-size:8.4px;color:#37301f}
+  .m-adjrow:first-of-type{border-top:0}
+  .m-adjrow b{font-family:var(--serifP);font-size:10.5px;white-space:nowrap}
+  .m-adjcard.v .m-adjrow b{color:var(--vert)} .m-adjcard.m .m-adjrow b{color:var(--rouge)}
+  .m-meth{display:grid;grid-template-columns:1fr 1fr;gap:7mm;border-top:.3mm solid var(--hair2);padding-top:4.5mm}
+  .m-meth p{font-size:7.8px;line-height:1.7;color:#6c6250;margin:0}
+  /* --- page finale --- */
+  .m-steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6mm;margin:2mm 0 8mm;text-align:center}
+  .m-step .num{width:7mm;height:7mm;border:.35mm solid var(--gold);transform:rotate(45deg);margin:0 auto 3.5mm;display:grid;place-items:center}
+  .m-step .num i{transform:rotate(-45deg);font-style:normal;font-family:var(--serifP);font-size:10px;color:var(--gold)}
+  .m-step b{display:block;font-size:7.4px;letter-spacing:.24em;color:var(--ink2);font-weight:700;text-transform:uppercase;margin-bottom:2mm}
+  .m-step p{font-size:7.6px;line-height:1.62;color:#6c6250;margin:0}
+  .m-contact{background:linear-gradient(155deg,#1e1a13,#0d0b08);display:flex;align-items:center;gap:8mm;padding:8mm 10mm;margin-bottom:5mm}
+  .m-contact .lg{text-align:center;flex:none;border-right:.25mm solid rgba(255,255,255,.2);padding-right:8mm}
+  .m-contact .lg img{width:15mm;height:15mm;border-radius:3.2mm}
+  .m-contact .lg b{display:block;font-family:var(--serifP);font-size:11px;letter-spacing:.4em;color:#EDE6D4;margin-top:2.5mm;text-indent:.4em}
+  .m-contact .lg span{display:block;font-size:5.4px;letter-spacing:.28em;color:#C9A96B;text-transform:uppercase;margin-top:1mm}
+  .m-contact .inf{flex:1;min-width:0}
+  .m-contact .inf h3{font-family:var(--serifP);font-size:16px;font-weight:500;color:#EDE6D4;margin:0 0 3.5mm}
+  .m-crow{display:flex;gap:5mm;align-items:baseline;margin-top:2mm}
+  .m-crow small{flex:0 0 22mm;font-size:5.8px;letter-spacing:.26em;color:#9A917C;font-weight:600;text-transform:uppercase}
+  .m-crow b{font-family:var(--serifP);font-size:11.5px;color:#EDE6D4;font-weight:500}
+  .m-crow b.gold{color:#D9B96A}
+  .m-contact .sg{flex:none;text-align:center}
+  .m-svc{display:flex;flex-wrap:wrap;gap:3mm 6mm;margin:4mm 0}
+  .m-svc span{font-size:6.6px;letter-spacing:.2em;color:#4c4331;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:1.8mm}
+  .m-svc i{width:1.7mm;height:1.7mm;background:var(--gold);transform:rotate(45deg);flex:none}
+  .m-legal{font-size:5.9px;line-height:1.65;color:#9a917f;margin-top:2mm}
+  /* annexes sur fond crème */
+  .mpage #dossier-h2, .mpage h2{color:var(--gold)!important;border-bottom-color:var(--hair2)!important}
+  .mpage .dtable td{border-top-color:var(--hair2)}
+  .mpage .pmtile,.mpage .dnote,.mpage .pmpoi .poi,.mpage .drisk{background:var(--sable);border-color:#E6DCC4}
 </style>
 </head>
 <body>
@@ -945,13 +1095,13 @@
       <img class="logo-gb-rail" src="/logo-gb-blanc.png" alt="GB Immobilier">
       <span class="wm-est">ESTIMAKE</span>
     </div>
-    <button class="navitem active" data-go="estimation">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-4 6 4v11"/><path d="M9.5 13h5M9.5 16.5h5"/></svg>
-      Estimation
-    </button>
-    <button class="navitem" data-go="cockpit">
+    <button class="navitem active" data-go="cockpit">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
       Cockpit
+    </button>
+    <button class="navitem" data-go="estimation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-4 6 4v11"/><path d="M9.5 13h5M9.5 16.5h5"/></svg>
+      Estimation
     </button>
     <button class="navitem" data-go="crm">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.6c2 .7 3.5 2.6 3.5 5.4"/></svg>
@@ -974,6 +1124,7 @@
   <!-- ======== MAIN ======== -->
   <div class="main">
     <div class="topbar">
+      <img class="tb-logo" src="/logo-gb-app.png" alt="GB Immobilier">
       <div>
         <h1 id="pgTitle">Cockpit</h1>
         <div class="sub" id="pgSub">Lundi 11 août 2026 · vue du mois</div>
@@ -1008,7 +1159,11 @@
 
       <!-- ============ COCKPIT ============ -->
       <section class="screen" id="cockpit">
-        <div class="sectitle"><h2>Mon activité</h2><div class="grow"></div>
+        <div class="sectitle"><h2>Ma journée &amp; à faire</h2><div class="grow"></div>
+          <button class="btn pri" id="addTaskBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Tâche</span></button></div>
+        <div class="card pad" id="todayCard"><div class="estimempty">Chargement…</div></div>
+
+        <div class="sectitle" style="margin-top:22px"><h2>Mon activité</h2><div class="grow"></div>
           <button class="btn pri" id="addVenteBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Vente</span></button></div>
         <div class="ckbar">
           <div class="ag-seg" id="ckMode">
@@ -1066,9 +1221,6 @@
           </div>
         </div>
 
-        <div class="sectitle"><h2>Ma journée &amp; à faire</h2><div class="grow"></div>
-          <button class="btn pri" id="addTaskBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Tâche</span></button></div>
-        <div class="card pad" id="todayCard"><div class="estimempty">Chargement…</div></div>
       </section>
 
       <!-- ============ BIENS ============ -->
@@ -1418,7 +1570,9 @@
           <button class="btn pri" id="addRdvBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Nouveau RDV</span></button>
         </div>
         <div id="agendaList"></div>
-        <div class="sectitle" style="margin-top:24px"><h2>✅ To-do</h2><div class="grow"></div><span class="eyebrow" id="todoCount"></span></div>
+        <div class="sectitle" style="margin-top:24px"><h2>✅ To-do</h2>
+          <button class="iconbtn" id="todoAddBtn" type="button" title="Nouvelle tâche" aria-label="Nouvelle tâche" style="margin-left:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="grow"></div><span class="eyebrow" id="todoCount"></span></div>
         <div class="subtabs" id="todoTabs" style="margin-bottom:10px">
           <button class="subtab on" data-tt="afaire" type="button">À faire</button>
           <button class="subtab" data-tt="faites" type="button">Réalisées</button>
@@ -1434,8 +1588,8 @@
       <div class="sp-reco" style="text-align:right"><small>Prix conseillé</small><b id="spReco">199 000 €</b></div>
     </div>
     <nav class="mobnav" id="mobnav">
-      <button class="active" data-go="estimation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V9l6-4 6 4v11M9.5 13h5"/></svg>Estimer</button>
-      <button data-go="cockpit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Cockpit</button>
+      <button class="active" data-go="cockpit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Cockpit</button>
+      <button data-go="estimation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V9l6-4 6 4v11M9.5 13h5"/></svg>Estimer</button>
       <button data-go="crm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/></svg>Contacts</button>
       <button data-go="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Agenda</button>
     </nav>
@@ -1842,7 +1996,7 @@
     window.scrollTo(0,0);
   }
   document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
-  go('estimation');   // écran d'accueil = Estimation (premier menu)
+  go('cockpit');   // écran d'accueil = Cockpit (premier menu)
 
   /* ---------- biens data ---------- */
   var dpeColors={A:'#2C9F5B',B:'#5AB84F',C:'#A9C93E',D:'#F1C40F',E:'#E88A2E',F:'#E15A2B',G:'#D33A2C'};
@@ -2387,7 +2541,7 @@
   var TYPEHEX={Estimation:'#3C6E8F',Visite:'#B07C1E',Signature:'#2F7D5B',Appel:'#7a6b47',Autre:'#8A938C'};
   var MONTHS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   var DOW=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  var agView='mois', agRef=null;
+  var agView='jour', agRef=null;   // vue par défaut : jour
   function isoD(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
   function evsOn(ds){ return agendaData.filter(function(r){return r.date===ds;}).sort(function(a,b){return (a.heure||'99').localeCompare(b.heure||'99');}); }
   function mondayOf(d){ var x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; }
@@ -2443,11 +2597,11 @@
         '<a class="gcal" href="'+gcalUrl(r)+'" target="_blank" rel="noopener" title="Ajouter à Google Agenda" aria-label="Google Agenda">'+gcalSvg+'</a></div>';
     }).join('');
   }
-  document.getElementById('agViews').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; agView=b.dataset.v; renderAgenda(); });
-  function shiftAg(n){ if(agView==='mois') agRef.setMonth(agRef.getMonth()+n); else if(agView==='semaine') agRef.setDate(agRef.getDate()+7*n); else agRef.setDate(agRef.getDate()+n); renderAgenda(); }
+  document.getElementById('agViews').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; agView=b.dataset.v; renderAgenda(); if(typeof renderTodoAgenda==='function') renderTodoAgenda(); });
+  function shiftAg(n){ if(agView==='mois') agRef.setMonth(agRef.getMonth()+n); else if(agView==='semaine') agRef.setDate(agRef.getDate()+7*n); else agRef.setDate(agRef.getDate()+n); renderAgenda(); if(typeof renderTodoAgenda==='function') renderTodoAgenda(); }
   document.getElementById('agPrev').addEventListener('click',function(){ shiftAg(-1); });
   document.getElementById('agNext').addEventListener('click',function(){ shiftAg(1); });
-  document.getElementById('agToday').addEventListener('click',function(){ agRef=new Date(); renderAgenda(); });
+  document.getElementById('agToday').addEventListener('click',function(){ agRef=new Date(); renderAgenda(); if(typeof renderTodoAgenda==='function') renderTodoAgenda(); });
   document.getElementById('agendaList').addEventListener('click',function(e){
     var tk=e.target.closest('[data-task]');
     if(tk){ e.stopPropagation(); var t=tachesData.find(function(x){ return x.id===tk.dataset.task; }); if(t) openTaskForm(t); return; }
@@ -2823,17 +2977,27 @@
       return;
     }
     var today=isoToday(); var in7=new Date(); in7.setDate(in7.getDate()+7); var in7s=isoD(in7);
-    var late=tachesData.filter(function(t){ return t.echeance && t.echeance<today; });
-    var soon=tachesData.filter(function(t){ return t.echeance && t.echeance>=today && t.echeance<=in7s; });
-    var later=tachesData.filter(function(t){ return t.echeance && t.echeance>in7s; });
-    var free=tachesData.filter(function(t){ return !t.echeance; });
-    document.getElementById('todoCount').textContent=tachesData.length?(tachesData.length+' t\u00e2che'+(tachesData.length>1?'s':'')):'';
+    // la To-do suit la p\u00e9riode affich\u00e9e en haut de l'agenda (jour / semaine / mois)
+    var pool=tachesData, perLbl='';
+    if(typeof agView!=='undefined' && agRef){
+      var pFrom, pTo;
+      if(agView==='jour'){ pFrom=isoD(agRef); pTo=pFrom; perLbl='ce jour'; }
+      else if(agView==='semaine'){ var mo=mondayOf(agRef); pFrom=isoD(mo); var su=new Date(mo); su.setDate(mo.getDate()+6); pTo=isoD(su); perLbl='cette semaine'; }
+      else { var m1=new Date(agRef.getFullYear(),agRef.getMonth(),1), m2=new Date(agRef.getFullYear(),agRef.getMonth()+1,0); pFrom=isoD(m1); pTo=isoD(m2); perLbl='ce mois'; }
+      pool=tachesData.filter(function(t){ return !t.echeance || (t.echeance>=pFrom && t.echeance<=pTo) || t.echeance<today; });
+    }
+    var late=pool.filter(function(t){ return t.echeance && t.echeance<today; });
+    var soon=pool.filter(function(t){ return t.echeance && t.echeance>=today && t.echeance<=in7s; });
+    var later=pool.filter(function(t){ return t.echeance && t.echeance>in7s; });
+    var free=pool.filter(function(t){ return !t.echeance; });
+    document.getElementById('todoCount').textContent=pool.length?(pool.length+' t\u00e2che'+(pool.length>1?'s':'')+(perLbl?' \u00b7 '+perLbl:'')):'';
     function grp(nm,arr){ return arr.length?('<div class="restyle-sub">'+nm+' ('+arr.length+')</div>'+arr.map(taskRow).join('')):''; }
     var html=grp('\u26a0\ufe0f En retard',late)+grp('Cette semaine',soon)+grp('Plus tard',later)+grp('Sans \u00e9ch\u00e9ance',free);
-    box.innerHTML=html||'<div class="estimempty">Aucune t\u00e2che \u2014 ajoute-les depuis le Cockpit ou une fiche contact.</div>';
+    box.innerHTML=html||'<div class="estimempty">Aucune t\u00e2che sur la p\u00e9riode \u2014 le \u00ab + \u00bb ci-dessus pour en cr\u00e9er une.</div>';
   }
   (function(){ var tb=document.getElementById('todoTabs'); if(!tb) return;
     tb.addEventListener('click',function(e){ var b=e.target.closest('[data-tt]'); if(!b) return; todoTab=b.dataset.tt; renderTodoAgenda(); }); })();
+  (function(){ var ab=document.getElementById('todoAddBtn'); if(ab) ab.addEventListener('click',function(){ openTaskForm(null); }); })();
   function tasksOn(ds){ return (tachesData||[]).filter(function(t){ return t.echeance===ds; }); }
   var taskModal=document.getElementById('taskModal'), taskForm=document.getElementById('taskForm'), editingTaskId=null;
   function openTaskForm(t, presetLien){
