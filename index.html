@@ -2069,7 +2069,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-171808';
+  var __BUILD='20260825-172429';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2277,10 +2277,10 @@
         '<div style="display:flex;align-items:center;gap:8px"><span class="pill">Réf. '+b.ref+'</span><span class="dpe" style="background:'+dpeColors[b.dpe]+'">DPE '+b.dpe+'</span></div>'+
         '<h2 style="margin-top:10px">'+b.ad+'</h2><div class="town">'+b.tw+' · '+b.ty+'</div>'+
         '<div class="specrow">'+
-          '<div class="specbox"><b class="tnum">'+b.m2+'</b><small>m² habitables</small></div>'+
+          '<div class="specbox"><b class="tnum">'+(b.m2||'—')+'</b><small>m² habitables</small></div>'+
           '<div class="specbox"><b class="tnum">'+(b.terr||'—')+'</b><small>m² terrain</small></div>'+
-          '<div class="specbox"><b class="tnum">'+b.ch+'</b><small>chambres</small></div>'+
-          '<div class="specbox"><b class="tnum">'+b.an+'</b><small>année</small></div></div>'+
+          '<div class="specbox"><b class="tnum">'+(b.ch||'—')+'</b><small>chambres</small></div>'+
+          '<div class="specbox"><b class="tnum">'+(b.an||'—')+'</b><small>année</small></div></div>'+
         '<div class="dsec"><div class="eyebrow">Propriétaire &amp; mandat</div>'+
           '<div class="kv"><span>Vendeur</span><b>'+escH(b.owner||'—')+'</b></div>'+
           '<div class="kv"><span>Type de mandat</span><b>'+escH(b.st||'—')+'</b></div>'+
@@ -2617,7 +2617,7 @@
         // photo choisie dans le formulaire → envoyée maintenant que le bien a un id
         if(bienPhotoPending && savedId){
           var pf=bienPhotoPending; bienPhotoPending=null;
-          await uploadBienPhoto({id:savedId, ad:row.adresse, photo:''}, pf);
+          try{ await uploadBienPhoto({id:savedId, ad:row.adresse, photo:''}, pf); }catch(ep){}
         }
         await syncBiens();
         toast(editingBienId?'Bien modifié ✓':'Bien ajouté ✓');
@@ -2696,23 +2696,49 @@
     };
     reader.readAsDataURL(file);
     if(!sb || !bid){ toast('Photo ajoutée (aperçu). Enregistre d\'abord le bien pour la conserver.'); return; }
+    // la photo est TOUJOURS compressée (photos iPhone = plusieurs Mo, refusées par le Storage)
+    var small=await shrinkImage(file, 1400, 0.78);
+    var url=null;
     try{
-      var ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-      if(['jpg','jpeg','png','webp','heic','heif'].indexOf(ext)<0) ext='jpg';
-      var path=bid+'-'+Date.now()+'.'+ext;   // nom unique : pas de cache figé ni de conflit upsert
-      var up=await sb.storage.from('biens').upload(path, file, {upsert:true, contentType:file.type||'image/jpeg'});
+      var path=bid+'-'+Date.now()+'.jpg';
+      var blob=await (await fetch(small)).blob();
+      var up=await sb.storage.from('biens').upload(path, blob, {upsert:true, contentType:'image/jpeg'});
       if(up.error) throw up.error;
-      var url=sb.storage.from('biens').getPublicUrl(path).data.publicUrl;
+      url=sb.storage.from('biens').getPublicUrl(path).data.publicUrl;
+    }catch(eSt){
+      console.warn('[ESTIMAKE] storage indisponible, repli base', eSt);
+      url=small;   // repli : la photo compressée est stockée directement avec le bien
+    }
+    try{
       var upd=await sb.from('biens').update({photo_url:url}).eq('id', bid).select('id');
       if(upd.error) throw upd.error;
       if(!upd.data || !upd.data.length) throw new Error('bien introuvable ou droits insuffisants');
       b.photo=url;
       toast('Photo enregistrée ✓');
-      await syncBiens();   // la grille et la fiche repartent de la base
+      await syncBiens();
     }catch(e){
-      console.warn('[ESTIMAKE] upload photo', e);
+      console.warn('[ESTIMAKE] photo bien', e);
       if(!authFail(e)) toast('⚠ Photo non enregistrée : '+((e&&e.message)||e));
     }
+  }
+  // redimensionne/compresse une image (fichier → dataURL jpeg)
+  function shrinkImage(file, maxW, q){
+    return new Promise(function(res){
+      var rd=new FileReader();
+      rd.onload=function(ev){
+        var im=new Image();
+        im.onload=function(){
+          var w=im.width, h=im.height;
+          if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+          var c=document.createElement('canvas'); c.width=w; c.height=h;
+          c.getContext('2d').drawImage(im,0,0,w,h);
+          try{ res(c.toDataURL('image/jpeg',q||0.78)); }catch(e){ res(ev.target.result); }
+        };
+        im.onerror=function(){ res(ev.target.result); };
+        im.src=ev.target.result;
+      };
+      rd.readAsDataURL(file);
+    });
   }
   scrim.addEventListener('click',closeDrawer);
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
