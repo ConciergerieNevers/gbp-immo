@@ -2914,10 +2914,13 @@
       lotTot=lotVals.reduce(function(a,lv){ return a+((lv&&lv.v)||0); },0);
       isImm=lotTot>0;
     }
-    var base= isImm ? lotTot : state.baseM2*surf;
-    var pct= isImm ? pctLoc : state.etat+state.dpe+state.terr+pctLoc;
+    // TERRAIN : aucun calcul automatique au m² bâti (les médianes DVF sont des prix bâtis) —
+    // la valeur se construit par ajustements manuels et/ou prix final ✎
+    var isTerr=(document.getElementById('fType').value==='Terrain');
+    var base= isImm ? lotTot : (isTerr ? 0 : state.baseM2*surf);
+    var pct= isImm ? pctLoc : (isTerr ? 0 : state.etat+state.dpe+state.terr+pctLoc);
     var toggPct=0,toggEur=0;
-    if(!isImm){
+    if(!isImm && !isTerr){
       for(var k in state.tgls){if(state.tgls[k]){var el=state.tgls[k];
         if(el.pct)toggPct+=parseFloat(el.pct);if(el.eur)toggEur+=parseFloat(el.eur);}}
       pct+=toggPct;
@@ -2931,12 +2934,15 @@
     if(state.override){ reco=state.override; }
     var flag=document.getElementById('recoFlag'); if(flag) flag.hidden=!state.override;
     var rflag=document.getElementById('rangeFlag'); if(rflag) rflag.hidden=!(state.overLow||state.overHigh);
-    document.getElementById('rLow').textContent=euro(Math.round(low/1000)*1000);
-    document.getElementById('rHigh').textContent=euro(Math.round(high/1000)*1000);
-    document.getElementById('rReco').textContent=euro(reco);
-    document.getElementById('rPm2').textContent='soit '+Math.round(reco/surf).toLocaleString('fr-FR')+' €/m² · marché stable';
+    var noAuto=(isTerr && !state.override && reco<=0);
+    document.getElementById('rLow').textContent=noAuto?'—':euro(Math.round(low/1000)*1000);
+    document.getElementById('rHigh').textContent=noAuto?'—':euro(Math.round(high/1000)*1000);
+    document.getElementById('rReco').textContent=noAuto?'—':euro(reco);
+    document.getElementById('rPm2').textContent=noAuto
+      ? 'terrain : ajoute des ajustements manuels (ex. « Valeur terrain : 45 000 ») ou fixe le prix final ✎'
+      : ('soit '+(surf?Math.round(reco/surf).toLocaleString('fr-FR'):'—')+' €/m² · marché stable');
     // gauge position: reco within [low,high]
-    var pos=Math.max(6,Math.min(94,(reco-low)/(high-low)*100));
+    var pos=(high>low)?Math.max(6,Math.min(94,(reco-low)/(high-low)*100)):50;
     document.getElementById('gaugeMk').style.left=pos+'%';
     // breakdown
     var bd;
@@ -2946,6 +2952,8 @@
         return ['Lot '+(i+1)+' — '+l.type+' · '+l.surf+' m²'+((lv&&lv.v)?'':' (non valorisé)'), (lv&&lv.v)||0, false, 'plain'];
       });
       if(pctLoc) bd.push(['Emplacement ('+(pctLoc>0?'+':'')+pctLoc+' %)',base*pctLoc/100,pctLoc>=0]);
+    } else if(isTerr){
+      bd=[['Terrain — pas de calcul automatique au m² bâti : valeur par ajustements manuels ou prix final',0,false,'plain']];
     } else {
       bd=[['Base marché ('+Math.round(state.baseM2).toLocaleString('fr-FR')+' €/m² × '+surf+' m²)',base,false]];
       if(pctLoc) bd.push(['Emplacement ('+(pctLoc>0?'+':'')+pctLoc+' %)',base*pctLoc/100,pctLoc>=0]);
@@ -2967,7 +2975,7 @@
     }).join('');
     // bandeau prix mobile toujours visible
     var spR=document.getElementById('spRange'), spP=document.getElementById('spReco');
-    if(spR){ spR.textContent=Math.round(low/1000)+' – '+Math.round(high/1000)+' k€'; spP.textContent=euro(reco); }
+    if(spR){ spR.textContent=noAuto?'— k€':(Math.round(low/1000)+' – '+Math.round(high/1000)+' k€'); spP.textContent=noAuto?'—':euro(reco); }
     // rentabilité locative
     var rb=document.getElementById('rentBox');
     if(rb){
