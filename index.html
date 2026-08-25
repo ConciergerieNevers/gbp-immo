@@ -2083,7 +2083,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260825-182040';
+  var B='20260825-182300';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2163,7 +2163,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-182040';
+  var __BUILD='20260825-182300';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2249,7 +2249,7 @@
   // session expirée détectée pendant l'usage → retour à l'écran de connexion avec message clair
   function authFail(err){
     var m=(err&&err.message)||String(err||'');
-    if(!/JWT|expired|401|invalid token|refresh_token|not authenticated/i.test(m)) return false;
+    if(!/jwt expired|invalid jwt|invalid token|refresh_token_not_found|token is expired/i.test(m)) return false;
     // session morte → on désarme tous les « retours fiche » en attente
     try{ contactReturn=null; estimReturn=null; if(typeof updateBackContact==='function') updateBackContact(); }catch(e){}
     try{ if(sb) sb.auth.signOut(); }catch(e){}
@@ -6192,19 +6192,9 @@
     if(!sb){ authgate.classList.remove('show'); syncBiens(); return; }
     try{
       var s=await sb.auth.getSession();
-      if(s.data && s.data.session){
-        // vérifier que la session est encore VALABLE côté serveur (sinon écritures 401 en silence)
-        var u=await sb.auth.getUser();
-        if(u.error){
-          console.warn('[ESTIMAKE] session expirée', u.error);
-          try{ await sb.auth.signOut(); }catch(e2){}
-          authgate.classList.add('show');
-          var ae=document.getElementById('autherr');
-          if(ae){ ae.textContent='Ta session a expiré — reconnecte-toi.'; ae.classList.add('show'); }
-        } else {
-          showApp(s.data.session);
-        }
-      }
+      // on FAIT CONFIANCE à la session locale (persistSession + autoRefreshToken) :
+      // pas de vérification réseau au démarrage, elle déconnectait à tort quand le réseau répondait mal
+      if(s.data && s.data.session){ showApp(s.data.session); }
       else { authgate.classList.add('show'); }
       sb.auth.onAuthStateChange(function(_e,session){
         if(_e==='PASSWORD_RECOVERY'){
