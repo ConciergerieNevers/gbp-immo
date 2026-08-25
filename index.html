@@ -533,6 +533,7 @@
     .stickyprice b{font-size:15px;font-variant-numeric:tabular-nums;color:#fff}
     .stickyprice .sp-reco b{color:var(--accent)}
   }
+  .ckbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
   .kpi-click{cursor:pointer}
   .kpi-click:active{transform:scale(.985)}
   .ventepart{background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:11px 14px;font-size:14px;margin-top:12px;text-align:center}
@@ -1041,6 +1042,23 @@
       <section class="screen" id="cockpit">
         <div class="sectitle"><h2>Mon activité</h2><div class="grow"></div>
           <button class="btn pri" id="addVenteBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Vente</span></button></div>
+        <div class="ckbar">
+          <div class="ag-seg" id="ckMode">
+            <button type="button" data-m="jour">Jour</button>
+            <button type="button" data-m="semaine">Semaine</button>
+            <button type="button" data-m="mois">Mois</button>
+            <button type="button" class="on" data-m="annee">Année</button>
+            <button type="button" data-m="perso">Période</button>
+          </div>
+          <div class="statsnav" style="margin:0">
+            <button type="button" class="iconbtn" id="ckPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <b id="ckLabel"></b>
+            <button type="button" class="iconbtn" id="ckNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+          <div class="statsperso" id="ckPerso" hidden style="margin:0">
+            <input type="date" id="ckFrom"> <span>→</span> <input type="date" id="ckTo">
+          </div>
+        </div>
         <div class="grid kpigrid">
           <div class="card kpi kpi-click" data-stat="ca">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 2.5L21 6"/></svg> CA réalisé · <span id="kCaYear">2026</span></div>
@@ -1620,6 +1638,7 @@
     <div class="modal-hd"><b id="statsTitle">Statistiques</b>
       <button class="modal-x" id="statsX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div class="ag-seg" id="statsMode" style="margin-bottom:11px">
+      <button type="button" data-m="jour">Jour</button>
       <button type="button" data-m="semaine">Semaine</button>
       <button type="button" class="on" data-m="mois">Mois</button>
       <button type="button" data-m="annee">Année</button>
@@ -2746,12 +2765,37 @@
       updateKpis();
     }catch(e){ console.warn('[ESTIMAKE] ventes', e); }
   }
+  var cockState={mode:'annee', ref:new Date()};
+  function ckRange(){
+    var r=new Date(cockState.ref), from, to;
+    if(cockState.mode==='jour'){ from=new Date(r); to=new Date(r); }
+    else if(cockState.mode==='semaine'){ var d=(r.getDay()+6)%7; from=new Date(r); from.setDate(r.getDate()-d); to=new Date(from); to.setDate(from.getDate()+6); }
+    else if(cockState.mode==='annee'){ from=new Date(r.getFullYear(),0,1); to=new Date(r.getFullYear(),11,31); }
+    else if(cockState.mode==='perso'){
+      var f=(document.getElementById('ckFrom')||{}).value, t=(document.getElementById('ckTo')||{}).value;
+      from=f?new Date(f):new Date(2000,0,1); to=t?new Date(t):new Date(2099,11,31);
+    }
+    else { from=new Date(r.getFullYear(),r.getMonth(),1); to=new Date(r.getFullYear(),r.getMonth()+1,0); }
+    from.setHours(0,0,0,0); to.setHours(23,59,59,999);
+    return {from:from,to:to};
+  }
+  function ckLabelTxt(rg){
+    if(cockState.mode==='jour') return cockState.ref.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    if(cockState.mode==='semaine') return rg.from.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' \u2013 '+rg.to.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    if(cockState.mode==='annee') return String(cockState.ref.getFullYear());
+    if(cockState.mode==='perso') return 'P\u00e9riode libre';
+    return cockState.ref.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  }
+  function ckInRange(dstr,rg){ if(!dstr) return false; var d=new Date(dstr); return d>=rg.from && d<=rg.to; }
   function updateKpis(){
+    var rg=ckRange();
+    var lb=document.getElementById('ckLabel'); if(lb) lb.textContent=ckLabelTxt(rg);
+    var cp=document.getElementById('ckPerso'); if(cp) cp.hidden=(cockState.mode!=='perso');
     if(!ventesData.length && !(biens&&biens.length&&biens[0].id)) return;   // aucune vraie donnée → démo
-    var y=new Date().getFullYear();
-    document.getElementById('kCaYear').textContent=y;
-    var actees=ventesData.filter(function(v){ return v.statut==='acte' && String(v.date_vente||v.created_at||'').slice(0,4)==String(y); });
-    var compromis=ventesData.filter(function(v){ return v.statut!=='acte'; });
+    document.getElementById('kCaYear').textContent=ckLabelTxt(rg);
+    var inP=ventesData.filter(function(v){ return ckInRange(v.date_vente||v.created_at,rg); });
+    var actees=inP.filter(function(v){ return v.statut==='acte'; });
+    var compromis=inP.filter(function(v){ return v.statut!=='acte'; });
     var ca=actees.reduce(function(a,v){return a+(v.prix||0);},0);
     var caPrev=compromis.reduce(function(a,v){return a+(v.prix||0);},0);
     var com=actees.reduce(function(a,v){return a+partVente(v);},0);
@@ -2759,14 +2803,40 @@
     document.getElementById('kCaVal').innerHTML=ca.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
     document.getElementById('kCaMeta').textContent=actees.length+' vente'+(actees.length>1?'s':'')+' act\u00e9e'+(actees.length>1?'s':'')+' \u00b7 '+y;
     document.getElementById('kPrevVal').innerHTML=caPrev.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
-    document.getElementById('kPrevMeta').textContent=compromis.length+' compromis en cours';
+    document.getElementById('kPrevMeta').textContent=compromis.length+' compromis sur la p\u00e9riode';
     document.getElementById('kComVal').innerHTML=com.toLocaleString('fr-FR')+' <span class="unit">\u20ac</span>';
     document.getElementById('kComMeta').innerHTML='<span class="pill good dot">act\u00e9es</span> <span style="color:var(--ink-3)">+ '+comPrev.toLocaleString('fr-FR')+' \u20ac \u00e0 venir</span>';
     var actifs=(biens||[]).filter(function(b){ return b.st!=='Vendu'; });
-    var excl=actifs.filter(function(b){ return b.st==='Exclusif'; }).length;
+    var rentres=(biens||[]).filter(function(b){ return b.crea && ckInRange(b.crea,rg); }).length;
     document.getElementById('kMandVal').textContent=actifs.length;
-    document.getElementById('kMandMeta').innerHTML='<span class="pill info">'+excl+' exclusif'+(excl>1?'s':'')+'</span> <span class="pill">'+(actifs.length-excl)+' autres</span>';
+    document.getElementById('kMandMeta').innerHTML='<span class="pill info">'+rentres+' rentr\u00e9'+(rentres>1?'s':'')+' sur la p\u00e9riode</span>';
   }
+  (function(){
+    var m=document.getElementById('ckMode'); if(!m) return;
+    m.addEventListener('click',function(e){
+      var b=e.target.closest('button'); if(!b) return;
+      this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on');
+      cockState.mode=b.dataset.m; updateKpis();
+    });
+    document.getElementById('ckPrev').addEventListener('click',function(){
+      var r=cockState.ref;
+      if(cockState.mode==='jour') r.setDate(r.getDate()-1);
+      else if(cockState.mode==='semaine') r.setDate(r.getDate()-7);
+      else if(cockState.mode==='annee') r.setFullYear(r.getFullYear()-1);
+      else r.setMonth(r.getMonth()-1);
+      updateKpis();
+    });
+    document.getElementById('ckNext').addEventListener('click',function(){
+      var r=cockState.ref;
+      if(cockState.mode==='jour') r.setDate(r.getDate()+1);
+      else if(cockState.mode==='semaine') r.setDate(r.getDate()+7);
+      else if(cockState.mode==='annee') r.setFullYear(r.getFullYear()+1);
+      else r.setMonth(r.getMonth()+1);
+      updateKpis();
+    });
+    ['ckFrom','ckTo'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('change',updateKpis); });
+    updateKpis();
+  })();
   /* --- formulaire vente --- */
   var venteModal=document.getElementById('venteModal'), venteForm=document.getElementById('venteForm'), editingVenteId=null;
   function ventePartPreview(){
@@ -2837,7 +2907,8 @@
   var STAT_TITLES={ca:'CA r\u00e9alis\u00e9', prev:'CA pr\u00e9visionnel', com:'Mes commissions', mand:'Mandats'};
   function statRange(){
     var r=new Date(statState.ref), from, to;
-    if(statState.mode==='semaine'){ var d=(r.getDay()+6)%7; from=new Date(r); from.setDate(r.getDate()-d); to=new Date(from); to.setDate(from.getDate()+6); }
+    if(statState.mode==='jour'){ from=new Date(r); to=new Date(r); }
+    else if(statState.mode==='semaine'){ var d=(r.getDay()+6)%7; from=new Date(r); from.setDate(r.getDate()-d); to=new Date(from); to.setDate(from.getDate()+6); }
     else if(statState.mode==='annee'){ from=new Date(r.getFullYear(),0,1); to=new Date(r.getFullYear(),11,31); }
     else if(statState.mode==='perso'){
       var f=document.getElementById('statsFrom').value, t=document.getElementById('statsTo').value;
@@ -2848,6 +2919,7 @@
     return {from:from, to:to};
   }
   function statLabel(rg){
+    if(statState.mode==='jour') return statState.ref.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
     if(statState.mode==='semaine') return rg.from.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' \u2013 '+rg.to.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
     if(statState.mode==='annee') return String(statState.ref.getFullYear());
     if(statState.mode==='perso') return 'P\u00e9riode libre';
@@ -2890,7 +2962,9 @@
   (function(){
     var modal=document.getElementById('statsModal');
     document.querySelectorAll('.kpi-click').forEach(function(k){
-      k.addEventListener('click',function(){ statState.tab=k.dataset.stat; statState.ref=new Date(); modal.hidden=false; renderStats(); });
+      k.addEventListener('click',function(){ statState.tab=k.dataset.stat; statState.mode=cockState.mode; statState.ref=new Date(cockState.ref);
+        document.querySelectorAll('#statsMode button').forEach(function(x){ x.classList.toggle('on', x.dataset.m===cockState.mode); });
+        modal.hidden=false; renderStats(); });
     });
     document.getElementById('statsX').addEventListener('click',function(){ modal.hidden=true; });
     modal.addEventListener('click',function(e){ if(e.target===modal) modal.hidden=true; });
@@ -2901,14 +2975,16 @@
     });
     document.getElementById('statsPrev').addEventListener('click',function(){
       var r=statState.ref;
-      if(statState.mode==='semaine') r.setDate(r.getDate()-7);
+      if(statState.mode==='jour') r.setDate(r.getDate()-1);
+      else if(statState.mode==='semaine') r.setDate(r.getDate()-7);
       else if(statState.mode==='annee') r.setFullYear(r.getFullYear()-1);
       else r.setMonth(r.getMonth()-1);
       renderStats();
     });
     document.getElementById('statsNext').addEventListener('click',function(){
       var r=statState.ref;
-      if(statState.mode==='semaine') r.setDate(r.getDate()+7);
+      if(statState.mode==='jour') r.setDate(r.getDate()+1);
+      else if(statState.mode==='semaine') r.setDate(r.getDate()+7);
       else if(statState.mode==='annee') r.setFullYear(r.getFullYear()+1);
       else r.setMonth(r.getMonth()+1);
       renderStats();
