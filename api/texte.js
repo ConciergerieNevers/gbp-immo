@@ -27,17 +27,33 @@ export default async function handler(req, res){
   try{
     var body = req.body;
     if(typeof body === 'string'){ try{ body = JSON.parse(body); }catch(e){ body = {}; } }
-    var text = (body && body.text ? String(body.text) : '').trim().slice(0, 4000);
-    if(text.length < 10){ res.status(400).json({ error: 'Texte trop court.' }); return; }
+    var prompt;
+    if(body && body.mode === 'rediger'){
+      // « Aide-moi à rédiger » : Claude rédige la description à partir des données de l'estimation
+      var fiche = JSON.stringify(body.bien || {}).slice(0, 6000);
+      var notes = (body.text ? String(body.text) : '').trim().slice(0, 2000);
+      prompt = 'Tu es un expert immobilier français qui rédige la partie descriptive d\'un AVIS DE VALEUR remis au propriétaire. '+
+        'Voici TOUTES les données de l\'estimation (caractéristiques du bien, équipements, ajustements d\'expertise état/DPE/emplacement, marché local DVF, commodités, lots et loyers éventuels) au format JSON :\n'+fiche+
+        (notes ? ('\n\nNotes/brouillon de l\'agent à intégrer en priorité : '+notes) : '')+
+        '\n\nRédige en français une analyse professionnelle en 2 à 3 paragraphes (150 à 220 mots au total) : '+
+        '① présentation valorisante mais factuelle du bien (type, surfaces, distribution, équipements, année) ; '+
+        '② lecture d\'expert : situation et commodités, état/DPE et leur incidence, dynamique du marché local (médiane au m² et tendance si fournies, sans citer le prix du bien estimé) ; '+
+        '③ pour un immeuble ou un bien loué : lots et potentiel locatif (loyers, rendement si fournis). '+
+        'RÈGLES STRICTES : n\'utilise QUE les informations fournies, n\'invente RIEN (pas d\'équipement, exposition, état, quartier ou travaux non mentionnés) ; ne cite JAMAIS le prix estimé, la fourchette ni la valeur du bien ; ignore les champs vides ou nuls ; ton posé et professionnel, pas de superlatifs publicitaires. '+
+        'Réponds UNIQUEMENT avec le texte, sans titre, sans préambule ni commentaire.';
+    } else {
+      var text = (body && body.text ? String(body.text) : '').trim().slice(0, 4000);
+      if(text.length < 10){ res.status(400).json({ error: 'Texte trop court.' }); return; }
+      prompt = 'Tu es le relecteur d\'une agence immobilière française. Corrige l\'orthographe, la grammaire et la ponctuation du texte suivant, et améliore légèrement la fluidité pour une annonce/avis de valeur professionnel. IMPORTANT : n\'invente AUCUNE information, ne rajoute aucun équipement ni détail qui n\'y figure pas, garde le même contenu et une longueur similaire. Réponds UNIQUEMENT avec le texte corrigé, sans préambule ni commentaire.\n\nTexte :\n' + text;
+    }
 
     var r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',   // rapide et économique pour de la correction
+        model: 'claude-haiku-4-5-20251001',   // rapide et économique
         max_tokens: 1200,
-        messages: [{ role: 'user', content:
-          'Tu es le relecteur d\'une agence immobilière française. Corrige l\'orthographe, la grammaire et la ponctuation du texte suivant, et améliore légèrement la fluidité pour une annonce/avis de valeur professionnel. IMPORTANT : n\'invente AUCUNE information, ne rajoute aucun équipement ni détail qui n\'y figure pas, garde le même contenu et une longueur similaire. Réponds UNIQUEMENT avec le texte corrigé, sans préambule ni commentaire.\n\nTexte :\n' + text }]
+        messages: [{ role: 'user', content: prompt }]
       })
     });
     if(!r.ok){

@@ -1554,9 +1554,14 @@
             </div>
             <label class="mf" style="margin-top:12px"><span>Description du bien (reprise dans l’avis)</span>
               <textarea id="fDesc" class="restyle-notes" rows="4" maxlength="1500" placeholder="Décris le bien avec tes mots — l’IA corrigera les fautes et le style…"></textarea></label>
-            <button type="button" class="btn" id="descFixBtn" style="width:100%;justify-content:center;margin-top:8px">
-              ✨ Corriger &amp; améliorer le texte (IA)
-            </button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <button type="button" class="btn pri" id="descWriteBtn" style="justify-content:center">
+                🖋️ M'aider à rédiger
+              </button>
+              <button type="button" class="btn" id="descFixBtn" style="justify-content:center">
+                ✨ Corriger le texte
+              </button>
+            </div>
             <div class="restyle-msg" id="descMsg" hidden></div>
             <button type="button" class="btn" id="saveEstimBtn" style="width:100%;justify-content:center;margin-top:12px">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
@@ -2000,7 +2005,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-144440';
+  var __BUILD='20260825-144814';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3155,6 +3160,57 @@
         var j=await r.json().catch(function(){return {};});
         if(!r.ok || !j.text){ throw new Error(j.error||('Erreur '+r.status)); }
         ta.value=j.text; toast('Texte corrigé ✓');
+      }catch(e){ msg.textContent='⚠️ '+(e.message||e); msg.hidden=false; }
+      finally{ b.disabled=false; b.textContent=old; }
+    });
+  })();
+  /* ---------- « M'aider à rédiger » : l'IA analyse TOUTE l'estimation et propose un texte d'expert ---------- */
+  (function(){
+    var b=document.getElementById('descWriteBtn'); if(!b) return;
+    var ta=document.getElementById('fDesc'), msg=document.getElementById('descMsg');
+    function collectEstimation(){
+      var g=function(id){ var el=document.getElementById(id); return el?el.value:''; };
+      var chips=Object.keys(state.tgls).filter(function(k){return state.tgls[k];})
+        .map(function(k){ return (state.tgls[k].label||'').replace(/\s*·.*$/,'').trim(); }).filter(Boolean);
+      var mk=window.__market||null;
+      var loyM=(typeof loyersMensuels==='function')?loyersMensuels():0;
+      var recoTxt=(document.getElementById('rReco')||{}).textContent||'';
+      var recoN=parseInt(String(recoTxt).replace(/[^0-9]/g,''),10)||0;
+      return {
+        type:g('fType'),
+        adresse:(document.querySelector('#estimation .addrbox .a')||{}).textContent||'',
+        ville:estVilleTxt||null,
+        complement:g('fCompl')||null,
+        surface_habitable_m2:g('fSurf')||null,
+        terrain_m2:g('fTerr')||null,
+        pieces:g('fPieces')||null, chambres:g('fChambres')||null, salles_de_bain:g('fSdb')||null,
+        annee_construction:g('fAnnee')||null,
+        equipements:chips,
+        expertise:{
+          etat_interieur_pct:state.etat, qualite_dpe_pct:state.dpe, terrain_exposition_pct:state.terr,
+          emplacement_pct:state.loc*10, travaux_a_prevoir_eur:parseFloat(state.trav)||0,
+          ajustements_manuels:(state.custom||[]).map(function(c){return c.n+' : '+c.e+' €';})
+        },
+        marche_local: mk?{ mediane_eur_m2:(mk.annees&&mk.annees.length)?Math.round(mk.annees[mk.annees.length-1].median):null,
+          evolution_1an_pct:mk.evo1, evolution_5ans_pct:mk.evo5 }:(state.baseM2?{mediane_eur_m2:Math.round(state.baseM2)}:null),
+        nb_ventes_comparables:(dvfComps||[]).filter(function(c){return c.sel;}).length||null,
+        commodites:(poiList||[]).slice(0,8).map(function(p){ return p.label+' à '+(p.m>=1000?((p.m/1000).toFixed(1)+' km'):(p.m+' m')); }),
+        loyer_mensuel_eur:loyM||null,
+        rendement_brut_pct:(loyM&&recoN)?Math.round(loyM*12/recoN*1000)/10:null,
+        lots:(estLots||[]).map(function(l){ return { type:l.type, etage:l.etage||null, surface_m2:l.surf,
+          etat:l.etat||null, pieces:l.pieces||null, chambres:l.ch||null, dpe:l.dpe||null,
+          loyer_mensuel_eur:l.loyer||null, occupation:l.occ||null }; })
+      };
+    }
+    b.addEventListener('click',async function(){
+      b.disabled=true; var old=b.textContent; b.textContent='Analyse de l’estimation…'; msg.hidden=true;
+      try{
+        var payload={ mode:'rediger', bien:collectEstimation(), text:ta.value.trim()||null };
+        var r=await fetch('/api/texte',{method:'POST',headers:await aiHeaders(),body:JSON.stringify(payload)});
+        var j=await r.json().catch(function(){return {};});
+        if(!r.ok || !j.text){ throw new Error(j.error||('Erreur '+r.status)); }
+        ta.value=j.text;
+        toast('Texte d’expertise proposé ✓ — relis et ajuste à ta main.');
       }catch(e){ msg.textContent='⚠️ '+(e.message||e); msg.hidden=false; }
       finally{ b.disabled=false; b.textContent=old; }
     });
