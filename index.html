@@ -2033,7 +2033,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-165756';
+  var __BUILD='20260825-170437';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2233,7 +2233,7 @@
     drawer.innerHTML=
       dheadOpen+
         '<button class="dclose" id="dclose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>'+
-        '<label class="dphoto-btn" title="'+(b.photo?'Changer':'Ajouter')+' la photo"><input type="file" accept="image/*" capture="environment" id="dPhotoInput" hidden>'+
+        '<label class="dphoto-btn" title="'+(b.photo?'Changer':'Ajouter')+' la photo"><input type="file" accept="image/*" id="dPhotoInput" hidden>'+
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg></label>'+
         '<div class="status">'+statusPill(b.st)+'</div>'+
         '<div class="price tnum">'+euro(b.px)+'</div></div>'+
@@ -2441,24 +2441,35 @@
   });
   async function uploadBienPhoto(b, file){
     toast('Ajout de la photo…');
-    var reader=new FileReader();          // aperçu local immédiat
-    reader.onload=function(e){ b.photo=e.target.result;
-      var f=document.querySelector('#bienChips .chip.on');
-      renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
-      openDrawer(biens.indexOf(b));
+    var bid=b.id;
+    // aperçu local immédiat, SANS rouvrir le drawer (rouvrir remplaçait l'objet b et perdait l'upload)
+    var reader=new FileReader();
+    reader.onload=function(e){
+      b.photo=e.target.result;
+      var ph=drawer.querySelector('.dhead .ph-img');
+      if(ph){ ph.src=e.target.result; }
+      else { var dh=drawer.querySelector('.dhead'); if(dh){ dh.style.background='#111';
+        dh.insertAdjacentHTML('afterbegin','<img class="ph-img" src="'+e.target.result+'" alt=""><div class="ph-scrim"></div>'); } }
     };
     reader.readAsDataURL(file);
-    if(!sb || !b.id){ toast('Photo ajoutée (aperçu). Active le Storage pour la conserver.'); return; }
+    if(!sb || !bid){ toast('Photo ajoutée (aperçu). Enregistre d\'abord le bien pour la conserver.'); return; }
     try{
       var ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-      var path=b.id+'.'+ext;
-      var up=await sb.storage.from('biens').upload(path, file, {upsert:true, contentType:file.type});
+      if(['jpg','jpeg','png','webp','heic','heif'].indexOf(ext)<0) ext='jpg';
+      var path=bid+'-'+Date.now()+'.'+ext;   // nom unique : pas de cache figé ni de conflit upsert
+      var up=await sb.storage.from('biens').upload(path, file, {upsert:true, contentType:file.type||'image/jpeg'});
       if(up.error) throw up.error;
-      var url=sb.storage.from('biens').getPublicUrl(path).data.publicUrl+'?t='+Date.now();
-      var upd=await sb.from('biens').update({photo_url:url}).eq('id', b.id);
+      var url=sb.storage.from('biens').getPublicUrl(path).data.publicUrl;
+      var upd=await sb.from('biens').update({photo_url:url}).eq('id', bid).select('id');
       if(upd.error) throw upd.error;
-      b.photo=url; toast('Photo enregistrée ✓');
-    }catch(e){ console.warn('[ESTIMAKE] upload photo', e); toast('Storage non configuré — photo en aperçu seulement.'); }
+      if(!upd.data || !upd.data.length) throw new Error('bien introuvable ou droits insuffisants');
+      b.photo=url;
+      toast('Photo enregistrée ✓');
+      await syncBiens();   // la grille et la fiche repartent de la base
+    }catch(e){
+      console.warn('[ESTIMAKE] upload photo', e);
+      if(!authFail(e)) toast('⚠ Photo non enregistrée : '+((e&&e.message)||e));
+    }
   }
   scrim.addEventListener('click',closeDrawer);
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
