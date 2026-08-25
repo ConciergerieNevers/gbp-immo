@@ -2013,6 +2013,17 @@
   });
   function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
     clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('show'); },3400); }
+  // session expirée détectée pendant l'usage → retour à l'écran de connexion avec message clair
+  function authFail(err){
+    var m=(err&&err.message)||String(err||'');
+    if(!/JWT|expired|401|invalid token|refresh_token|not authenticated/i.test(m)) return false;
+    try{ if(sb) sb.auth.signOut(); }catch(e){}
+    if(typeof authgate!=='undefined'&&authgate) authgate.classList.add('show');
+    var ae=document.getElementById('autherr');
+    if(ae){ ae.textContent='Ta session a expiré — reconnecte-toi.'; ae.classList.add('show'); }
+    toast('⚠ Session expirée — reconnecte-toi.');
+    return true;
+  }
 
   /* ---------- navigation ---------- */
   var titles={cockpit:['Cockpit', new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).replace(/^./,function(c){return c.toUpperCase();})],
@@ -3072,8 +3083,8 @@
       taskModal.hidden=true; toast(editingTaskId?'T\u00e2che modifi\u00e9e \u2713':'T\u00e2che ajout\u00e9e \u2713');
       syncTaches();
     }catch(err){
+      if(authFail(err)){ taskModal.hidden=true; return; }
       var msg=(err&&err.message)||String(err);
-      if(/JWT|expired|401|refresh/i.test(msg)) msg='Session expirée — déconnecte-toi (menu profil) puis reconnecte-toi.';
       var el=document.getElementById('taskErr'); el.textContent='Erreur : '+msg; el.classList.add('show');
       toast('⚠ Tâche non enregistrée : '+msg);
     }
@@ -3673,6 +3684,7 @@
   var estVilleTxt=null;      // ville mémorisée (perdue sinon au rechargement d'une estimation)
   async function saveEstimation(){
     if(!sb) { toast('Base non connectée.'); return false; }
+    saveEstimation._lastErr=null;
     var g=function(id){return document.getElementById(id);};
     var num=function(id){return parseInt((g(id).textContent||'').replace(/[^0-9]/g,''),10)||null;};
     var adrTxt=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'').trim();
@@ -3705,13 +3717,14 @@
       if(res.error) throw res.error;
       return true;
     }catch(e){
+      if(authFail(e)){ saveEstimation._lastErr='session expirée'; return false; }
       // repli (création uniquement) : colonnes étendues absentes → enregistrement minimal.
       // En mode édition, on n'insère JAMAIS (sinon doublon) : on remonte l'échec.
-      if(editingEstimId){ console.warn('[ESTIMAKE] save estimation',e); return false; }
+      if(editingEstimId){ console.warn('[ESTIMAKE] save estimation',e); saveEstimation._lastErr=(e&&e.message)||String(e); return false; }
       try{ var res2=await sb.from('estimations').insert({adresse:row.adresse,type:row.type,surface:row.surface,
         valeur_basse:row.valeur_basse,valeur_haute:row.valeur_haute,prix_conseille:row.prix_conseille});
         if(res2.error) throw res2.error; return true;
-      }catch(e2){ console.warn('[ESTIMAKE] save estimation',e2); return false; }
+      }catch(e2){ authFail(e2); console.warn('[ESTIMAKE] save estimation',e2); saveEstimation._lastErr=(e2&&e2.message)||String(e2); return false; }
     }
   }
   (function(){
@@ -3721,7 +3734,7 @@
       var ok=await saveEstimation();
       if(ok && typeof loadEstimations==='function') loadEstimations();
       if(ok){ var cn=document.getElementById('cliNom'); if(cn&&cn.value.trim()) ensureContact(cn.value,'prospect',(document.querySelector('#estimation .addrbox .a')||{}).textContent||'','Estimation en cours'); }
-      toast(ok?'Estimation enregistrée ✓':'Enregistrement impossible — réessaie.');
+      toast(ok?'Estimation enregistrée ✓':('⚠ Estimation NON enregistrée'+(saveEstimation._lastErr?' : '+saveEstimation._lastErr:' — réessaie.')));
       b.disabled=false; b.innerHTML=old;
     });
   })();
@@ -4752,7 +4765,10 @@
   }
   document.getElementById('genBtn').addEventListener('click',function(){
     var b=this;var old=b.innerHTML;
-    saveEstimation().then(function(ok){ if(ok){ toast('Estimation enregistrée ✓'); if(typeof loadEstimations==='function') loadEstimations(); } });
+    saveEstimation().then(function(ok){
+      if(ok){ toast('Estimation enregistrée ✓'); if(typeof loadEstimations==='function') loadEstimations(); }
+      else { toast('⚠ Estimation NON enregistrée'+(saveEstimation._lastErr?' : '+saveEstimation._lastErr:'')); }
+    });
     buildDossier();
     b.disabled=true; b.innerHTML='G\u00e9n\u00e9ration du PDF\u2026';
     exportPDF().then(function(){
@@ -4976,7 +4992,19 @@
     if(!sb){ authgate.classList.remove('show'); syncBiens(); return; }
     try{
       var s=await sb.auth.getSession();
-      if(s.data && s.data.session){ showApp(s.data.session); }
+      if(s.data && s.data.session){
+        // vérifier que la session est encore VALABLE côté serveur (sinon écritures 401 en silence)
+        var u=await sb.auth.getUser();
+        if(u.error){
+          console.warn('[ESTIMAKE] session expirée', u.error);
+          try{ await sb.auth.signOut(); }catch(e2){}
+          authgate.classList.add('show');
+          var ae=document.getElementById('autherr');
+          if(ae){ ae.textContent='Ta session a expiré — reconnecte-toi.'; ae.classList.add('show'); }
+        } else {
+          showApp(s.data.session);
+        }
+      }
       else { authgate.classList.add('show'); }
       sb.auth.onAuthStateChange(function(_e,session){
         if(_e==='PASSWORD_RECOVERY'){
