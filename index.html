@@ -2069,7 +2069,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-172643';
+  var __BUILD='20260825-172824';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2174,7 +2174,7 @@
     estimation:['Estimation','Avis de valeur & dossier client'],
     agenda:['Agenda','RDV, visites & signatures']};
   function go(id){
-    var navId=(id==='biens'||id==='portefeuille')?'estimation':id;   // sous-écrans de l'onglet Estimation
+    var navId=(id==='estimation'||id==='portefeuille')?'biens':id;   // le menu « Estimation » pointe sur la liste
     document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('active',s.id===id);});
     document.querySelectorAll('.rail .navitem').forEach(function(b){b.classList.toggle('active',b.dataset.go===navId);});
     document.querySelectorAll('.mobnav button').forEach(function(b){b.classList.toggle('active',b.dataset.go===navId);});
