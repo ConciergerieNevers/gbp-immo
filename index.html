@@ -674,6 +674,23 @@
   .risk .ic svg{width:15px;height:15px}
   .risk b{display:block;font-weight:600;font-size:13px} .risk small{color:var(--ink-3);font-size:11.5px}
 
+  /* ============ CÉLÉBRATION ============ */
+  .celebmodal{position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:rgba(10,8,4,.74);backdrop-filter:blur(6px);padding:18px}
+  .celebmodal[hidden]{display:none}
+  .celebcard{background:linear-gradient(165deg,#1d1810,#0f0c07);border:1px solid rgba(201,169,107,.45);border-radius:22px;
+    width:min(420px,94vw);padding:16px;box-shadow:0 30px 80px rgba(0,0,0,.6);position:relative;overflow:hidden;
+    animation:celebPop .45s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes celebPop{from{transform:scale(.82) translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  .celebcard>img{width:100%;border-radius:14px;display:block;background:#000;min-height:140px;max-height:240px;object-fit:cover}
+  .celebtxt{text-align:center;padding:14px 4px 10px}
+  .celebkicker{font-size:10px;letter-spacing:.26em;color:#C9A96B;font-weight:700;text-transform:uppercase}
+  .celebtitle{font-size:25px;color:#F3EDE0;margin:5px 0 3px;font-weight:800}
+  .celebsub{font-size:13.5px;color:#BFB49B;line-height:1.5}
+  .celebmoney{margin-top:9px;font-size:23px;font-weight:800;color:#E3C77E;font-variant-numeric:tabular-nums}
+  .celebconf{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .celebconf i{position:absolute;top:-14px;width:8px;height:14px;border-radius:2px;animation:celebFall linear forwards}
+  @keyframes celebFall{to{transform:translateY(600px) rotate(640deg);opacity:0}}
+
   /* ============ DRAWER ============ */
   .scrim{position:fixed;inset:0;background:rgba(15,22,18,.5);backdrop-filter:blur(3px);z-index:60;opacity:0;
     pointer-events:none;transition:opacity .25s}
@@ -1895,6 +1912,21 @@
   </div>
 </div>
 
+<!-- ======== CÉLÉBRATION (compromis / vente) ======== -->
+<div class="celebmodal" id="celebModal" hidden>
+  <div class="celebcard">
+    <div class="celebconf" id="celebConf"></div>
+    <img id="celebGif" alt="" referrerpolicy="no-referrer">
+    <div class="celebtxt">
+      <div class="celebkicker" id="celebKick">COMPROMIS SIGNÉ</div>
+      <div class="celebtitle" id="celebTitle">Bravo !</div>
+      <div class="celebsub" id="celebSub"></div>
+      <div class="celebmoney" id="celebMoney"></div>
+    </div>
+    <button type="button" class="btn pri" id="celebClose" style="width:100%;justify-content:center">🥂 Merci !</button>
+  </div>
+</div>
+
 <!-- ======== REPOUSSER UNE TÂCHE ======== -->
 <div class="modal" id="pushModal" hidden>
   <div class="modal-card" style="max-width:420px">
@@ -2050,7 +2082,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260825-180114';
+  var B='20260825-181344';
   function check(){
     try{
       fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
@@ -2109,7 +2141,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-180114';
+  var __BUILD='20260825-181344';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2768,7 +2800,7 @@
             if(vRes.error) throw vRes.error;
             await syncVentes();
             var partV=(!isNaN(forcedP)&&e.v_part.value!=='')?Math.round(forcedP):Math.round((hoV||0)*((vRow.rentree?0.25:0)+(vRow.sortie?0.25:0)));
-            setTimeout(function(){ toast('💶 '+(row.statut==='Vendu'?'Vente actée':'Compromis')+' enregistré · ma commission '+partV.toLocaleString('fr-FR')+' € ✓'); },1300);
+            setTimeout(function(){ celebrate(row.statut==='Vendu'?'acte':'compromis', partV, row.adresse); },900);
           }catch(eV){ setTimeout(function(){ toast('⚠ Vente non synchronisée : '+((eV&&eV.message)||eV)); },1300); }
         }
         // flux MANDAT : la fiche client passe au statut mandat correspondant + relance datée
@@ -4249,6 +4281,7 @@
       venteModal.hidden=true;
       if(typeof returnToContact==='function') returnToContact();
       toast(editingVenteId?'Vente modifi\u00e9e \u2713':'Vente enregistr\u00e9e \u2713 \u00b7 ma part : '+partVente(row).toLocaleString('fr-FR')+' \u20ac');
+      setTimeout(function(){ celebrate(row.statut==='acte'?'acte':'compromis', partVente(row), row.bien); },500);
       if(row.client){ ensureContact(row.client, 'vendeur', row.bien, 'Client'); bumpRelance(row.client); }
       syncVentes();
     }catch(err){ if(authFail(err)){ venteModal.hidden=true; } else { var el=document.getElementById('venteErr'); el.textContent='Erreur : '+((err&&err.message)||err); el.classList.add('show'); } }
@@ -4511,6 +4544,53 @@
       }).join('');
   }
   (function(){ var se=document.getElementById('estimSearch'); if(se) se.addEventListener('input',renderEstimList); })();
+  /* ---------- CÉLÉBRATION : compromis signé / vente actée ---------- */
+  var CELEB_GIFS=['DfLwM9kttDFEQ','YitBbyU7DNjUs','GCLlQnV7wzKLu','10bHcDcPM925ry','awpqNsKuFtXI4',
+    'UDdp1MVwRlbRiCEXGZ','TJssvTF16urPfizSVy','pfbx76ne7dCoXnFqis','u1O8OjlyaNuZCOVMYP','KVT0i8ls6Scp5X2255',
+    'JzfTNHqOlVDWg','hk1S2NTfdXlvXQBa4T'];
+  var CELEB_COMP=[
+    ['Bravo Jimmy !','Compromis signé — le plus dur est fait.'],
+    ['Ça sent bon 🥂','Un compromis de plus au tableau. Leo lève son verre pour toi.'],
+    ['Beau travail !','Signé. Encore quelques semaines et cette commission tombe.'],
+    ['Tu gères 💼','Le client a dit oui. Savoure — puis relance le notaire.'],
+    ['Encore un ! 🔥','Ton pipeline se remplit. Continue comme ça.']
+  ];
+  var CELEB_ACTE=[
+    ['ENCAISSÉ ! 🎉','Acte signé, vente actée. Cette commission est à toi.'],
+    ['Champagne 🥂','Signature chez le notaire actée. Du très beau travail.'],
+    ['Mission accomplie','Le bien est vendu, ta commission est dans la poche.'],
+    ['Boss du secteur 🏆','Une vente de plus à Nevers. Leo approuve.'],
+    ['Money time 💰','Vendu et signé. Voilà pourquoi tu fais ce métier.']
+  ];
+  var lastCeleb=0;
+  function celebrate(kind, montant, adresse){
+    var m=document.getElementById('celebModal'); if(!m) return;
+    var now=Date.now(); if(now-lastCeleb<4000) return; lastCeleb=now;
+    var pick=function(a){ return a[Math.floor(Math.random()*a.length)]; };
+    var acte=(kind==='acte');
+    var msg=pick(acte?CELEB_ACTE:CELEB_COMP);
+    var g=document.getElementById('celebGif');
+    g.onerror=function(){ this.style.display='none'; };
+    g.style.display=''; g.src='https://media.giphy.com/media/'+pick(CELEB_GIFS)+'/giphy.gif';
+    document.getElementById('celebKick').textContent=acte?'VENTE ACTÉE':'COMPROMIS SIGNÉ';
+    document.getElementById('celebTitle').textContent=msg[0];
+    document.getElementById('celebSub').textContent=msg[1]+(adresse?' · '+adresse:'');
+    document.getElementById('celebMoney').textContent=montant?((acte?'+ ':'à venir : ')+Math.round(montant).toLocaleString('fr-FR')+' € de commission'):'';
+    var conf=document.getElementById('celebConf'), cols=['#E3C77E','#C9A96B','#2F7D5B','#EDE6D4','#A8853B'], h='';
+    for(var i=0;i<44;i++){
+      h+='<i style="left:'+(Math.random()*100).toFixed(1)+'%;background:'+cols[i%cols.length]+
+         ';animation-duration:'+(1.6+Math.random()*1.6).toFixed(2)+'s;animation-delay:'+(Math.random()*0.6).toFixed(2)+'s"></i>';
+    }
+    conf.innerHTML=h;
+    m.hidden=false;
+  }
+  (function(){
+    var m=document.getElementById('celebModal'); if(!m) return;
+    function closeC(){ m.hidden=true; document.getElementById('celebConf').innerHTML=''; document.getElementById('celebGif').src=''; }
+    document.getElementById('celebClose').addEventListener('click',closeC);
+    m.addEventListener('click',function(e){ if(e.target===m) closeC(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !m.hidden) closeC(); });
+  })();
   /* ---- retirer une estimation : on demande POURQUOI ---- */
   var estimFilter='cours', estimDelId=null;
   function openEstimDel(id){
