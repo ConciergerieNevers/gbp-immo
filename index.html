@@ -1577,7 +1577,10 @@
               </button>
             </div>
             <div class="restyle-msg" id="descMsg" hidden></div>
-            <button type="button" class="btn" id="saveEstimBtn" style="width:100%;justify-content:center;margin-top:12px">
+            <button type="button" class="btn pri" id="mandatBtn" style="width:100%;justify-content:center;margin-top:12px">
+              🏡 Mandat signé → créer le bien au portefeuille
+            </button>
+            <button type="button" class="btn" id="saveEstimBtn" style="width:100%;justify-content:center;margin-top:8px">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
               Enregistrer l’estimation
             </button>
@@ -1653,15 +1656,15 @@
       <div class="mfields">
         <label class="mf mf-wide"><span>Adresse</span><input name="adresse" required placeholder="12 rue des Récollets"></label>
         <label class="mf mf-wide"><span>Secteur</span><input name="secteur" placeholder="Nevers · centre"></label>
-        <label class="mf"><span>Type</span><select name="type"><option>Maison</option><option>Appartement</option></select></label>
-        <label class="mf"><span>Statut</span><select name="statut"><option>Exclusif</option><option>Simple</option><option>Compromis</option><option>Vendu</option></select></label>
+        <label class="mf"><span>Type</span><select name="type"><option>Maison</option><option>Appartement</option><option>Immeuble</option><option>Terrain</option><option>Local commercial</option><option>Bureaux</option><option>Fonds de commerce</option><option>Garage / Parking</option><option>Cave</option><option>Grange / Dépendance</option><option>Propriété / Château</option><option>Autre</option></select></label>
+        <label class="mf"><span>Statut (mandat)</span><select name="statut"><option>Exclusif</option><option>Simple</option><option>Compromis</option><option>Vendu</option></select></label>
         <label class="mf"><span>Prix (€)</span><input name="prix" type="number" inputmode="numeric" placeholder="199000"></label>
         <label class="mf"><span>Surface (m²)</span><input name="surface" type="number" inputmode="numeric"></label>
         <label class="mf"><span>Terrain (m²)</span><input name="terrain" type="number" inputmode="numeric"></label>
         <label class="mf"><span>Pièces</span><input name="pieces" type="number" inputmode="numeric"></label>
         <label class="mf"><span>Chambres</span><input name="chambres" type="number" inputmode="numeric"></label>
         <label class="mf"><span>Année</span><input name="annee" type="number" inputmode="numeric"></label>
-        <label class="mf"><span>DPE</span><select name="dpe"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></label>
+        <label class="mf"><span>DPE</span><select name="dpe"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option value="ND">N/D (à vérifier)</option></select></label>
         <label class="mf mf-wide"><span>Propriétaire</span><input name="proprietaire" placeholder="M. et Mme Delaunay"></label>
         <label class="mf mf-check"><input type="checkbox" name="garage"><span>Garage</span></label>
       </div>
@@ -2019,7 +2022,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-163312';
+  var __BUILD='20260825-163727';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2238,6 +2241,17 @@
           '<div class="kv"><span>Garage</span><b>'+(b.gar?'Oui':'Non')+'</b></div></div>'+
         (function(){ var m=acquerersFor(b); return '<div class="dsec"><div class="eyebrow">Acquéreurs correspondants (CRM) · '+m.length+'</div>'+
           (m.length?acquerersHtml(m):'<div style="color:var(--ink-3);font-size:13px">Aucun acquéreur du CRM ne correspond à ce bien pour l\'instant.</div>')+'</div>'; })()+
+        (function(){
+          var ad=(b.ad||'').trim().toLowerCase();
+          var est=(window.__estimsAll||[]).filter(function(r){ return (r.adresse||'').trim().toLowerCase()===ad; });
+          if(!est.length) return '';
+          return '<div class="dsec"><div class="eyebrow">Estimation'+(est.length>1?'s':'')+' liée'+(est.length>1?'s':'')+' · '+est.length+'</div>'+
+            est.slice(0,3).map(function(r){
+              var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR'):'';
+              var px=(r.prix_final||r.prix_conseille);
+              return '<div class="kv drawer-estim" data-eid="'+r.id+'" style="cursor:pointer"><span>📄 Avis du '+d+'</span><b class="tnum" style="color:var(--accent)">'+(px?px.toLocaleString('fr-FR')+' €':'—')+'</b></div>';
+            }).join('')+'</div>';
+        })()+
         '<div class="dsec"><div class="eyebrow">Historique</div><ul class="tl">'+
           b.hist.map(function(h){return '<li><span class="dot"></span><div class="tx"><b>'+h[0]+'</b><small>'+h[1]+'</small></div></li>';}).join('')+
           '</ul></div>'+
@@ -2251,6 +2265,12 @@
     if(dphoto) dphoto.addEventListener('change',function(){
       var f=this.files&&this.files[0]; if(!f) return;
       uploadBienPhoto(b,f);
+    });
+    drawer.querySelectorAll('.drawer-estim').forEach(function(el){
+      el.addEventListener('click',function(){
+        var r=(window.__estimsAll||[]).find(function(x){ return x.id===el.dataset.eid; });
+        if(r){ contactReturn=null; closeDrawer(); estimReturn=null; hydrateEstimation(r); }
+      });
     });
     var dd=document.getElementById('drawerDelete');
     if(dd) dd.addEventListener('click',async function(){
@@ -2311,7 +2331,41 @@
     e.dpe.value=b?(b.dpe||'D'):'D'; e.proprietaire.value=b?(b.owner||''):''; e.garage.checked=b?!!b.gar:false;
     bienErr.classList.remove('show'); bienErr.textContent=''; bienModal.hidden=false;
   }
-  function closeBienForm(){ bienModal.hidden=true; if(typeof returnToContact==='function') returnToContact(); }
+  function closeBienForm(){ bienModal.hidden=true; mandatFlow=null; if(typeof returnToContact==='function') returnToContact(); }
+  /* ---------- MANDAT SIGNÉ : l'estimation devient un bien du portefeuille, tout interlié ---------- */
+  var mandatFlow=null;   // {photo, client, estimId} pendant la création du bien depuis une estimation
+  (function(){
+    var mb=document.getElementById('mandatBtn'); if(!mb) return;
+    mb.addEventListener('click',async function(){
+      var g=function(id){ var el=document.getElementById(id); return el?el.value:''; };
+      mb.disabled=true; var old=mb.textContent; mb.textContent='Préparation du bien…';
+      try{
+        // 1) l'estimation est d'abord enregistrée (elle porte l'id, la photo, la ville…)
+        var ok=await saveEstimation();
+        if(!ok){ toast('⚠ Enregistre d\'abord l\'estimation : '+(saveEstimation._lastErr||'réessaie.')); return; }
+        if(typeof loadEstimations==='function') loadEstimations();
+        // 2) formulaire bien PRÉ-REMPLI depuis l'estimation
+        openBienForm(null);
+        var e=bienForm.elements;
+        e.adresse.value=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'').trim();
+        e.secteur.value=(estVilleTxt||'').trim();
+        var tSel=g('fType'); if([].some.call(e.type.options,function(o){return o.value===tSel||o.text===tSel;})) e.type.value=tSel;
+        e.statut.value='Exclusif';
+        var recoN=parseInt((document.getElementById('rReco').textContent||'').replace(/[^0-9]/g,''),10)||'';
+        e.prix.value=recoN;
+        e.surface.value=g('fSurf'); e.terrain.value=(tSel==='Appartement')?'':g('fTerr');
+        e.pieces.value=g('fPieces'); e.chambres.value=g('fChambres'); e.annee.value=g('fAnnee');
+        if(g('fDpeCl')) e.dpe.value=g('fDpeCl');
+        e.proprietaire.value=g('cliNom');
+        var cover=(estPhotos&&estPhotos.length)?(estPhotos[0].after||estPhotos[0].before):null;
+        mandatFlow={ photo:null, client:g('cliNom').trim(), estimId:editingEstimId };
+        if(cover){ mandatFlow.photo=await makeThumb(cover); }
+        document.getElementById('bienModalTitle').textContent='🏡 Mandat signé — nouveau bien';
+        toast('Vérifie le type de mandat (Exclusif/Simple) puis Enregistrer.');
+      }catch(err){ if(!authFail(err)) toast('Impossible : '+((err&&err.message)||err)); }
+      finally{ mb.disabled=false; mb.textContent=old; }
+    });
+  })();
   document.getElementById('addBienBtn').addEventListener('click',function(){ openBienForm(null); });
   document.getElementById('bienModalX').addEventListener('click',closeBienForm);
   document.getElementById('bienCancel').addEventListener('click',closeBienForm);
@@ -2328,11 +2382,28 @@
     try{
       if(sb){
         var res;
+        if(!editingBienId && mandatFlow && mandatFlow.photo){ row.photo_url=mandatFlow.photo; }   // la photo de l'estimation habille le bien
         if(editingBienId){ res=await sb.from('biens').update(row).eq('id',editingBienId); }
         else { row.reference='EST-'+String(Date.now()).slice(-4); res=await sb.from('biens').insert(row); }
         if(res.error) throw res.error;
         await syncBiens();
         toast(editingBienId?'Bien modifié ✓':'Bien ajouté ✓');
+        // flux MANDAT : la fiche client passe au statut mandat correspondant + relance datée
+        if(!editingBienId && mandatFlow){
+          var mfC=(mandatFlow.client||row.proprietaire||'').trim();
+          mandatFlow=null;
+          if(mfC){
+            var cM=(contactsData||[]).find(function(x){ return (x.nom||'').trim().toLowerCase()===mfC.toLowerCase(); });
+            if(!cM){ await ensureContact(mfC,'vendeur',row.adresse,'Mandat signé'); cM=(contactsData||[]).find(function(x){ return (x.nom||'').trim().toLowerCase()===mfC.toLowerCase(); }); }
+            if(cM && cM.id && String(cM.id).length>4){
+              var stM=(row.statut==='Simple')?'Mandat simple':'Mandat exclusif';
+              try{ var uC=await sb.from('contacts').update({statut:stM, prochaine_action:'Mise en vente', derniere_relance:new Date().toLocaleDateString('fr-FR')}).eq('id',cM.id);
+                if(!uC.error){ cM.statut=stM; cM.action='Mise en vente'; renderCrm(); if(typeof updateKpis==='function') updateKpis(); }
+              }catch(e3){}
+              setTimeout(function(){ toast('🏡 Bien au portefeuille · fiche '+mfC+' → « '+stM+' » ✓'); },1400);
+            }
+          }
+        }
       } else {
         var demo={ ad:row.adresse, tw:row.secteur, px:row.prix, m2:row.surface, ch:row.chambres, ty:row.type,
           st:row.statut, dpe:row.dpe, ref:editingBienId||('EST-'+String(Date.now()).slice(-4)), owner:row.proprietaire,
