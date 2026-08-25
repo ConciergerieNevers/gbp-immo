@@ -460,6 +460,19 @@
   .result > .mf{display:flex;margin:12px 16px 0}
   .result > .btn{width:calc(100% - 32px)!important;margin-left:16px!important;margin-right:16px!important}
   .result > .restyle-msg{margin:11px 16px 0}
+  /* To-do */
+  .task-row{display:flex;align-items:center;gap:11px;padding:10px 2px;border-top:1px solid var(--line)}
+  .task-row:first-child{border-top:0}
+  .task-ck{width:22px;height:22px;border-radius:7px;border:2px solid var(--line-2);background:var(--surface);cursor:pointer;flex:none;display:grid;place-items:center;color:transparent;padding:0}
+  .task-ck.done{background:var(--good);border-color:var(--good);color:#fff}
+  .task-ck svg{width:13px;height:13px}
+  .task-main{min-width:0;flex:1;cursor:pointer}
+  .task-main b{font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .task-main small{font-size:11.5px;color:var(--ink-3)}
+  .task-due{font-size:11px;font-weight:700;flex:none;padding:3px 9px;border-radius:20px;background:var(--surface-2);color:var(--ink-2)}
+  .task-due.late{background:var(--crit-bg);color:var(--crit)}
+  .task-due.soon{background:var(--accent-soft);color:var(--accent)}
+  .ag-task{background:var(--accent-soft)!important;color:var(--accent)!important;font-weight:600}
   /* Aperçu avis */
   .avpv{position:fixed;inset:0;z-index:300;background:#3a372f;display:flex;flex-direction:column}
   .avpv[hidden]{display:none}
@@ -1099,15 +1112,9 @@
           </div>
         </div>
 
-        <div class="sectitle"><h2>Activité récente</h2></div>
-        <div class="card pad">
-          <ul class="feed">
-            <li><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="tx"><b>Compromis signé</b> — Maison, 34 rue de Charleville, Nevers · 189 000 €<small>Il y a 2 h · commission 6 615 €</small></div><span class="pill good">+1 vente</span></li>
-            <li><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 20h16M6 20V9l6-4 6 4v11"/></svg></div><div class="tx"><b>Nouveau mandat exclusif</b> — Appartement T3, quai de Médine<small>Hier · 149 000 € · M. et Mme Ferrand</small></div><span class="pill info">Exclusif</span></li>
-            <li><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 9V5l6-3 6 3v4M6 9v11h12V9M9 20v-5h6v5"/></svg></div><div class="tx"><b>Estimation réalisée</b> — Maison 127 m², 12 rue des Récollets<small>Hier · fourchette 185–200 k€ · RDV signature jeudi</small></div><span class="pill">À suivre</span></li>
-            <li><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/></svg></div><div class="tx"><b>3 acquéreurs relancés</b> — biens T3/T4 secteur centre<small>Il y a 2 j · 1 visite calée samedi</small></div><span class="pill">CRM</span></li>
-          </ul>
-        </div>
+        <div class="sectitle"><h2>Ma journée &amp; à faire</h2><div class="grow"></div>
+          <button class="btn pri" id="addTaskBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Tâche</span></button></div>
+        <div class="card pad" id="todayCard"><div class="estimempty">Chargement…</div></div>
       </section>
 
       <!-- ============ BIENS ============ -->
@@ -1458,6 +1465,8 @@
           <button class="btn pri" id="addRdvBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Nouveau RDV</span></button>
         </div>
         <div id="agendaList"></div>
+        <div class="sectitle" style="margin-top:24px"><h2>✅ To-do</h2><div class="grow"></div><span class="eyebrow" id="todoCount"></span></div>
+        <div class="card pad" id="todoAgenda"><div class="estimempty">Aucune tâche — ajoute-les depuis le Cockpit ou une fiche contact.</div></div>
       </section>
 
     </div>
@@ -1573,9 +1582,11 @@
       </div>
       <div id="cliEstims"></div>
       <div id="cliRdvs"></div>
+      <div id="cliTaches"></div>
       <div class="mfields" style="margin-top:14px">
-        <button type="button" class="btn" id="cNewEstim">🏠 Nouvelle estimation</button>
-        <button type="button" class="btn" id="cNewRdv">📅 Nouveau RDV</button>
+        <button type="button" class="btn" id="cNewEstim">🏠 Estimation</button>
+        <button type="button" class="btn" id="cNewRdv">📅 RDV</button>
+        <button type="button" class="btn" id="cNewTask">✅ Tâche</button>
       </div>
       <div class="autherr" id="contactErr"></div>
       <div class="modal-ft">
@@ -1635,6 +1646,28 @@
       <input type="date" id="statsFrom"> <span>→</span> <input type="date" id="statsTo">
     </div>
     <div id="statsBody" style="max-height:52vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- ======== TÂCHE (to-do) ======== -->
+<div class="modal" id="taskModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b id="taskModalTitle">Nouvelle tâche</b>
+      <button class="modal-x" id="taskX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form class="modal-body" id="taskForm">
+      <div class="mfields">
+        <label class="mf mf-wide"><span>Tâche</span><input name="t_titre" required placeholder="Rappeler M. Martin, préparer le compromis…"></label>
+        <label class="mf"><span>Date butoir (optionnel)</span><input name="t_echeance" type="date"></label>
+        <label class="mf"><span>Lié à (optionnel)</span><input name="t_lien" list="taskLienOptions" placeholder="Contact…"><datalist id="taskLienOptions"></datalist></label>
+        <label class="mf mf-wide"><span>Note</span><input name="t_note" placeholder="Détail…"></label>
+      </div>
+      <div class="autherr" id="taskErr"></div>
+      <div class="modal-ft">
+        <button type="button" class="btn danger-o" id="taskDelete" style="margin-right:auto" hidden>Supprimer</button>
+        <button type="button" class="btn" id="taskCancel">Annuler</button>
+        <button type="submit" class="btn pri">Enregistrer</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -2248,7 +2281,17 @@
     toggleAcqSection();
     renderCliEstims(c);
     renderCliRdvs(c);
+    renderCliTaches(c);
     contactErr.classList.remove('show'); contactErr.textContent=''; contactModal.hidden=false;
+  }
+  function renderCliTaches(c){
+    var box=document.getElementById('cliTaches'); if(!box) return;
+    box.innerHTML='';
+    if(!c || !c.nom) return;
+    var nom=c.nom.trim().toLowerCase();
+    var linked=(tachesData||[]).filter(function(t){ return (t.lien||'').toLowerCase().indexOf(nom)>-1; });
+    if(!linked.length) return;
+    box.innerHTML='<div class="restyle-sub">T\u00e2ches ('+linked.length+')</div>'+linked.map(taskRow).join('');
   }
   function renderCliRdvs(c){
     var box=document.getElementById('cliRdvs'); if(!box) return;
@@ -2311,6 +2354,11 @@
     editingEstimId=null;
     go('estimation');
     toast('Nouvelle estimation pour '+(nom||'ce contact')+' \u2014 renseigne l\u2019adresse.');
+  });
+  document.getElementById('cNewTask').addEventListener('click',function(){
+    var nom=contactForm.elements.nom.value.trim();
+    contactModal.hidden=true;
+    openTaskForm(null, nom);
   });
   document.getElementById('cNewRdv').addEventListener('click',function(){
     var nom=contactForm.elements.nom.value.trim();
@@ -2415,6 +2463,7 @@
       var ds=isoD(cur), evs=evsOn(ds), out=cur.getMonth()!==m;
       html+='<div class="ag-cell'+(out?' out':'')+(ds===today?' today':'')+'" data-day="'+ds+'"><span class="dnum">'+cur.getDate()+'</span>';
       evs.slice(0,3).forEach(function(r){ html+='<div class="ag-ev" style="background:'+(TYPEHEX[r.type]||'#888')+'" data-id="'+r.id+'">'+(r.heure?r.heure+' ':'')+r.titre+'</div>'; });
+      if(typeof tasksOn==='function') tasksOn(ds).slice(0,2).forEach(function(t){ html+='<div class="ag-ev ag-task" data-task="'+t.id+'">\u2705 '+t.titre+'</div>'; });
       if(evs.length>3) html+='<div class="ag-more">+'+(evs.length-3)+'</div>';
       html+='</div>'; cur.setDate(cur.getDate()+1);
     }
@@ -2428,6 +2477,7 @@
       var ds=isoD(cur), evs=evsOn(ds);
       html+='<div class="ag-wcol'+(ds===today?' today':'')+'" data-day="'+ds+'"><div class="wh">'+DOW[i]+'<b>'+cur.getDate()+'</b></div>';
       evs.forEach(function(r){ html+='<div class="ag-wev" style="background:'+(TYPEHEX[r.type]||'#888')+'" data-id="'+r.id+'"><small>'+(r.heure||'')+'</small>'+r.titre+'</div>'; });
+      if(typeof tasksOn==='function') tasksOn(ds).forEach(function(t){ html+='<div class="ag-wev ag-task" data-task="'+t.id+'"><small>\u2705</small>'+t.titre+'</div>'; });
       html+='</div>'; cur.setDate(cur.getDate()+1);
     }
     el.innerHTML='<div class="ag-week">'+html+'</div>';
@@ -2435,7 +2485,9 @@
   function renderDay(el){
     var ds=isoD(agRef), evs=evsOn(ds);
     document.getElementById('agLabel').textContent=frDay(ds);
-    if(!evs.length){ el.innerHTML='<div class="card pad" style="color:var(--ink-3)">Aucun rendez-vous ce jour — clique « Nouveau RDV ».</div>'; return; }
+    var dayTasks=(typeof tasksOn==='function')?tasksOn(ds):[];
+    if(!evs.length && !dayTasks.length){ el.innerHTML='<div class="card pad" style="color:var(--ink-3)">Aucun rendez-vous ce jour — clique « Nouveau RDV ».</div>'; return; }
+    if(!evs.length){ el.innerHTML=dayTasks.map(taskRow).map(function(h){return '<div class="card" style="padding:4px 14px">'+h+'</div>';}).join(''); return; }
     el.innerHTML=evs.map(function(r){
       var cls=TYPECOL[r.type]||'', sub=r.lien?(r.lien+(r.note?' · '+r.note:'')):(r.note||'');
       return '<div class="card rdv-row" data-id="'+r.id+'"><div class="rdv-time">'+(r.heure||'--:--')+'</div>'+
@@ -2450,6 +2502,8 @@
   document.getElementById('agNext').addEventListener('click',function(){ shiftAg(1); });
   document.getElementById('agToday').addEventListener('click',function(){ agRef=new Date(); renderAgenda(); });
   document.getElementById('agendaList').addEventListener('click',function(e){
+    var tk=e.target.closest('[data-task]');
+    if(tk){ e.stopPropagation(); var t=tachesData.find(function(x){ return x.id===tk.dataset.task; }); if(t) openTaskForm(t); return; }
     if(e.target.closest('.gcal')) return;
     var ev=e.target.closest('[data-id]');
     if(ev){ var r=agendaData.find(function(x){return x.id===ev.dataset.id;}); if(r){ openRdvForm(r); return; } }
@@ -2492,7 +2546,7 @@
     if(!sb) return;
     try{ var res=await sb.from('rdv').select('*').order('date',{ascending:true});
       if(res.error) throw res.error;
-      if(res.data){ agendaData=res.data.filter(function(r){ return !r.deleted; }).map(function(r){ return {id:r.id,titre:r.titre,type:r.type,date:r.date,heure:r.heure,lien:r.lien,note:r.note}; }); renderAgenda(); }
+      if(res.data){ agendaData=res.data.filter(function(r){ return !r.deleted; }).map(function(r){ return {id:r.id,titre:r.titre,type:r.type,date:r.date,heure:r.heure,lien:r.lien,note:r.note}; }); renderAgenda(); if(typeof renderToday==='function') renderToday(); }
     }catch(e){ console.warn('[ESTIMAKE] Supabase rdv → démo', e); }
   }
   syncAgenda(); gPull();
@@ -2755,6 +2809,119 @@
       return contactsData[contactsData.length-1];
     }catch(e){ console.warn('[ESTIMAKE] ensureContact', e); return null; }
   }
+  /* ---------- TO-DO / TÂCHES (jamais synchronisées Google) ---------- */
+  var tachesData=[];
+  function isoToday(){ return new Date().toISOString().slice(0,10); }
+  async function syncTaches(){
+    if(!sb) return;
+    try{
+      var res=await sb.from('taches').select('*').eq('deleted',false).eq('fait',false).order('echeance',{ascending:true,nullsFirst:false});
+      if(res.error) throw res.error;
+      tachesData=res.data||[];
+      renderToday(); renderTodoAgenda();
+      if(typeof renderAgenda==='function') try{ renderAgenda(); }catch(e){}
+    }catch(e){ console.warn('[ESTIMAKE] taches', e); }
+  }
+  function dueBadge(t){
+    if(!t.echeance) return '<span class="task-due">libre</span>';
+    var today=isoToday();
+    var d=new Date(t.echeance+'T00:00:00');
+    var lbl=d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    if(t.echeance<today) return '<span class="task-due late">en retard \u00b7 '+lbl+'</span>';
+    var in7=new Date(); in7.setDate(in7.getDate()+7);
+    if(d<=in7) return '<span class="task-due soon">'+lbl+'</span>';
+    return '<span class="task-due">'+lbl+'</span>';
+  }
+  function taskRow(t){
+    return '<div class="task-row" data-tid="'+t.id+'">'+
+      '<button type="button" class="task-ck" data-ck="'+t.id+'" title="Marquer fait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></button>'+
+      '<div class="task-main" data-open="'+t.id+'"><b>'+t.titre+'</b>'+((t.lien||t.note)?'<small>'+[t.lien,t.note].filter(Boolean).join(' \u00b7 ')+'</small>':'')+'</div>'+
+      dueBadge(t)+'</div>';
+  }
+  function renderToday(){
+    var card=document.getElementById('todayCard'); if(!card) return;
+    var today=isoToday();
+    var rdvJour=(agendaData||[]).filter(function(r){ return r.date===today; })
+      .sort(function(a,b){ return (a.heure||'99').localeCompare(b.heure||'99'); });
+    var in7=new Date(); in7.setDate(in7.getDate()+7); var in7s=in7.toISOString().slice(0,10);
+    var urgent=tachesData.filter(function(t){ return t.echeance && t.echeance<=in7s; });
+    var html='';
+    if(rdvJour.length){
+      html+='<div class="restyle-sub" style="margin-top:0">\ud83d\udcc5 Aujourd\u2019hui</div>';
+      html+=rdvJour.map(function(r){ return '<div class="task-row" data-rdv="'+r.id+'"><span style="font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;flex:none">'+(r.heure||'\u2014')+'</span><div class="task-main"><b>'+r.titre+'</b>'+(r.lien?'<small>'+r.lien+'</small>':'')+'</div><span class="pill">'+(r.type||'RDV')+'</span></div>'; }).join('');
+    }
+    if(urgent.length){
+      html+='<div class="restyle-sub"'+(rdvJour.length?'':' style="margin-top:0"')+'>\u2705 \u00c0 faire (7 jours)</div>';
+      html+=urgent.map(taskRow).join('');
+    }
+    card.innerHTML=html||'<div class="estimempty">Rien d\u2019urgent \u2014 journ\u00e9e libre ou tout est \u00e0 jour \ud83c\udf89</div>';
+  }
+  function renderTodoAgenda(){
+    var box=document.getElementById('todoAgenda'); if(!box) return;
+    var today=isoToday(); var in7=new Date(); in7.setDate(in7.getDate()+7); var in7s=in7.toISOString().slice(0,10);
+    var late=tachesData.filter(function(t){ return t.echeance && t.echeance<today; });
+    var soon=tachesData.filter(function(t){ return t.echeance && t.echeance>=today && t.echeance<=in7s; });
+    var later=tachesData.filter(function(t){ return t.echeance && t.echeance>in7s; });
+    var free=tachesData.filter(function(t){ return !t.echeance; });
+    document.getElementById('todoCount').textContent=tachesData.length?(tachesData.length+' t\u00e2che'+(tachesData.length>1?'s':'')):'';
+    function grp(nm,arr){ return arr.length?('<div class="restyle-sub">'+nm+' ('+arr.length+')</div>'+arr.map(taskRow).join('')):''; }
+    var html=grp('\u26a0\ufe0f En retard',late)+grp('Cette semaine',soon)+grp('Plus tard',later)+grp('Sans \u00e9ch\u00e9ance',free);
+    box.innerHTML=html||'<div class="estimempty">Aucune t\u00e2che \u2014 ajoute-les depuis le Cockpit ou une fiche contact.</div>';
+  }
+  function tasksOn(ds){ return tachesData.filter(function(t){ return t.echeance===ds; }); }
+  var taskModal=document.getElementById('taskModal'), taskForm=document.getElementById('taskForm'), editingTaskId=null;
+  function openTaskForm(t, presetLien){
+    editingTaskId=(t&&t.id)||null;
+    document.getElementById('taskModalTitle').textContent=t?'Modifier la t\u00e2che':'Nouvelle t\u00e2che';
+    document.getElementById('taskDelete').hidden=!editingTaskId;
+    var e=taskForm.elements;
+    e.t_titre.value=t?(t.titre||''):'';
+    e.t_echeance.value=t?(t.echeance||''):'';
+    e.t_lien.value=t?(t.lien||''):(presetLien||'');
+    e.t_note.value=t?(t.note||''):'';
+    var esc=function(x){return String(x||'').replace(/"/g,'&quot;');}, o='';
+    (contactsData||[]).forEach(function(c){ if(c.nom) o+='<option value="'+esc(c.nom)+'">'; });
+    document.getElementById('taskLienOptions').innerHTML=o;
+    document.getElementById('taskErr').classList.remove('show');
+    taskModal.hidden=false;
+  }
+  document.getElementById('addTaskBtn').addEventListener('click',function(){ openTaskForm(null); });
+  document.getElementById('taskX').addEventListener('click',function(){ taskModal.hidden=true; });
+  document.getElementById('taskCancel').addEventListener('click',function(){ taskModal.hidden=true; });
+  taskModal.addEventListener('click',function(e){ if(e.target===taskModal) taskModal.hidden=true; });
+  taskForm.addEventListener('submit',async function(ev){
+    ev.preventDefault();
+    var e=taskForm.elements;
+    var row={ titre:e.t_titre.value.trim(), echeance:e.t_echeance.value||null,
+      lien:e.t_lien.value.trim()||null, note:e.t_note.value.trim()||null };
+    if(!row.titre) return;
+    try{
+      if(!sb) throw new Error('Base non connect\u00e9e');
+      var res=editingTaskId ? await sb.from('taches').update(row).eq('id',editingTaskId) : await sb.from('taches').insert(row);
+      if(res.error) throw res.error;
+      taskModal.hidden=true; toast(editingTaskId?'T\u00e2che modifi\u00e9e \u2713':'T\u00e2che ajout\u00e9e \u2713');
+      syncTaches();
+    }catch(err){ var el=document.getElementById('taskErr'); el.textContent='Erreur : '+((err&&err.message)||err); el.classList.add('show'); }
+  });
+  document.getElementById('taskDelete').addEventListener('click',async function(){
+    if(!editingTaskId||!sb) return;
+    try{ var r=await sb.from('taches').update({deleted:true}).eq('id',editingTaskId); if(r.error) throw r.error;
+      taskModal.hidden=true; toast('T\u00e2che d\u00e9plac\u00e9e dans la corbeille \u2713'); syncTaches();
+    }catch(e){ toast('Suppression impossible.'); }
+  });
+  async function toggleTaskDone(id){
+    if(!sb) return;
+    try{ var r=await sb.from('taches').update({fait:true}).eq('id',id); if(r.error) throw r.error;
+      toast('T\u00e2che termin\u00e9e \u2713'); syncTaches();
+    }catch(e){ toast('Impossible de valider.'); }
+  }
+  document.addEventListener('click',function(e){
+    var ck=e.target.closest('.task-ck');
+    if(ck){ toggleTaskDone(ck.dataset.ck); return; }
+    var op=e.target.closest('.task-main[data-open]');
+    if(op){ var t=tachesData.find(function(x){ return x.id===op.dataset.open; }); if(t) openTaskForm(t); }
+  });
+  syncTaches();
   /* ---------- VENTES & COMMISSIONS (25 % rentrée + 25 % sortie) ---------- */
   var ventesData=[];
   function partVente(v){ return Math.round((v.honoraires||0)*(((v.rentree)?0.25:0)+((v.sortie)?0.25:0))); }
@@ -3052,7 +3219,8 @@
           sb.from('contacts').select('id,nom,role,detail').eq('deleted',true),
           sb.from('estimations').select('id,adresse,prix_conseille,created_at').eq('deleted',true).order('created_at',{ascending:false}),
           sb.from('rdv').select('id,titre,date,heure').eq('deleted',true).order('date',{ascending:false}),
-          sb.from('ventes').select('id,bien,client,prix').eq('deleted',true)
+          sb.from('ventes').select('id,bien,client,prix').eq('deleted',true),
+          sb.from('taches').select('id,titre,echeance,lien').eq('deleted',true)
         ]);
         var html='';
         function grp(titre, rows, fmt, table){
@@ -3066,6 +3234,7 @@
         grp('Estimations', qs[2].data, function(r){ return (r.adresse||'\u2014')+(r.prix_conseille?' \u00b7 '+r.prix_conseille.toLocaleString('fr-FR')+' \u20ac':''); }, 'estimations');
         grp('Rendez-vous', qs[3].data, function(r){ return (r.titre||'\u2014')+' \u00b7 '+(r.date||'')+(r.heure?' '+r.heure:''); }, 'rdv');
         grp('Ventes', qs[4].data, function(r){ return (r.bien||'\u2014')+(r.client?' \u00b7 '+r.client:'')+(r.prix?' \u00b7 '+r.prix.toLocaleString('fr-FR')+' \u20ac':''); }, 'ventes');
+        grp('T\u00e2ches', qs[5].data, function(r){ return (r.titre||'\u2014')+(r.lien?' \u00b7 '+r.lien:'')+(r.echeance?' \u00b7 '+r.echeance:''); }, 'taches');
         body.innerHTML=html||'<div class="estimempty">La corbeille est vide.</div>';
       }catch(e){ body.innerHTML='<div class="estimempty">Erreur de chargement de la corbeille.</div>'; }
     }
@@ -3081,6 +3250,7 @@
         if(b.dataset.rt==='estimations') loadEstimations();
         if(b.dataset.rt==='rdv'){ syncAgenda(); gPush('save',{id:b.dataset.rid}); }
         if(b.dataset.rt==='ventes') syncVentes();
+        if(b.dataset.rt==='taches') syncTaches();
         openTrash();
       }catch(err){ toast('Restauration impossible.'); b.disabled=false; }
     });
