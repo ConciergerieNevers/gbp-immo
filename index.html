@@ -3689,7 +3689,7 @@
     var num=function(id){return parseInt((g(id).textContent||'').replace(/[^0-9]/g,''),10)||null;};
     var adrTxt=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'').trim();
     if(!estCoord && (!adrTxt || adrTxt==='Aucune adresse' || adrTxt==='12 rue des Récollets')){
-      toast('Sélectionne d’abord l’adresse du bien (étape 1 → Modifier).'); return false;
+      saveEstimation._lastErr='sélectionne d’abord l’adresse du bien (étape 1 → Modifier)'; return false;
     }
     var row={
       adresse:(document.querySelector('#estimation .addrbox .a')||{}).textContent||'',
