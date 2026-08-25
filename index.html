@@ -1084,9 +1084,9 @@
           </div>
         </div>
 
-        <div class="sectitle"><h2>Tunnel de conversion</h2><div class="grow"></div><span class="eyebrow">12 derniers mois</span></div>
+        <div class="sectitle"><h2>Tunnel de conversion</h2><div class="grow"></div><span class="eyebrow" id="tunnelLabel">12 derniers mois</span></div>
         <div class="grid funnel">
-          <div class="card pad">
+          <div class="card pad" id="tunnelCard">
             <div class="stage"><span class="nm">Estimations</span><div class="bar"><i style="width:100%"></i></div><span class="n tnum">64</span><span class="rate"></span></div>
             <div class="stage"><span class="nm">→ Mandats</span><div class="bar"><i style="width:56%"></i></div><span class="n tnum">36</span><span class="rate">56 %</span></div>
             <div class="stage"><span class="nm">→ Compromis</span><div class="bar"><i style="width:33%"></i></div><span class="n tnum">21</span><span class="rate">58 %</span></div>
@@ -2800,6 +2800,24 @@
     var rentres=(biens||[]).filter(function(b){ return b.crea && ckInRange(b.crea,rg); }).length;
     document.getElementById('kMandVal').textContent=actifs.length;
     document.getElementById('kMandMeta').innerHTML='<span class="pill info">'+rentres+' rentr\u00e9'+(rentres>1?'s':'')+' sur la p\u00e9riode</span>';
+    // tunnel de conversion sur la même période
+    var tl=document.getElementById('tunnelLabel'); if(tl) tl.textContent=ckLabelTxt(rg);
+    var tc=document.getElementById('tunnelCard');
+    if(tc){
+      var nEst=(window.__estimsAll||[]).filter(function(r){ return ckInRange(r.created_at,rg); }).length;
+      var nMand=rentres;
+      var nComp=compromis.length;
+      var nVend=actees.length;
+      if(nEst||nMand||nComp||nVend){
+        var mx=Math.max(nEst,nMand,nComp,nVend,1);
+        function stg(nm,n,prev){
+          var w=Math.max(4,Math.round(n/mx*100));
+          var rate=(prev!==null&&prev>0)?Math.round(n/prev*100)+' %':'';
+          return '<div class="stage"><span class="nm">'+nm+'</span><div class="bar"><i style="width:'+w+'%"></i></div><span class="n tnum">'+n+'</span><span class="rate">'+rate+'</span></div>';
+        }
+        tc.innerHTML=stg('Estimations',nEst,null)+stg('\u2192 Mandats',nMand,nEst)+stg('\u2192 Compromis',nComp,nMand)+stg('\u2192 Ventes act\u00e9es',nVend,nComp);
+      }
+    }
   }
   (function(){
     var m=document.getElementById('ckMode'); if(!m) return;
@@ -3066,6 +3084,7 @@
       var rows=res.data||[];
       window.__estimsAll=rows;
       renderEstimList();
+      if(typeof updateKpis==='function') updateKpis();
     }catch(e){ console.warn('[ESTIMAKE] estimations', e); }
   }
   function renderEstimList(){
