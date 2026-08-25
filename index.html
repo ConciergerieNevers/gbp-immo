@@ -2069,7 +2069,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-173310';
+  var __BUILD='20260825-173820';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2607,10 +2607,22 @@
     var bCur=editingBienId?(biens||[]).find(function(x){return x.id===editingBienId;}):null;
     var etapeNew=e.v_etape.value, etapeOld=etapeCourante(bCur), etapeChanged=(etapeNew && etapeNew!==etapeOld);
     var histNew=(bCur&&Array.isArray(bCur.hist))?bCur.hist.slice():[];
+    var idxNew=ETAPES.indexOf(etapeNew), idxOld=ETAPES.indexOf(etapeOld);
+    var recul=(etapeChanged && idxNew>-1 && idxOld>-1 && idxNew<idxOld);
+    if(recul){
+      // retour en arrière : les étapes plus avancées sont retirées de l'historique
+      histNew=histNew.filter(function(h){ var i=ETAPES.indexOf(h&&h[0]); return i===-1 || i<=idxNew; });
+    }
     if(etapeChanged) histNew.push([etapeNew, new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})]);
-    // l'étape pilote le statut du mandat quand elle est décisive
+    // l'étape pilote le statut du mandat, dans les deux sens
     if(etapeNew==='Compromis signé' && e.statut.value!=='Vendu') e.statut.value='Compromis';
-    if(etapeNew==='Vente actée') e.statut.value='Vendu';
+    else if(etapeNew==='Vente actée') e.statut.value='Vendu';
+    else if(recul && (e.statut.value==='Compromis'||e.statut.value==='Vendu')){
+      e.statut.value=(e.v_rentree.value==='1')?'Exclusif':'Simple';   // le mandat redevient actif
+    }
+    // en reculant, les dates devenues fausses sont effacées
+    if(recul && idxNew<ETAPES.indexOf('Vente actée')) e.v_dacte.value='';
+    if(recul && idxNew<ETAPES.indexOf('Compromis signé')) e.v_dcomp.value='';
     var row={ type:e.type.value, adresse:e.adresse.value.trim(), secteur:e.secteur.value.trim(), historique:histNew,
       prix:num(e.prix.value), surface:num(e.surface.value), terrain:num(e.terrain.value),
       pieces:num(e.pieces.value), chambres:num(e.chambres.value), annee:num(e.annee.value),
@@ -2645,6 +2657,17 @@
         honoSave(savedId, e.v_hfix.value, e.v_hpct.value);
         // étape → tâche de suivi automatique (répondre à l'offre, préparer le compromis, suivi acte…)
         if(etapeChanged) etapeTacheAuto(etapeNew, row.adresse, row.proprietaire);
+        // RETOUR EN ARRIÈRE : la vente enregistrée n'a plus lieu d'être → corbeille (le cockpit se corrige)
+        if(recul && row.statut!=='Compromis' && row.statut!=='Vendu'){
+          var vOld=venteForBien({ad:row.adresse});
+          if(vOld && vOld.id){
+            try{
+              var dv=await sb.from('ventes').update({deleted:true}).eq('id',vOld.id);
+              if(!dv.error){ await syncVentes();
+                setTimeout(function(){ toast('↩ Retour à « '+etapeNew+' » — compromis/vente annulé, cockpit à jour.'); },1300); }
+            }catch(eD){ console.warn('[ESTIMAKE] annulation vente', eD); }
+          }
+        }
         // STATUT Compromis/Vendu → la vente liée est créée ou mise à jour (le cockpit suit, zéro double saisie)
         if(row.statut==='Compromis' || row.statut==='Vendu'){
           var vv=venteForBien({ad:row.adresse});
