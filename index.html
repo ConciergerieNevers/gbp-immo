@@ -2868,7 +2868,7 @@
     var html=grp('\u26a0\ufe0f En retard',late)+grp('Cette semaine',soon)+grp('Plus tard',later)+grp('Sans \u00e9ch\u00e9ance',free);
     box.innerHTML=html||'<div class="estimempty">Aucune t\u00e2che \u2014 ajoute-les depuis le Cockpit ou une fiche contact.</div>';
   }
-  function tasksOn(ds){ return tachesData.filter(function(t){ return t.echeance===ds; }); }
+  function tasksOn(ds){ return (tachesData||[]).filter(function(t){ return t.echeance===ds; }); }
   var taskModal=document.getElementById('taskModal'), taskForm=document.getElementById('taskForm'), editingTaskId=null;
   function openTaskForm(t, presetLien){
     editingTaskId=(t&&t.id)||null;
