@@ -679,14 +679,15 @@
   .drawer{position:fixed;top:0;right:0;height:100vh;width:min(460px,94vw);background:var(--ground);z-index:70;
     transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;box-shadow:var(--shadow-lg)}
   .drawer.open{transform:none}
-  .dhead{position:relative;height:180px;display:grid;place-items:center}
+  .dhead{position:relative;height:calc(180px + env(safe-area-inset-top));display:grid;place-items:center;
+    padding-top:env(safe-area-inset-top)}   /* le badge et le ✕ ne passent plus sous l'heure iOS */
   .dhead svg.house{width:74px;height:74px;color:#fff;opacity:.55}
-  .dclose{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:0;
+  .dclose{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;width:36px;height:36px;border-radius:50%;border:0;
     background:rgba(255,255,255,.9);color:#222;display:grid;place-items:center}
   .dclose svg{width:18px;height:18px}
   .dhead .price{position:absolute;bottom:14px;left:18px;color:#fff;font-weight:740;font-size:26px;
     text-shadow:0 1px 10px rgba(0,0,0,.4)}
-  .dhead .status{position:absolute;top:14px;left:14px}
+  .dhead .status{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px}
   .dbody{padding:20px}
   .dbody h2{font-size:20px} .dbody .town{color:var(--ink-2);margin:2px 0 14px}
   .specrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:18px}
@@ -2018,7 +2019,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-145357';
+  var __BUILD='20260825-150714';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2241,13 +2242,26 @@
         '<div class="dsec"><div class="eyebrow">Historique</div><ul class="tl">'+
           b.hist.map(function(h){return '<li><span class="dot"></span><div class="tx"><b>'+h[0]+'</b><small>'+h[1]+'</small></div></li>';}).join('')+
           '</ul></div>'+
-        '<button class="btn pri" id="drawerEdit" style="width:100%;justify-content:center">Modifier ce bien</button>'+
+        '<div style="display:grid;grid-template-columns:'+(b.id?'1fr auto':'1fr')+';gap:10px">'+
+          '<button class="btn pri" id="drawerEdit" style="justify-content:center">Modifier ce bien</button>'+
+          (b.id?'<button class="btn danger-o" id="drawerDelete" title="Mettre à la corbeille"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>':'')+
+        '</div>'+
       '</div>';
     document.getElementById('dclose').addEventListener('click',closeDrawer);
     var dphoto=document.getElementById('dPhotoInput');
     if(dphoto) dphoto.addEventListener('change',function(){
       var f=this.files&&this.files[0]; if(!f) return;
       uploadBienPhoto(b,f);
+    });
+    var dd=document.getElementById('drawerDelete');
+    if(dd) dd.addEventListener('click',async function(){
+      if(!window.confirm('Mettre « '+(b.ad||'ce bien')+' » à la corbeille ?')) return;
+      dd.disabled=true;
+      try{
+        var r=await sb.from('biens').update({deleted:true}).eq('id',b.id);
+        if(r.error) throw r.error;
+        closeDrawer(); toast('Bien déplacé dans la corbeille ✓'); syncBiens();
+      }catch(err){ dd.disabled=false; if(!authFail(err)) toast('Suppression impossible : '+((err&&err.message)||err)); }
     });
     var de=document.getElementById('drawerEdit');
     if(de) de.addEventListener('click',function(){
