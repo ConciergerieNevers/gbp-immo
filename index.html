@@ -2072,7 +2072,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-171604';
+  var __BUILD='20260825-171709';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2458,6 +2458,7 @@
     if(vendu && !e.v_dacte.value) e.v_dacte.value=isoD(new Date());
     if(comp && !e.v_dcomp.value) e.v_dcomp.value=isoD(new Date());
     if(vendu && e.v_sortie.value==='0' && !venteForBien({ad:e.adresse.value})) e.v_sortie.value='1';
+    bienHonoAuto(false);   // honoraires calculés dès l'ouverture (prix du bien ou prix de vente réel)
     bienComPreview();
   }
   // barème propre à CE bien (négociable) — mémorisé par bien, défaut = barème agence
