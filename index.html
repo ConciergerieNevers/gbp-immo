@@ -2033,7 +2033,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-164929';
+  var __BUILD='20260825-165756';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2246,10 +2246,20 @@
           '<div class="specbox"><b class="tnum">'+b.ch+'</b><small>chambres</small></div>'+
           '<div class="specbox"><b class="tnum">'+b.an+'</b><small>année</small></div></div>'+
         '<div class="dsec"><div class="eyebrow">Propriétaire &amp; mandat</div>'+
-          '<div class="kv"><span>Vendeur</span><b>'+b.owner+'</b></div>'+
-          '<div class="kv"><span>Type de mandat</span><b>'+b.st+'</b></div>'+
-          '<div class="kv"><span>Prix / m²</span><b class="tnum">'+euro(b.px/b.m2)+'/m²</b></div>'+
+          '<div class="kv"><span>Vendeur</span><b>'+escH(b.owner||'—')+'</b></div>'+
+          '<div class="kv"><span>Type de mandat</span><b>'+escH(b.st||'—')+'</b></div>'+
+          '<div class="kv"><span>Prix / m²</span><b class="tnum">'+(b.m2?euro(b.px/b.m2)+'/m²':'—')+'</b></div>'+
           '<div class="kv"><span>Garage</span><b>'+(b.gar?'Oui':'Non')+'</b></div></div>'+
+        (function(){
+          if(!b.px || typeof honorairesPour!=='function') return '';
+          var h=honorairesPour(b.px,'fai'), net=b.px-h, bm=bareme();
+          return '<div class="dsec"><div class="eyebrow">💶 Honoraires &amp; ma commission <small style="text-transform:none;letter-spacing:0">(barème '+bm.fix.toLocaleString('fr-FR')+' € + '+String(bm.pct).replace('.',',')+' % · prix FAI)</small></div>'+
+            '<div class="kv"><span>Net vendeur estimé</span><b class="tnum">'+net.toLocaleString('fr-FR')+' €</b></div>'+
+            '<div class="kv"><span>Honoraires agence</span><b class="tnum">'+h.toLocaleString('fr-FR')+' €</b></div>'+
+            '<div class="kv"><span>Ma part si je rentre ET je vends (50 %)</span><b class="tnum" style="color:var(--good)">'+Math.round(h*0.5).toLocaleString('fr-FR')+' €</b></div>'+
+            '<div class="kv"><span>Ma part rentrée OU sortie (25 %)</span><b class="tnum">'+Math.round(h*0.25).toLocaleString('fr-FR')+' €</b></div>'+
+            '<div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">Modifie le prix via « Modifier ce bien » — le calcul suit. Le barème se règle dans Paramètres &amp; objectifs.</div></div>';
+        })()+
         (function(){ var m=acquerersFor(b); return '<div class="dsec"><div class="eyebrow">Acquéreurs correspondants (CRM) · '+m.length+'</div>'+
           (m.length?acquerersHtml(m):'<div style="color:var(--ink-3);font-size:13px">Aucun acquéreur du CRM ne correspond à ce bien pour l\'instant.</div>')+'</div>'; })()+
         (function(){
@@ -3672,7 +3682,13 @@
     var actifs=(biens||[]).filter(function(b){ return b.st!=='Vendu'; });
     var rentres=(biens||[]).filter(function(b){ return b.crea && ckInRange(b.crea,rg); }).length;
     document.getElementById('kMandVal').textContent=actifs.length;
-    document.getElementById('kMandMeta').innerHTML='<span class="pill info">'+rentres+' rentr\u00e9'+(rentres>1?'s':'')+' sur la p\u00e9riode</span>';
+    // pipeline du portefeuille : commissions potentielles au bar\u00e8me (part 50 %) sur les mandats en vente
+    var potCom=0;
+    if(typeof honorairesPour==='function'){
+      actifs.forEach(function(b2){ if(b2.px && (b2.st==='Exclusif'||b2.st==='Simple')){ potCom+=Math.round(honorairesPour(b2.px,'fai')*0.5); } });
+    }
+    document.getElementById('kMandMeta').innerHTML='<span class="pill info">'+rentres+' rentr\u00e9'+(rentres>1?'s':'')+' sur la p\u00e9riode</span>'+
+      (potCom?' <span style="color:var(--ink-3)">potentiel \u2248 '+potCom.toLocaleString('fr-FR')+' \u20ac de com (50 %)</span>':'');
     // tunnel de conversion sur la même période
     var tl=document.getElementById('tunnelLabel'); if(tl) tl.textContent=ckLabelTxt(rg);
     var tc=document.getElementById('tunnelCard');
