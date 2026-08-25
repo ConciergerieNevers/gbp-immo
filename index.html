@@ -1180,11 +1180,14 @@
 
       <!-- ============ COCKPIT ============ -->
       <section class="screen" id="cockpit">
-        <div class="sectitle"><h2>Ma journée</h2><div class="grow"></div>
-          <button class="btn pri" id="addTaskBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Tâche</span></button></div>
-        <div class="card pad" id="todayCard"><div class="estimempty">Chargement…</div></div>
+        <!-- affichée UNIQUEMENT s'il y a des tâches en retard -->
+        <div id="lateSection" hidden style="margin-bottom:22px">
+          <div class="sectitle"><h2>⚠️ Tâches en retard <span class="eyebrow" id="lateCount" style="margin-left:8px"></span></h2><div class="grow"></div>
+            <button class="btn pri" id="addTaskBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Tâche</span></button></div>
+          <div class="card pad" id="todayCard"></div>
+        </div>
 
-        <div class="sectitle" style="margin-top:22px"><h2>Mon activité</h2><div class="grow"></div>
+        <div class="sectitle"><h2>Mon activité</h2><div class="grow"></div>
           <button class="btn pri" id="addVenteBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Vente</span></button></div>
         <div class="ckbar">
           <div class="ag-seg" id="ckMode">
@@ -2995,22 +2998,15 @@
       '<button type="button" class="task-push" data-push="'+t.id+'" title="Repousser la t\u00e2che">\u21b7</button></div>';
   }
   function renderToday(){
-    var card=document.getElementById('todayCard'); if(!card) return;
+    // cockpit : UNIQUEMENT les t\u00e2ches en retard \u2014 la section enti\u00e8re est masqu\u00e9e s'il n'y en a pas
+    var sec=document.getElementById('lateSection'), card=document.getElementById('todayCard');
+    if(!sec||!card) return;
     var today=isoToday();
-    var rdvJour=(agendaData||[]).filter(function(r){ return r.date===today; })
-      .sort(function(a,b){ return (a.heure||'99').localeCompare(b.heure||'99'); });
-    // cockpit : RDV du jour + UNIQUEMENT les t\u00e2ches en retard (rubrique masqu\u00e9e sinon)
     var late=tachesData.filter(function(t){ return t.echeance && t.echeance<today; });
-    var html='';
-    if(rdvJour.length){
-      html+='<div class="restyle-sub" style="margin-top:0">\ud83d\udcc5 Aujourd\u2019hui</div>';
-      html+=rdvJour.map(function(r){ return '<div class="task-row" data-rdv="'+r.id+'"><span style="font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;flex:none">'+(r.heure||'\u2014')+'</span><div class="task-main"><b>'+escH(r.titre)+'</b>'+(r.lien?'<small>'+escH(r.lien)+'</small>':'')+'</div><span class="pill">'+(r.type||'RDV')+'</span></div>'; }).join('');
-    }
-    if(late.length){
-      html+='<div class="restyle-sub"'+(rdvJour.length?'':' style="margin-top:0"')+'>\u26a0\ufe0f T\u00e2ches en retard ('+late.length+')</div>';
-      html+=late.map(taskRow).join('');
-    }
-    card.innerHTML=html||'<div class="estimempty">Aucun RDV aujourd\u2019hui et aucune t\u00e2che en retard \ud83c\udf89</div>';
+    if(!late.length){ sec.hidden=true; card.innerHTML=''; return; }
+    sec.hidden=false;
+    var lc=document.getElementById('lateCount'); if(lc) lc.textContent=late.length;
+    card.innerHTML=late.map(taskRow).join('');
   }
   function doneRow(t){
     return '<div class="task-row" data-tid="'+t.id+'" style="opacity:.72">'+
