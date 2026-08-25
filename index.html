@@ -2019,7 +2019,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-160729';
+  var __BUILD='20260825-163131';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3159,7 +3159,7 @@
           document.getElementById('addrS').textContent=(p.postcode||'')+' '+(p.city||'')+' · géolocalisé ✓';
           if(typeof estVilleTxt!=='undefined') estVilleTxt=((p.postcode||'')+' '+(p.city||'')).trim()||null;
           estCoord={lat:c[1], lon:c[0], insee:p.citycode, label:p.label};
-          if(typeof editingEstimId!=='undefined') editingEstimId=null;
+          // idem : la géolocalisation ne casse pas le mode « mise à jour »
           document.getElementById('addrSearch').hidden=true; document.getElementById('addrDisplay').hidden=false;
           document.getElementById('pgSub').textContent=p.label+' · en cours';
           if(typeof updateRisks==='function') updateRisks(estCoord.lat, estCoord.lon, estCoord.insee);
@@ -4068,6 +4068,27 @@
     if(typeof updateBackContact==='function') updateBackContact();
     go('estimation');
     toast('Estimation rechargée \u2014 '+(r.adresse||''));
+    // ANALYSE AUTOMATIQUE : coordonnées mémorisées, ou géocodage BAN de l'adresse (anciennes estimations)
+    try{
+      var co=(dt.coord&&dt.coord.lat)?dt.coord:null;
+      if(!co && r.adresse){
+        var qGeo=r.adresse+(estVilleTxt?' '+estVilleTxt:' Nevers');
+        var rgGeo=await fetch('https://api-adresse.data.gouv.fr/search/?limit=1&q='+encodeURIComponent(qGeo));
+        var jg=await rgGeo.json();
+        var fg=jg.features&&jg.features[0];
+        if(fg && fg.properties && fg.properties.score>0.5){
+          co={lat:fg.geometry.coordinates[1], lon:fg.geometry.coordinates[0], insee:fg.properties.citycode, label:fg.properties.label};
+          if(!estVilleTxt) estVilleTxt=((fg.properties.postcode||'')+' '+(fg.properties.city||'')).trim()||null;
+        }
+      }
+      if(co){
+        estCoord=co;
+        g('addrS').textContent=(estVilleTxt?estVilleTxt+' · ':'')+'géolocalisé ✓ · estimation du '+(r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR'):'');
+        window.__keepBaseOnce=!!state.baseM2;   // la médiane mémorisée reste (prix fidèle), l'analyse se recharge
+        if(typeof updateRisks==='function') updateRisks(co.lat, co.lon, co.insee);
+        if(typeof refreshMarket==='function') refreshMarket();
+      }
+    }catch(eGeo){ console.warn('[ESTIMAKE] géocodage hydratation', eGeo); }
   }
   loadEstimations();
   /* ---------- enregistrement de l'estimation ---------- */
@@ -4122,6 +4143,7 @@
              terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav,
              baseM2:state.baseM2||null, tgls:state.tgls, dpeClasse:(g('fDpeCl')&&g('fDpeCl').value)||null,
+             coord:estCoord||null,
              ville:(function(){ var s=((g('addrS')||{}).textContent||'').split('·')[0].trim();
                if(s&&!/estimation du|sélectionne/i.test(s)) return s; return estVilleTxt||null; })() }
     };
@@ -4217,7 +4239,10 @@
     if(kept.length){
       var med=median(kept);
       document.getElementById('compSummary').innerHTML='M\u00e9diane retenue : <b>'+Math.round(med).toLocaleString('fr-FR')+' \u20ac/m\u00b2</b> sur '+kept.length+' vente'+(kept.length>1?'s':'')+' correspondante'+(kept.length>1?'s':'')+(dvfComps[0]&&dvfComps[0].demo?' \u00b7 donn\u00e9es de d\u00e9mo \u2014 choisis une adresse r\u00e9elle':'')+' \u00b7 touche une vente pour l\u2019\u00e9carter';
-      state.baseM2=med; compute();
+      // après un rechargement d'estimation, on garde UNE fois la médiane mémorisée (fidélité au prix remis au client)
+      if(window.__keepBaseOnce && state.baseM2){ window.__keepBaseOnce=false; }
+      else { state.baseM2=med; }
+      compute();
     } else {
       document.getElementById('compSummary').innerHTML='\u26a0\ufe0f Aucune vente s\u00e9lectionn\u00e9e \u2014 touche une ligne pour en retenir au moins une.';
     }
@@ -4850,7 +4875,8 @@
       document.getElementById('addrS').textContent=b.dataset.ctx+' · géolocalisé ✓';
       if(typeof estVilleTxt!=='undefined') estVilleTxt=(b.dataset.ctx||'').split('·')[0].trim()||null;
       estCoord={lat:+b.dataset.lat, lon:+b.dataset.lon, insee:b.dataset.insee, label:b.dataset.label};
-      if(typeof editingEstimId!=='undefined') editingEstimId=null;
+      // NB : on NE touche PAS à editingEstimId — corriger l'adresse d'une estimation ouverte
+      // met à jour LA MÊME estimation (une nouvelle = bouton « Nouvelle estimation » / le +)
       search.hidden=true; disp.hidden=false; sug.innerHTML='';
       document.getElementById('pgSub').textContent=b.dataset.label+' · en cours';
       // nouvelle adresse → risques réels + reset DVF
