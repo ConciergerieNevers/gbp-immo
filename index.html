@@ -1028,6 +1028,7 @@
           <div class="menu-hd"><div class="av" id="menuAvBig">JG</div><div style="min-width:0"><b id="menuName">Jimmy Garcia</b><small id="menuEmail">—</small></div></div>
           <a class="menu-item" href="https://v2.immo-facile.com/catalog/admin-v2/home.php" target="_blank" rel="noopener" role="menuitem" style="text-decoration:none;color:inherit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> Ouvrir Immo-Facile</a>
           <button class="menu-item" id="trashBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg> Corbeille</button>
+          <button class="menu-item" id="goalsBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg> Paramètres &amp; objectifs</button>
           <button class="menu-item" id="avatarBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg> Photo de profil</button>
           <input type="file" accept="image/*" id="avatarInput" hidden>
           <button class="menu-item" id="pwdBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Changer le mot de passe</button>
@@ -1092,18 +1093,9 @@
             <div class="stage"><span class="nm">→ Compromis</span><div class="bar"><i style="width:33%"></i></div><span class="n tnum">21</span><span class="rate">58 %</span></div>
             <div class="stage"><span class="nm">→ Ventes actées</span><div class="bar"><i style="width:22%"></i></div><span class="n tnum">14</span><span class="rate">67 %</span></div>
           </div>
-          <div class="card pad">
+          <div class="card pad" id="goalsCard">
             <div class="eyebrow">Objectifs</div>
-            <div style="margin:15px 0 20px">
-              <div class="goalrow"><b>Annuel · CA</b><span class="tnum">218 k€ <span style="color:var(--ink-3)">/ 300 k€</span></span></div>
-              <div class="prog"><i style="width:73%"></i></div>
-              <div style="font-size:12px;color:var(--ink-3);margin-top:6px">73 % atteint · il reste 4,5 mois</div>
-            </div>
-            <div>
-              <div class="goalrow"><b>Mensuel · mandats</b><span class="tnum">3 <span style="color:var(--ink-3)">/ 4</span></span></div>
-              <div class="prog g"><i style="width:75%"></i></div>
-              <div style="font-size:12px;color:var(--ink-3);margin-top:6px">1 mandat pour tenir l'objectif d'août</div>
-            </div>
+            <div class="estimempty" style="margin-top:12px">Définis tes objectifs dans <b>Profil → Paramètres &amp; objectifs</b>.</div>
           </div>
         </div>
 
@@ -1643,6 +1635,26 @@
       <input type="date" id="statsFrom"> <span>→</span> <input type="date" id="statsTo">
     </div>
     <div id="statsBody" style="max-height:52vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- ======== PARAMÈTRES & OBJECTIFS ======== -->
+<div class="modal" id="goalsModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b>Paramètres &amp; objectifs</b>
+      <button class="modal-x" id="goalsX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form class="modal-body" id="goalsForm">
+      <div class="mfields">
+        <label class="mf"><span>Objectif CA annuel (€)</span><input name="g_ca" type="number" step="10000" placeholder="300000"></label>
+        <label class="mf"><span>Objectif commissions annuelles (€)</span><input name="g_com" type="number" step="1000" placeholder="30000"></label>
+        <label class="mf"><span>Objectif mandats / mois</span><input name="g_mand" type="number" placeholder="4"></label>
+        <label class="mf"><span>Objectif ventes / an</span><input name="g_vte" type="number" placeholder="15"></label>
+      </div>
+      <div class="modal-ft">
+        <button type="button" class="btn" id="goalsCancel">Annuler</button>
+        <button type="submit" class="btn pri">Enregistrer</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -2753,6 +2765,7 @@
       if(res.error) throw res.error;
       ventesData=res.data||[];
       updateKpis();
+      if(typeof renderGoals==='function') renderGoals();
     }catch(e){ console.warn('[ESTIMAKE] ventes', e); }
   }
   var cockState={mode:'annee', ref:new Date()};
@@ -2844,6 +2857,7 @@
     });
     ['ckFrom','ckTo'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('change',updateKpis); });
     updateKpis();
+    if(typeof renderGoals==='function') renderGoals();
   })();
   /* --- formulaire vente --- */
   var venteModal=document.getElementById('venteModal'), venteForm=document.getElementById('venteForm'), editingVenteId=null;
@@ -4271,6 +4285,57 @@
   }
   /* =================== AUTHENTIFICATION (Supabase Auth) =================== */
   var authgate=document.getElementById('authgate');
+  var userGoals=null;
+  try{ userGoals=JSON.parse(localStorage.getItem('estimake_goals')||'null'); }catch(e){}
+  function renderGoals(){
+    var card=document.getElementById('goalsCard'); if(!card) return;
+    var g=userGoals;
+    if(!g || (!g.ca&&!g.com&&!g.mand&&!g.vte)){
+      card.innerHTML='<div class="eyebrow">Objectifs</div><div class="estimempty" style="margin-top:12px">D\u00e9finis tes objectifs dans <b>Profil \u2192 Param\u00e8tres &amp; objectifs</b>.</div>';
+      return;
+    }
+    var y=new Date().getFullYear(), mNow=new Date().getMonth();
+    var acteesY=ventesData.filter(function(v){ return v.statut==='acte' && String(v.date_vente||v.created_at||'').slice(0,4)==String(y); });
+    var caY=acteesY.reduce(function(a,v){return a+(v.prix||0);},0);
+    var comY=acteesY.reduce(function(a,v){return a+partVente(v);},0);
+    var mandM=(biens||[]).filter(function(b){ if(!b.crea) return false; var d=new Date(b.crea); return d.getFullYear()===y&&d.getMonth()===mNow; }).length;
+    var vteY=acteesY.length;
+    function line(nm,val,obj,unit,cls){
+      if(!obj) return '';
+      var pct=Math.min(100,Math.round(val/obj*100));
+      return '<div style="margin-bottom:15px"><div class="goalrow"><b>'+nm+'</b><span class="tnum">'+val.toLocaleString('fr-FR')+unit+' <span style="color:var(--ink-3)">/ '+obj.toLocaleString('fr-FR')+unit+'</span></span></div>'+
+        '<div class="prog'+(cls||'')+'"><i style="width:'+pct+'%"></i></div>'+
+        '<div style="font-size:12px;color:var(--ink-3);margin-top:5px">'+pct+' % atteint</div></div>';
+    }
+    card.innerHTML='<div class="eyebrow">Objectifs</div><div style="margin-top:14px">'+
+      line('Annuel \u00b7 CA',caY,g.ca?parseInt(g.ca,10):0,' \u20ac','')+
+      line('Annuel \u00b7 commissions',comY,g.com?parseInt(g.com,10):0,' \u20ac',' g')+
+      line('Mois \u00b7 mandats',mandM,g.mand?parseInt(g.mand,10):0,'','')+
+      line('Annuel \u00b7 ventes',vteY,g.vte?parseInt(g.vte,10):0,'',' g')+'</div>';
+  }
+  (function(){
+    var modal=document.getElementById('goalsModal'), form=document.getElementById('goalsForm');
+    if(!modal) return;
+    document.getElementById('goalsBtn').addEventListener('click',function(){
+      closeMenu();
+      var g=userGoals||{};
+      form.elements.g_ca.value=g.ca||''; form.elements.g_com.value=g.com||'';
+      form.elements.g_mand.value=g.mand||''; form.elements.g_vte.value=g.vte||'';
+      modal.hidden=false;
+    });
+    document.getElementById('goalsX').addEventListener('click',function(){ modal.hidden=true; });
+    document.getElementById('goalsCancel').addEventListener('click',function(){ modal.hidden=true; });
+    modal.addEventListener('click',function(e){ if(e.target===modal) modal.hidden=true; });
+    form.addEventListener('submit',function(ev){
+      ev.preventDefault();
+      userGoals={ ca:form.elements.g_ca.value, com:form.elements.g_com.value,
+        mand:form.elements.g_mand.value, vte:form.elements.g_vte.value };
+      try{ localStorage.setItem('estimake_goals',JSON.stringify(userGoals)); }catch(e){}
+      if(sb){ sb.auth.updateUser({data:{goals:userGoals}}); }
+      modal.hidden=true; renderGoals();
+      toast('Objectifs enregistr\u00e9s \u2713');
+    });
+  })();
   function applyAvatar(du){
     if(!du) return;
     var b=document.getElementById('menuBtn'), big=document.getElementById('menuAvBig');
@@ -4285,6 +4350,8 @@
       document.getElementById('menuEmail').textContent=email; // e-mail dans le menu profil
       var av=(session.user.user_metadata&&session.user.user_metadata.avatar)||null;
       if(av) applyAvatar(av);
+      var gl=(session.user.user_metadata&&session.user.user_metadata.goals)||null;
+      if(gl){ userGoals=gl; try{ localStorage.setItem('estimake_goals',JSON.stringify(gl)); }catch(e){} renderGoals(); }
     }
     syncBiens();  // recharge les données une fois connecté
   }
