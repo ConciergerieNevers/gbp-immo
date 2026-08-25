@@ -2083,7 +2083,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260825-183211';
+  var B='20260825-183406';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2160,11 +2160,21 @@
     auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
   }) : null;
   async function readTable(table, build){
-    var q = build(sb.from(table));
-    var res = await q;
-    if(res.error && sbRead){
-      console.warn('[ESTIMAKE] lecture '+table+' via session KO ('+res.error.message+') → relecture sans jeton');
-      res = await build(sbRead.from(table));
+    var res;
+    try{ res = await build(sb.from(table)); }
+    catch(e){ res = {error:e, data:null}; }
+    // relecture sans jeton si ERREUR **ou si la session ne renvoie RIEN** :
+    // avec des droits serveur incomplets, la base filtre en silence (200 + 0 ligne) et vidait l'écran
+    var vide = !res.error && Array.isArray(res.data) && res.data.length===0;
+    if((res.error || vide) && sbRead){
+      try{
+        var alt = await build(sbRead.from(table));
+        if(!alt.error && Array.isArray(alt.data) && alt.data.length){
+          if(res.error) console.warn('[ESTIMAKE] '+table+' : session KO ('+res.error.message+') → lecture de secours');
+          else console.warn('[ESTIMAKE] '+table+' : 0 ligne avec la session → lecture de secours ('+alt.data.length+')');
+          return alt;
+        }
+      }catch(e2){}
     }
     return res;
   }
@@ -2176,7 +2186,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-183211';
+  var __BUILD='20260825-183406';
   (function(){
     var checking=false;
     function modalOpen(){
