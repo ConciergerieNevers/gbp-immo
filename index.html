@@ -457,6 +457,10 @@
   @media (min-width:901px){ .fabmenu{bottom:96px} }
   /* To-do */
   .task-row{display:flex;align-items:center;gap:11px;padding:10px 2px;border-top:1px solid var(--line)}
+  .task-row[data-tid]{cursor:pointer}
+  .task-push{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;flex:none;
+    width:28px;height:28px;border-radius:9px;font-size:15px;line-height:1;display:grid;place-items:center;padding:0}
+  .task-push:hover{border-color:var(--accent);color:var(--accent)}
   .task-row:first-child{border-top:0}
   .task-ck{width:22px;height:22px;border-radius:7px;border:2px solid var(--line-2);background:var(--surface);cursor:pointer;flex:none;display:grid;place-items:center;color:transparent;padding:0}
   .task-ck.done{background:var(--good);border-color:var(--good);color:#fff}
@@ -1175,7 +1179,7 @@
 
       <!-- ============ COCKPIT ============ -->
       <section class="screen" id="cockpit">
-        <div class="sectitle"><h2>Ma journée &amp; à faire</h2><div class="grow"></div>
+        <div class="sectitle"><h2>Ma journée</h2><div class="grow"></div>
           <button class="btn pri" id="addTaskBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Tâche</span></button></div>
         <div class="card pad" id="todayCard"><div class="estimempty">Chargement…</div></div>
 
@@ -1795,6 +1799,22 @@
         <button type="submit" class="btn pri">Enregistrer</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ======== REPOUSSER UNE TÂCHE ======== -->
+<div class="modal" id="pushModal" hidden>
+  <div class="modal-card" style="max-width:420px">
+    <div class="modal-hd"><b>↷ Repousser la tâche</b>
+      <button class="modal-x" id="pushX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body">
+      <div class="mfields" style="grid-template-columns:1fr">
+        <button type="button" class="btn" id="pushTomorrow" style="justify-content:center">📅 Demain</button>
+        <button type="button" class="btn" id="pushNextWeek" style="justify-content:center">📆 Semaine prochaine (lundi)</button>
+        <label class="mf mf-wide"><span>Un autre jour</span><input type="date" id="pushDate"></label>
+        <button type="button" class="btn pri" id="pushGo" style="justify-content:center">Repousser à cette date</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2959,25 +2979,26 @@
     return '<div class="task-row" data-tid="'+t.id+'">'+
       '<button type="button" class="task-ck" data-ck="'+t.id+'" title="Marquer fait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></button>'+
       '<div class="task-main" data-open="'+t.id+'"><b>'+escH(t.titre)+'</b>'+((t.lien||t.note)?'<small>'+escH([t.lien,t.note].filter(Boolean).join(' \u00b7 '))+'</small>':'')+'</div>'+
-      dueBadge(t)+'</div>';
+      dueBadge(t)+
+      '<button type="button" class="task-push" data-push="'+t.id+'" title="Repousser la t\u00e2che">\u21b7</button></div>';
   }
   function renderToday(){
     var card=document.getElementById('todayCard'); if(!card) return;
     var today=isoToday();
     var rdvJour=(agendaData||[]).filter(function(r){ return r.date===today; })
       .sort(function(a,b){ return (a.heure||'99').localeCompare(b.heure||'99'); });
-    var in7=new Date(); in7.setDate(in7.getDate()+7); var in7s=isoD(in7);
-    var urgent=tachesData.filter(function(t){ return t.echeance && t.echeance<=in7s; });
+    // cockpit : RDV du jour + UNIQUEMENT les t\u00e2ches en retard (rubrique masqu\u00e9e sinon)
+    var late=tachesData.filter(function(t){ return t.echeance && t.echeance<today; });
     var html='';
     if(rdvJour.length){
       html+='<div class="restyle-sub" style="margin-top:0">\ud83d\udcc5 Aujourd\u2019hui</div>';
       html+=rdvJour.map(function(r){ return '<div class="task-row" data-rdv="'+r.id+'"><span style="font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;flex:none">'+(r.heure||'\u2014')+'</span><div class="task-main"><b>'+escH(r.titre)+'</b>'+(r.lien?'<small>'+escH(r.lien)+'</small>':'')+'</div><span class="pill">'+(r.type||'RDV')+'</span></div>'; }).join('');
     }
-    if(urgent.length){
-      html+='<div class="restyle-sub"'+(rdvJour.length?'':' style="margin-top:0"')+'>\u2705 \u00c0 faire (7 jours)</div>';
-      html+=urgent.map(taskRow).join('');
+    if(late.length){
+      html+='<div class="restyle-sub"'+(rdvJour.length?'':' style="margin-top:0"')+'>\u26a0\ufe0f T\u00e2ches en retard ('+late.length+')</div>';
+      html+=late.map(taskRow).join('');
     }
-    card.innerHTML=html||'<div class="estimempty">Rien d\u2019urgent \u2014 journ\u00e9e libre ou tout est \u00e0 jour \ud83c\udf89</div>';
+    card.innerHTML=html||'<div class="estimempty">Aucun RDV aujourd\u2019hui et aucune t\u00e2che en retard \ud83c\udf89</div>';
   }
   function doneRow(t){
     return '<div class="task-row" data-tid="'+t.id+'" style="opacity:.72">'+
@@ -3077,14 +3098,45 @@
         toast('Tâche remise à faire ✓'); syncTaches();
       }catch(err){ toast('Impossible de remettre la tâche.'); }
     })(); return; }
+    var pb=e.target.closest('[data-push]');
+    if(pb){ openPushModal(pb.dataset.push); return; }
     var op=e.target.closest('.task-main[data-open]');
     if(op){ var t=tachesData.find(function(x){ return x.id===op.dataset.open; })||tachesFaites.find(function(x){ return x.id===op.dataset.open; }); if(t) openTaskForm(t); return; }
     var rr=e.target.closest('.task-row[data-rdv]');
     if(rr && typeof agendaData!=='undefined' && typeof openRdvForm==='function'){
       var rv=agendaData.find(function(x){ return String(x.id)===rr.dataset.rdv; });
       if(rv){ go('agenda'); openRdvForm(rv); }
+      return;
     }
+    // clic n'importe où ailleurs sur la ligne = modifier la tâche
+    var tr=e.target.closest('.task-row[data-tid]');
+    if(tr){ var t2=tachesData.find(function(x){ return x.id===tr.dataset.tid; })||tachesFaites.find(function(x){ return x.id===tr.dataset.tid; }); if(t2) openTaskForm(t2); }
   });
+  /* ---------- repousser une tâche (Demain / Semaine prochaine / date choisie) ---------- */
+  var pushModal=document.getElementById('pushModal'), pushTaskId=null;
+  function openPushModal(id){ pushTaskId=id; var pd=document.getElementById('pushDate'); if(pd) pd.value=''; pushModal.hidden=false; }
+  async function pushTaskTo(ds){
+    if(!pushTaskId||!sb||!ds) return;
+    try{
+      var r=await sb.from('taches').update({echeance:ds}).eq('id',pushTaskId);
+      if(r.error) throw r.error;
+      pushModal.hidden=true; pushTaskId=null;
+      toast('Tâche repoussée au '+frDay(ds)+' ✓'); syncTaches();
+    }catch(e){ toast('⚠ Impossible de repousser : '+((e&&e.message)||e)); }
+  }
+  (function(){
+    if(!pushModal) return;
+    document.getElementById('pushX').addEventListener('click',function(){ pushModal.hidden=true; });
+    pushModal.addEventListener('click',function(e){ if(e.target===pushModal) pushModal.hidden=true; });
+    document.getElementById('pushTomorrow').addEventListener('click',function(){
+      var d=new Date(); d.setDate(d.getDate()+1); pushTaskTo(isoD(d)); });
+    document.getElementById('pushNextWeek').addEventListener('click',function(){
+      var m=mondayOf(new Date()); m.setDate(m.getDate()+7); pushTaskTo(isoD(m)); });
+    document.getElementById('pushGo').addEventListener('click',function(){
+      var v=document.getElementById('pushDate').value;
+      if(!v){ toast('Choisis d’abord une date.'); return; }
+      pushTaskTo(v); });
+  })();
   // rendu immédiat (la carte ne doit jamais rester sur « Chargement… »), puis la synchro affine
   try{ renderToday(); renderTodoAgenda(); }catch(e){ console.warn('[ESTIMAKE] rendu initial tâches', e); }
   syncTaches();
