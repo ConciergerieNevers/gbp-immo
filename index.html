@@ -1787,7 +1787,12 @@
         <label class="mf mf-wide"><span>Bien (adresse)</span><input name="bien" list="venteBienOptions" placeholder="12 rue des Récollets…" required><datalist id="venteBienOptions"></datalist></label>
         <label class="mf mf-wide"><span>Client</span><input name="client" list="venteCliOptions" placeholder="M. et Mme…"><datalist id="venteCliOptions"></datalist></label>
         <label class="mf"><span>Prix de vente (€)</span><input name="prix" type="number" required></label>
+        <label class="mf"><span>Ce prix est…</span><select name="pmode">
+          <option value="fai">FAI (honoraires inclus)</option>
+          <option value="net">Net vendeur (hors honoraires)</option>
+        </select></label>
         <label class="mf"><span>Honoraires d'agence (€)</span><input name="honoraires" type="number" required></label>
+        <label class="mf" style="align-self:end"><button type="button" class="btn" id="honoBareme" style="width:100%;justify-content:center">↺ Barème agence</button></label>
         <label class="mf"><span>Date</span><input name="date_vente" type="date"></label>
         <label class="mf"><span>Statut</span><select name="statut"><option value="compromis">Compromis signé</option><option value="acte">Vente actée</option></select></label>
         <label class="mf mf-check"><input type="checkbox" name="rentree" checked><span>J'ai rentré le mandat <b style="color:var(--accent)">+25 %</b></span></label>
@@ -1878,6 +1883,12 @@
         <label class="mf"><span>Objectif mandats / mois</span><input name="g_mand" type="number" placeholder="4"></label>
         <label class="mf"><span>Objectif ventes / an</span><input name="g_vte" type="number" placeholder="15"></label>
       </div>
+      <div class="restyle-sub" style="margin-top:14px">Barème honoraires de l'agence</div>
+      <div class="mfields">
+        <label class="mf"><span>Part fixe (€)</span><input name="g_hfix" type="number" step="500" placeholder="3000"></label>
+        <label class="mf"><span>% du prix de vente</span><input name="g_hpct" type="number" step="0.5" placeholder="5"></label>
+      </div>
+      <div style="font-size:12px;color:var(--ink-3);margin-top:6px">Utilisé pour pré-calculer les honoraires d'une vente (3 000 € + 5 % par défaut) — toujours modifiables à la main.</div>
       <div class="modal-ft">
         <button type="button" class="btn" id="goalsCancel">Annuler</button>
         <button type="submit" class="btn pri">Enregistrer</button>
@@ -2022,7 +2033,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-163727';
+  var __BUILD='20260825-164929';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2838,7 +2849,7 @@
               if(row.detail && !vf.bien.value.trim()) vf.bien.value=row.detail;
               vf.statut.value=(stNew==='vendu')?'acte':'compromis';
               if(pxEst && !vf.prix.value) vf.prix.value=pxEst;
-              ventePartPreview();
+              applyBareme(false);   // honoraires pré-calculés au barème (prix FAI)
               toast('Statut « '+row.statut+' » → complète la vente (pré-remplie) pour tes stats.');
             },500);
           } else if(stNew==='vendu' && vEx.statut!=='acte'){
@@ -3710,14 +3721,42 @@
   })();
   /* --- formulaire vente --- */
   var venteModal=document.getElementById('venteModal'), venteForm=document.getElementById('venteForm'), editingVenteId=null;
+  /* ---- bar\u00e8me honoraires agence : fixe + % du prix (Param\u00e8tres, d\u00e9faut 3 000 \u20ac + 5 %) ---- */
+  function bareme(){
+    var g=userGoals||{};
+    return { fix:parseFloat(g.hfix)||3000, pct:parseFloat(g.hpct)||5 };
+  }
+  // prix net vendeur \u2192 honoraires = fixe + %\u00d7prix ; prix FAI \u2192 net=(prix\u2212fixe)/(1+%) et honoraires=prix\u2212net
+  function honorairesPour(prix, mode){
+    var b=bareme(); prix=parseFloat(prix)||0;
+    if(!prix) return 0;
+    if(mode==='net') return Math.round(b.fix + prix*b.pct/100);
+    var net=(prix-b.fix)/(1+b.pct/100);
+    return Math.max(0, Math.round(prix-net));
+  }
+  function applyBareme(force){
+    var e=venteForm.elements;
+    if(!e.prix.value) return;
+    if(force || !e.honoraires.value || e.honoraires.dataset.auto==='1'){
+      e.honoraires.value=honorairesPour(e.prix.value, e.pmode.value);
+      e.honoraires.dataset.auto='1';
+    }
+    ventePartPreview();
+  }
   function ventePartPreview(){
     var e=venteForm.elements;
     var h=parseFloat(e.honoraires.value)||0;
     var p=Math.round(h*((e.rentree.checked?0.25:0)+(e.sortie.checked?0.25:0)));
     var pct=((e.rentree.checked?25:0)+(e.sortie.checked?25:0));
-    document.getElementById('ventePart').innerHTML='Ma commission ('+pct+' %) : <b>'+p.toLocaleString('fr-FR')+' \u20ac</b>';
+    var b=bareme();
+    document.getElementById('ventePart').innerHTML='Ma commission ('+pct+' %) : <b>'+p.toLocaleString('fr-FR')+' \u20ac</b>'+
+      '<br><small style="color:var(--ink-3)">Bar\u00e8me : '+b.fix.toLocaleString('fr-FR')+' \u20ac + '+String(b.pct).replace('.',',')+' % '+(venteForm.elements.pmode.value==='fai'?'(prix FAI \u2192 honoraires d\u00e9duits)':'(sur le net vendeur)')+'</small>';
   }
   venteForm.addEventListener('input',ventePartPreview);
+  venteForm.elements.prix.addEventListener('input',function(){ applyBareme(false); });
+  venteForm.elements.pmode.addEventListener('change',function(){ applyBareme(false); });
+  venteForm.elements.honoraires.addEventListener('input',function(){ delete this.dataset.auto; });
+  document.getElementById('honoBareme').addEventListener('click',function(){ applyBareme(true); toast('Honoraires recalcul\u00e9s au bar\u00e8me.'); });
   venteForm.elements.client.addEventListener('input',function(){
     var c=contactsData.find(function(x){ return (x.nom||'').trim().toLowerCase()===this.value.trim().toLowerCase(); }.bind(this));
     if(c && c.detail && !venteForm.elements.bien.value.trim()){ venteForm.elements.bien.value=c.detail; }
@@ -3736,6 +3775,7 @@
     e.prix.value=v?(v.prix||''):''; e.honoraires.value=v?(v.honoraires||''):'';
     e.date_vente.value=v?(v.date_vente||''):new Date().toISOString().slice(0,10);
     e.statut.value=v?(v.statut||'compromis'):'compromis';
+    e.pmode.value='fai'; delete e.honoraires.dataset.auto;
     e.rentree.checked=v?!!v.rentree:true; e.sortie.checked=v?!!v.sortie:true;
     var esc=escH, ob='', oc='';
     (biens||[]).forEach(function(b){ if(b.ad) ob+='<option value="'+esc(b.ad)+'">'; });
@@ -5487,6 +5527,7 @@
       var g=userGoals||{};
       form.elements.g_ca.value=g.ca||''; form.elements.g_com.value=g.com||'';
       form.elements.g_mand.value=g.mand||''; form.elements.g_vte.value=g.vte||'';
+      form.elements.g_hfix.value=g.hfix||''; form.elements.g_hpct.value=g.hpct||'';
       modal.hidden=false;
     });
     document.getElementById('goalsX').addEventListener('click',function(){ modal.hidden=true; });
@@ -5495,7 +5536,8 @@
     form.addEventListener('submit',function(ev){
       ev.preventDefault();
       userGoals={ ca:form.elements.g_ca.value, com:form.elements.g_com.value,
-        mand:form.elements.g_mand.value, vte:form.elements.g_vte.value };
+        mand:form.elements.g_mand.value, vte:form.elements.g_vte.value,
+        hfix:form.elements.g_hfix.value, hpct:form.elements.g_hpct.value };
       try{ localStorage.setItem('estimake_goals',JSON.stringify(userGoals)); }catch(e){}
       if(sb){ sb.auth.updateUser({data:{goals:userGoals}}); }
       modal.hidden=true; renderGoals();
