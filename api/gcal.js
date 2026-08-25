@@ -69,7 +69,10 @@ function gBody(r){
   if(r.heure && /^\d{2}:\d{2}/.test(r.heure)){
     var sh=parseInt(r.heure.slice(0,2),10), mm=r.heure.slice(3,5);
     body.start={ dateTime:r.date+'T'+r.heure.slice(0,5)+':00', timeZone:'Europe/Paris' };
-    body.end={ dateTime:r.date+'T'+pad2((sh+1)%24)+':'+mm+':00', timeZone:'Europe/Paris' };
+    var eh=sh+1, ed=r.date;
+    if(eh>23){ eh=0; var ndx=new Date(r.date+'T00:00:00'); ndx.setDate(ndx.getDate()+1);
+      ed=ndx.getFullYear()+'-'+pad2(ndx.getMonth()+1)+'-'+pad2(ndx.getDate()); }   // 23:30 → fin le lendemain 00:30
+    body.end={ dateTime:ed+'T'+pad2(eh)+':'+mm+':00', timeZone:'Europe/Paris' };
   } else {
     var nd=new Date(r.date+'T00:00:00'); nd.setDate(nd.getDate()+1);
     body.start={ date:r.date };
@@ -89,12 +92,15 @@ async function pushOne(id){
   }
   if(r.gcal_id){
     var pr = await fetch(base+'/'+r.gcal_id, { method:'PATCH', headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'}, body:JSON.stringify(gBody(r)) });
-    if(pr.status !== 404){ return { updated:r.gcal_id, status:pr.status }; }   // 404 => recréé ci-dessous
+    if(pr.ok){ return { updated:r.gcal_id }; }
+    if(pr.status !== 404){ throw new Error('Google a refusé la mise à jour ('+pr.status+') : '+(await pr.text()).slice(0,180)); }
+    // 404 => l'événement n'existe plus côté Google → recréé ci-dessous
   }
   var cr = await fetch(base, { method:'POST', headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'}, body:JSON.stringify(gBody(r)) });
-  var cj = await cr.json();
-  if(cj && cj.id){ await sbFetch('rdv?id=eq.'+id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ gcal_id:cj.id }) }); }
-  return { created:(cj && cj.id) || null };
+  var cj = await cr.json().catch(function(){ return {}; });
+  if(!cr.ok || !cj.id){ throw new Error('Google a refusé la création ('+cr.status+') : '+JSON.stringify(cj).slice(0,180)); }
+  await sbFetch('rdv?id=eq.'+id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ gcal_id:cj.id }) });
+  return { created:cj.id };
 }
 
 // app → Google (suppression) : supprime l'événement Google, garde la ligne (deleted=true)
@@ -134,9 +140,17 @@ async function applyEvent(ev){
   if(s.dateTime){ var p=inParis(s.dateTime); date=p.date; heure=p.heure; }
   else if(s.date){ date=s.date; }
   if(!date) return 0;
-  var row = { titre:ev.summary||'(sans titre)', date:date, heure:heure, note:(ev.description||''), gcal_id:ev.id, deleted:false };
-  if(ex){ await sbFetch('rdv?id=eq.'+ex.id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify(row) }); }
-  else { row.type='Autre'; await sbFetch('rdv', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify(row) }); }
+  if(ex){
+    // RDV déjà connu de l'app : on ne met à jour QUE titre/date/heure.
+    // La note reste celle de l'app (sinon la description composée « [Type] note — lien »
+    // reviendrait polluer la note à chaque cycle push/pull).
+    var upd = { titre:ev.summary||'(sans titre)', date:date, heure:heure, gcal_id:ev.id, deleted:false };
+    await sbFetch('rdv?id=eq.'+ex.id, { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify(upd) });
+  }
+  else {
+    var row = { titre:ev.summary||'(sans titre)', date:date, heure:heure, note:(ev.description||''), gcal_id:ev.id, deleted:false, type:'Autre' };
+    await sbFetch('rdv', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify(row) });
+  }
   return 1;
 }
 
@@ -153,7 +167,7 @@ async function pull(){
     var u = url + (pageToken ? ('&pageToken='+pageToken) : '');
     var r = await fetch(u, { headers:{Authorization:'Bearer '+tok} });
     if(r.status === 410){ // syncToken invalide → on repart de zéro au prochain appel
-      await sbFetch('gcal_sync?id=eq.1', { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ sync_token:null }) });
+      await saveSyncToken(null);
       return { reset:true };
     }
     var j = await r.json();
@@ -163,8 +177,14 @@ async function pull(){
     if(j.nextPageToken){ pageToken=j.nextPageToken; continue; }
     next = j.nextSyncToken || null; break;
   }
-  if(next){ await sbFetch('gcal_sync?id=eq.1', { method:'PATCH', headers:{Prefer:'return=minimal'}, body:JSON.stringify({ sync_token:next, updated_at:new Date().toISOString() }) }); }
+  if(next){ await saveSyncToken(next); }
   return { changed:changed };
+}
+
+// Upsert : crée la ligne id=1 si elle n'existe pas encore (sinon le token n'était jamais stocké)
+function saveSyncToken(tokenVal){
+  return sbFetch('gcal_sync', { method:'POST', headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify({ id:1, sync_token:tokenVal, updated_at:new Date().toISOString() }) });
 }
 
 function readBody(req){

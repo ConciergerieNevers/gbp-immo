@@ -58,16 +58,21 @@ export default async function handler(req, res){
       if(!/^\d{5}$/.test(insee)){ res.status(400).json({ error:'insee manquant' }); return; }
       var typeS = (q.type==='Appartement') ? 'Appartement' : 'Maison';
       var now = new Date().getFullYear();
-      var yrs = []; for(var y=now-1; y>=now-5; y--) yrs.push(String(y));
+      var yrs = []; for(var y=now; y>=now-5; y--) yrs.push(String(y));   // année en cours incluse (publiée en cours d'année, 404 sinon)
       var out = [];
       var results = await Promise.all(yrs.map(function(yy){ return loadYear(insee, yy).catch(function(){ return null; }); }));
       for(var k=0;k<yrs.length;k++){
         var rows = results[k]; if(!rows){ continue; }
-        // mutations mono-lot du type demandé
-        var byId={};
-        rows.forEach(function(r){ if(r.type===typeS && r.val>0 && r.surf>9){ (byId[r.id]=byId[r.id]||[]).push(r); } });
+        // mutations mono-lot : un SEUL local principal dans la mutation, du type demandé
+        // (une mutation maison+appartement porte la valeur foncière totale → à exclure)
+        var MAIN={'Maison':1,'Appartement':1,'Local industriel. commercial ou assimilé':1};
+        var byId={}, lotCount={};
+        rows.forEach(function(r){
+          if(MAIN[r.type]){ lotCount[r.id]=(lotCount[r.id]||0)+1; }
+          if(r.type===typeS && r.val>0 && r.surf>9){ (byId[r.id]=byId[r.id]||[]).push(r); }
+        });
         var pm2=[];
-        Object.keys(byId).forEach(function(id){ if(byId[id].length===1){ var r=byId[id][0]; var p=r.val/r.surf; if(p>=300&&p<=9000) pm2.push(p); } });
+        Object.keys(byId).forEach(function(id){ if(byId[id].length===1 && lotCount[id]===1){ var r=byId[id][0]; var p=r.val/r.surf; if(p>=300&&p<=9000) pm2.push(p); } });
         if(pm2.length){ out.push({ annee:parseInt(yrs[k],10), median:Math.round(median(pm2)), ventes:pm2.length }); }
       }
       out.sort(function(a,b){ return a.annee-b.annee; });
@@ -90,8 +95,10 @@ export default async function handler(req, res){
 
     // Récupère les 3 derniers millésimes publiés pour élargir l'échantillon
     var nowY = new Date().getFullYear();
-    var years = [String(nowY-1), String(nowY-2), String(nowY-3)];
+    var years = [String(nowY), String(nowY-1), String(nowY-2), String(nowY-3)];   // année en cours incluse (404 ignoré si pas encore publiée)
     var rows = [];
+    var MAIN_TYPES = {'Maison':1,'Appartement':1,'Local industriel. commercial ou assimilé':1};
+    var lotCount = {};
     for(var y=0; y<years.length; y++){
       var url = 'https://files.data.gouv.fr/geo-dvf/latest/csv/'+years[y]+'/communes/'+dept+'/'+insee+'.csv';
       try{
@@ -109,21 +116,24 @@ export default async function handler(req, res){
         for(var i=1;i<lines.length;i++){
           if(!lines[i]) continue;
           var f = parseLine(lines[i]);
+          // compte TOUS les locaux principaux de la mutation (même d'un autre type) :
+          // une mutation maison+appartement porte la valeur foncière totale → à exclure
+          if(MAIN_TYPES[f[iType]]){ var mk=years[y]+'_'+f[iId]; lotCount[mk]=(lotCount[mk]||0)+1; }
           if(f[iType]!==type) continue;
           var val=parseFloat(f[iVal]), surf=parseFloat(f[iSurf]),
               plat=parseFloat(f[iLat]), plon=parseFloat(f[iLon]);
           if(!(val>0) || !(surf>9) || isNaN(plat) || isNaN(plon)) continue;
-          rows.push({ id:f[iId], date:f[iDate], val:val, surf:surf, lat:plat, lon:plon,
+          rows.push({ id:years[y]+'_'+f[iId], date:f[iDate], val:val, surf:surf, lat:plat, lon:plon,
             adr:((f[iNum]||'')+' '+(f[iVoie]||'')).trim() });
         }
       }catch(e){ /* année indisponible → on continue */ }
     }
     if(!rows.length){ res.status(200).json({ comparables:[], median:0, count:0, note:'Aucune vente DVF trouvée pour cette commune.' }); return; }
 
-    // Ne garde que les mutations à un seul lot bâti de ce type (évite les €/m² faussés)
+    // Ne garde que les mutations à un seul local principal, du type demandé (évite les €/m² faussés)
     var byId={}; rows.forEach(function(r){ (byId[r.id]=byId[r.id]||[]).push(r); });
     var clean=[];
-    Object.keys(byId).forEach(function(k){ if(byId[k].length===1) clean.push(byId[k][0]); });
+    Object.keys(byId).forEach(function(k){ if(byId[k].length===1 && lotCount[k]===1) clean.push(byId[k][0]); });
 
     // Distance + €/m², filtre rayon + valeurs aberrantes
     clean.forEach(function(r){ r.dist=haversine(lat,lon,r.lat,r.lon); r.pm2=r.val/r.surf; });
