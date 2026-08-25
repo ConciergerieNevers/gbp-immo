@@ -1243,24 +1243,24 @@
         <div class="grid kpigrid">
           <div class="card kpi kpi-click" data-stat="ca">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 2.5L21 6"/></svg> Mes commissions · <span id="kCaYear">2026</span></div>
-            <div class="val tnum" id="kCaVal">21 840 <span class="unit">€</span></div>
+            <div class="val tnum" id="kCaVal">0 <span class="unit">€</span></div>
             <div class="meta" id="kCaMeta"><span class="trend up">▲ 14 %</span> vs 2025</div>
             <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 28 20 26 40 24 60 22 80 18 100 20 120 14 140 12 160 9 180 6 200 4" fill="none" stroke="var(--brand)" stroke-width="2"/><path d="M0 28 20 26 40 24 60 22 80 18 100 20 120 14 140 12 160 9 180 6 200 4 200 34 0 34Z" fill="var(--brand-soft)" opacity=".5"/></svg>
           </div>
           <div class="card kpi kpi-click" data-stat="prev">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Commissions à venir</div>
-            <div class="val tnum" id="kPrevVal">9 680 <span class="unit">€</span></div>
+            <div class="val tnum" id="kPrevVal">0 <span class="unit">€</span></div>
             <div class="meta" id="kPrevMeta">7 compromis en cours · signés d'ici déc.</div>
             <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="M0 24 25 25 50 20 75 22 100 16 125 18 150 11 175 13 200 7" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/></svg>
           </div>
           <div class="card kpi kpi-click" data-stat="com">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg> Volume de ventes</div>
-            <div class="val tnum" id="kComVal">218 400 <span class="unit">€</span></div>
+            <div class="val tnum" id="kComVal">0 <span class="unit">€</span></div>
             <div class="meta" id="kComMeta"><span class="pill good dot">actées</span> <span style="color:var(--ink-3)">+ 96 800 € en compromis</span></div>
           </div>
           <div class="card kpi kpi-click" data-stat="mand">
             <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16v4H4zM4 12h10M4 17h7"/></svg> Mandats actifs</div>
-            <div class="val tnum" id="kMandVal">18</div>
+            <div class="val tnum" id="kMandVal">0</div>
             <div class="meta" id="kMandMeta"><span class="pill info">11 exclusifs</span> <span class="pill">7 simples</span></div>
           </div>
         </div>
@@ -1303,11 +1303,11 @@
           <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg><input id="bienSearch" placeholder="Rechercher une adresse, une réf., un propriétaire…"></div>
           <button class="btn pri" id="addBienBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Ajouter un bien</span></button>
           <div class="chips" id="bienChips">
-            <button class="chip on" data-f="all">Tous <span class="c">18</span></button>
-            <button class="chip" data-f="Exclusif">Exclusifs <span class="c">11</span></button>
-            <button class="chip" data-f="Simple">Simples <span class="c">7</span></button>
-            <button class="chip" data-f="Compromis">Sous compromis <span class="c">4</span></button>
-            <button class="chip" data-f="Vendu">Vendus <span class="c">3</span></button>
+            <button class="chip on" data-f="all">Tous <span class="c">0</span></button>
+            <button class="chip" data-f="Exclusif">Exclusifs <span class="c">0</span></button>
+            <button class="chip" data-f="Simple">Simples <span class="c">0</span></button>
+            <button class="chip" data-f="Compromis">Sous compromis <span class="c">0</span></button>
+            <button class="chip" data-f="Vendu">Vendus <span class="c">0</span></button>
           </div>
         </div>
         <div class="grid bienscol" id="bienGrid"></div>
@@ -2083,7 +2083,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260825-182300';
+  var B='20260825-182528';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2163,7 +2163,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-182300';
+  var __BUILD='20260825-182528';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2287,35 +2287,7 @@
   var facades=['linear-gradient(160deg,#5b7b8c,#39525f)','linear-gradient(160deg,#8a7a68,#5c4f42)',
     'linear-gradient(160deg,#6e8b7a,#42594c)','linear-gradient(160deg,#8c7f9b,#544a63)',
     'linear-gradient(160deg,#a08258,#6b543a)','linear-gradient(160deg,#5f7a97,#3a4d63)'];
-  var biens=[
-    {ad:'12 rue des Récollets',tw:'Nevers · centre',px:199000,m2:127,ch:4,ty:'Maison',st:'Exclusif',dpe:'D',ref:'GBP-2041',
-     owner:'M. et Mme Delaunay',terr:680,an:1972,gar:true,acq:3,
-     hist:[['Mandat exclusif signé','2 août 2026'],['Reportage photo réalisé','4 août 2026'],['Diffusion Leboncoin + SeLoger','5 août 2026'],['1re visite programmée','samedi 15 août']]},
-    {ad:'34 rue de Charleville',tw:'Nevers · Banlay',px:189000,m2:104,ch:3,ty:'Maison',st:'Compromis',dpe:'C',ref:'GBP-2033',
-     owner:'Succession Morel',terr:410,an:1985,gar:true,acq:0,
-     hist:[['Mandat exclusif','12 mai 2026'],['Offre acceptée · 189 000 €','28 juil. 2026'],['Compromis signé','10 août 2026']]},
-    {ad:'Quai de Médine, T3',tw:'Nevers · bords de Loire',px:149000,m2:68,ch:2,ty:'Appartement',st:'Exclusif',dpe:'C',ref:'GBP-2048',
-     owner:'M. et Mme Ferrand',terr:0,an:2004,gar:true,acq:5,
-     hist:[['Estimation réalisée','8 août 2026'],['Mandat exclusif signé','10 août 2026']]},
-    {ad:'7 rue du Commerce, T2',tw:'Nevers · centre',px:96000,m2:44,ch:1,ty:'Appartement',st:'Simple',dpe:'E',ref:'GBP-2019',
-     owner:'Mme Aubry',terr:0,an:1968,gar:false,acq:2,
-     hist:[['Mandat simple','20 juin 2026'],['Baisse de prix -4 000 €','1 août 2026']]},
-    {ad:'2 impasse des Vignes',tw:'Coulanges-lès-Nevers',px:264000,m2:151,ch:5,ty:'Maison',st:'Exclusif',dpe:'B',ref:'GBP-2044',
-     owner:'M. Ollivier',terr:920,an:2011,gar:true,acq:4,
-     hist:[['Estimation','15 juil. 2026'],['Mandat exclusif','22 juil. 2026'],['3 visites réalisées','août 2026']]},
-    {ad:'18 avenue Colbert',tw:'Nevers · Saint-Genest',px:172000,m2:96,ch:3,ty:'Maison',st:'Simple',dpe:'D',ref:'GBP-2027',
-     owner:'M. et Mme Renard',terr:520,an:1979,gar:true,acq:1,
-     hist:[['Mandat simple','3 juil. 2026'],['1re visite','19 juil. 2026']]},
-    {ad:'5 place Carnot, T4',tw:'Nevers · centre',px:158000,m2:88,ch:3,ty:'Appartement',st:'Compromis',dpe:'C',ref:'GBP-2015',
-     owner:'M. Barbier',terr:0,an:1930,gar:false,acq:0,
-     hist:[['Mandat exclusif','2 juin 2026'],['Compromis signé','5 août 2026']]},
-    {ad:'9 chemin de Marzy',tw:'Marzy',px:229000,m2:134,ch:4,ty:'Maison',st:'Exclusif',dpe:'C',ref:'GBP-2039',
-     owner:'Mme Dupuis',terr:750,an:1998,gar:true,acq:2,
-     hist:[['Estimation','28 juin 2026'],['Mandat exclusif','5 juil. 2026']]},
-    {ad:'22 rue Bovet',tw:'Nevers · Mouësse',px:118000,m2:72,ch:2,ty:'Maison',st:'Vendu',dpe:'E',ref:'GBP-1998',
-     owner:'M. Girard',terr:300,an:1962,gar:false,acq:0,
-     hist:[['Mandat simple','avr. 2026'],['Vente actée · 118 000 €','24 juil. 2026']]}
-  ];
+  var biens=[];   // plus de données de démonstration : vraies données uniquement
   function statusPill(s){ s=s||'\u2014'; return '<span class="pill '+etatCls(s)+'">'+escH(s)+'</span>'; }
   function renderBiens(filter,q){
     var grid=document.getElementById('bienGrid');grid.innerHTML='';
@@ -2917,21 +2889,7 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
 
   /* ---------- CRM ---------- */
-  var contactsData=[
-    {id:'c1',role:'vendeur',nom:'Delaunay',detail:'12 rue des Récollets',statut:'Exclusif',budget:null,relance:'il y a 3 j',action:'Signature RDV jeudi',couleur:'#6a9'},
-    {id:'c2',role:'vendeur',nom:'Ferrand',detail:'Quai de Médine T3',statut:'Exclusif',budget:null,relance:'hier',action:'Valider les photos',couleur:'#7aa'},
-    {id:'c3',role:'vendeur',nom:'Ollivier',detail:'2 impasse des Vignes',statut:'Exclusif',budget:null,relance:'il y a 5 j',action:'Faire un retour visites',couleur:'#b78'},
-    {id:'c4',role:'vendeur',nom:'Renard',detail:'18 avenue Colbert',statut:'Simple',budget:null,relance:'il y a 8 j',action:'Proposer l\'exclusivité',couleur:'#a86'},
-    {id:'c5',role:'vendeur',nom:'Aubry',detail:'7 rue du Commerce',statut:'Simple',budget:null,relance:'il y a 12 j',action:'Point sur baisse de prix',couleur:'#699'},
-    {id:'c6',role:'acquereur',nom:'Camille Petit',detail:'T3/T4 centre',statut:null,budget:160000,relance:'hier',action:'Envoyer 2 biens correspondants',couleur:'#6a9'},
-    {id:'c7',role:'acquereur',nom:'Thomas Girard',detail:'Maison ≤ 200 k€',statut:null,budget:200000,relance:'il y a 2 j',action:'Visite samedi 15/08',couleur:'#7aa'},
-    {id:'c8',role:'acquereur',nom:'Léa Fontaine',detail:'Locatif rentable',statut:null,budget:120000,relance:'il y a 4 j',action:'Relancer T2 rue Bovet',couleur:'#b78'},
-    {id:'c9',role:'acquereur',nom:'Hugo Blanc',detail:'Primo-accédant',statut:null,budget:140000,relance:'il y a 6 j',action:'Appeler courtier',couleur:'#a86'},
-    {id:'c10',role:'prospect',nom:'Famille Lambert',detail:'Estimation en ligne',statut:'Chaud',budget:null,relance:'il y a 1 j',action:'Caler RDV estimation',couleur:'#6a9'},
-    {id:'c11',role:'prospect',nom:'M. Chevalier',detail:'Recommandation',statut:'Tiède',budget:null,relance:'il y a 3 j',action:'Rappeler mardi',couleur:'#7aa'},
-    {id:'c12',role:'prospect',nom:'Mme Roy',detail:'Porte-à-porte',statut:'À qualifier',budget:null,relance:'il y a 7 j',action:'Envoyer plaquette GBP',couleur:'#b78'},
-    {id:'c13',role:'prospect',nom:'SCI Vauban',detail:'Réseau',statut:'Chaud',budget:null,relance:'il y a 2 j',action:'Proposer estimation loc.',couleur:'#a86'}
-  ];
+  var contactsData=[];   // plus de données de démonstration : vraies données uniquement
   function biensForContact(c){
     if(!c || !c.nom) return [];
     var nom=c.nom.trim().toLowerCase(), det=(c.detail||'').trim().toLowerCase();
@@ -3364,12 +3322,7 @@
   });
 
   /* ---------- AGENDA (RDV) ---------- */
-  var agendaData=[
-    {id:'r1',titre:'Estimation — 12 rue des Récollets',type:'Estimation',date:'2026-08-21',heure:'14:30',lien:'M. et Mme Delaunay',note:'Apporter les diagnostics'},
-    {id:'r2',titre:'Visite — 2 impasse des Vignes',type:'Visite',date:'2026-08-22',heure:'11:00',lien:'M. Ollivier · GBP-2044',note:''},
-    {id:'r3',titre:'Signature compromis — 34 rue de Charleville',type:'Signature',date:'2026-08-22',heure:'16:00',lien:'Étude Me Petit',note:''},
-    {id:'r4',titre:'Appel acquéreur T3',type:'Appel',date:'2026-08-25',heure:'09:30',lien:'Camille Petit',note:'Proposer quai de Médine'}
-  ];
+  var agendaData=[];   // plus de données de démonstration : vraies données uniquement
   var TYPECOL={Estimation:'info',Visite:'warn',Signature:'good',Appel:'',Autre:''};
   function frDay(iso){ try{ var d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return iso; } }
   function pad2(n){ return String(n).padStart(2,'0'); }
@@ -4138,8 +4091,7 @@
     var rg=ckRange();
     var lb=document.getElementById('ckLabel'); if(lb) lb.textContent=ckLabelTxt(rg);
     var cp=document.getElementById('ckPerso'); if(cp) cp.hidden=(cockState.mode!=='perso');
-    var hasRealFiches=(contactsData||[]).some(function(c){ return c.id && String(c.id).length>4; });
-    if(!ventesData.length && !(biens&&biens.length&&biens[0].id) && !hasRealFiches) return;   // aucune vraie donnée → démo
+    // plus de mode démo : on affiche toujours les chiffres réels (0 € si rien)
     document.getElementById('kCaYear').textContent=ckLabelTxt(rg);
     var inP=ventesData.filter(function(v){ return ckInRange(v.date_vente||v.created_at,rg); });
     var actees=inP.filter(function(v){ return v.statut==='acte'; });
@@ -4614,7 +4566,7 @@
     document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !m.hidden) closeC(); });
   })();
   /* ---- retirer une estimation : on demande POURQUOI ---- */
-  var estimFilter='cours', estimDelId=null;
+  var estimFilter='all', estimDelId=null;
   function openEstimDel(id){
     estimDelId=id;
     var r=(window.__estimsAll||[]).find(function(x){ return x.id===id; });
