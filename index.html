@@ -2019,7 +2019,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-155354';
+  var __BUILD='20260825-160516';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4913,7 +4913,7 @@
     } else {
       if(g('fPieces').value) specsBits.push(g('fPieces').value+' pièces');
       if(g('fChambres').value) specsBits.push(g('fChambres').value+' chambres');
-      if(g('fTerr').value&&g('fTerr').value!=='0') specsBits.push('terrain de '+g('fTerr').value+' m²');
+      if(type!=='Appartement' && g('fTerr').value && g('fTerr').value!=='0') specsBits.push('terrain de '+g('fTerr').value+' m²');
     }
     var coverHtml='<div class="dsheet mcover">'+
       '<img class="mc-logo" src="/logo-gb-app.png" alt="GB Immobilier">'+
