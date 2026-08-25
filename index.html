@@ -1138,7 +1138,8 @@
     <div class="authfield"><label for="authpass">Mot de passe</label>
       <input type="password" id="authpass" autocomplete="current-password" placeholder="••••••••••" required></div>
     <button class="btn pri authbtn" type="submit" id="authsubmit">Se connecter</button>
-    <div class="foot">Accès réservé à l'agence · ESTIMAKE</div>
+    <div class="foot">Accès réservé à l'agence · ESTIMAKE <span id="authVer" style="opacity:.6"></span></div>
+    <button type="button" id="authReset" style="margin-top:10px;background:none;border:0;color:var(--ink-3);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer;width:100%">Problème de connexion ? Réinitialiser l'application</button>
   </form>
 </div>
 
@@ -2082,7 +2083,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260825-181344';
+  var B='20260825-181839';
   function check(){
     try{
       fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
@@ -2096,6 +2097,17 @@
     }catch(e){}
   }
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') check(); });
+  // bouton de secours : vide tout (session, caches) et recharge la dernière version
+  document.addEventListener('DOMContentLoaded',function(){
+    var v=document.getElementById('authVer'); if(v) v.textContent='· v'+B;
+    var r=document.getElementById('authReset');
+    if(r) r.addEventListener('click',function(){
+      try{ localStorage.clear(); }catch(e){}
+      try{ sessionStorage.clear(); }catch(e){}
+      try{ if(window.caches&&caches.keys) caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }); }catch(e){}
+      setTimeout(function(){ location.replace(location.pathname+'?r='+Date.now()); },350);
+    });
+  });
   setTimeout(check,4000);
   setInterval(check,900000);
   // filet de sécurité : si l'application plante au démarrage, on propose la mise à jour
@@ -2141,7 +2153,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-181344';
+  var __BUILD='20260825-181839';
   (function(){
     var checking=false;
     function modalOpen(){
