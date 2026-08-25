@@ -1689,10 +1689,19 @@
         </select></label>
         <label class="mf"><span>Prix de vente réel (€)</span><input name="v_prix" type="number" inputmode="numeric" placeholder="= prix affiché"></label>
         <label class="mf"><span>Ce prix est…</span><select name="v_pmode"><option value="fai">FAI (honoraires inclus)</option><option value="net">Net vendeur</option></select></label>
-        <label class="mf"><span>Honoraires agence (€)</span><input name="v_hono" type="number" inputmode="numeric" placeholder="auto barème"></label>
-        <label class="mf" style="align-self:end"><button type="button" class="btn" id="bienBareme" style="width:100%;justify-content:center">↺ Barème agence</button></label>
-        <label class="mf mf-check"><input type="checkbox" name="v_rentree" checked><span>J'ai <b>rentré</b> le mandat <b style="color:var(--accent)">+25 %</b></span></label>
-        <label class="mf mf-check"><input type="checkbox" name="v_sortie"><span>J'ai <b>vendu</b> le bien <b style="color:var(--accent)">+25 %</b><br><small style="color:var(--ink-3)">décoché = vendu par un collègue</small></span></label>
+        <label class="mf"><span>Honoraires : part fixe (€)</span><input name="v_hfix" type="number" inputmode="numeric" placeholder="3000"></label>
+        <label class="mf"><span>Honoraires : % du net vendeur</span><input name="v_hpct" type="number" step="0.1" inputmode="decimal" placeholder="5"></label>
+        <label class="mf"><span>Honoraires agence TOTAL (€)</span><input name="v_hono" type="number" inputmode="numeric" placeholder="auto"></label>
+        <label class="mf" style="align-self:end"><button type="button" class="btn" id="bienBareme" style="width:100%;justify-content:center">↺ Recalculer</button></label>
+        <label class="mf"><span>J'ai <b>rentré</b> ce bien ? <small style="color:var(--accent)">+25 %</small></span>
+          <select name="v_rentree"><option value="1">Oui — j'ai rentré le mandat</option><option value="0">Non — mandat d'un collègue</option></select></label>
+        <label class="mf"><span>J'ai <b>vendu</b> ce bien ? <small style="color:var(--accent)">+25 %</small></span>
+          <select name="v_sortie"><option value="0">Non — vendu par un collègue</option><option value="1">Oui — j'ai fait la vente</option></select></label>
+        <label class="mf mf-wide"><span>Acquéreur (compromis / vente)</span>
+          <input name="v_acq" list="bienAcqOptions" placeholder="Nom de l'acquéreur — créé s'il n'existe pas" autocomplete="off">
+          <datalist id="bienAcqOptions"></datalist><div class="addrsug" id="bienAcqSug"></div></label>
+        <label class="mf mf-wide"><span>Ma commission réelle (€) — si différente du calcul</span>
+          <input name="v_part" type="number" inputmode="numeric" placeholder="laisser vide = calcul automatique"></label>
         <label class="mf"><span>Date compromis</span><input name="v_dcomp" type="date"></label>
         <label class="mf"><span>Date de l'acte</span><input name="v_dacte" type="date"></label>
       </div>
@@ -2063,7 +2072,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-171207';
+  var __BUILD='20260825-171604';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2239,7 +2248,7 @@
           '<div class="specs"><span>'+b.ty+'</span>'+
           '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 21V8l9-5 9 5v13"/></svg>'+b.m2+' m²</span>'+
           '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 18v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5M3 15h18M6 11V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/></svg>'+b.ch+' ch.</span></div></div>';
-      el.addEventListener('click',function(){openDrawer(idx);});
+      el.addEventListener('click',function(){ if(typeof contactReturn!=='undefined') contactReturn=null; openDrawer(idx); });
       grid.appendChild(el);
     });
   }
@@ -2359,11 +2368,9 @@
     });
     var de=document.getElementById('drawerEdit');
     if(de) de.addEventListener('click',function(){
-      // le retour fiche ne doit pas se déclencher sous le formulaire bien : on le transfère à sa fermeture
-      var keep=(typeof contactReturn!=='undefined')?contactReturn:null;
+      // « Modifier ce bien » n'a rien à voir avec une fiche contact : on désarme tout retour en attente
       if(typeof contactReturn!=='undefined') contactReturn=null;
       closeDrawer(); openBienForm(b);
-      if(keep && typeof contactReturn!=='undefined') contactReturn=keep;
     });
     scrim.classList.add('open');drawer.classList.add('open');
   }
@@ -2413,8 +2420,12 @@
     e.v_prix.value=(v&&v.prix)?v.prix:'';
     e.v_hono.value=(v&&v.honoraires)?v.honoraires:'';
     e.v_pmode.value='fai';
-    e.v_rentree.checked=v?!!v.rentree:true;
-    e.v_sortie.checked=v?!!v.sortie:false;
+    e.v_rentree.value=(v && !v.rentree)?'0':'1';
+    e.v_sortie.value=(v && v.sortie)?'1':'0';
+    e.v_part.value=(v && v.part_perso)?v.part_perso:'';
+    e.v_acq.value=(v && v.acquereur)?v.acquereur:'';
+    var hb=honoDetail(b);
+    e.v_hfix.value=hb.fix; e.v_hpct.value=hb.pct;
     e.v_dcomp.value=(v&&v.statut!=='acte'&&v.date_vente)?v.date_vente:'';
     e.v_dacte.value=(v&&v.statut==='acte'&&v.date_vente)?v.date_vente:'';
     e.v_etape.value=etapeCourante(b);
@@ -2446,32 +2457,50 @@
     e.v_dacte.closest('label').hidden=!vendu;
     if(vendu && !e.v_dacte.value) e.v_dacte.value=isoD(new Date());
     if(comp && !e.v_dcomp.value) e.v_dcomp.value=isoD(new Date());
-    if(vendu && !e.v_sortie.checked && !venteForBien({ad:e.adresse.value})) e.v_sortie.checked=true;
+    if(vendu && e.v_sortie.value==='0' && !venteForBien({ad:e.adresse.value})) e.v_sortie.value='1';
     bienComPreview();
   }
+  // barème propre à CE bien (négociable) — mémorisé par bien, défaut = barème agence
+  function honoDetail(b){
+    var bm=bareme(), fix=bm.fix, pct=bm.pct;
+    try{ if(b&&b.id){ var s=JSON.parse(localStorage.getItem('estimake_hono_'+b.id)||'null');
+      if(s){ if(s.fix!==undefined&&s.fix!=='') fix=s.fix; if(s.pct!==undefined&&s.pct!=='') pct=s.pct; } } }catch(e){}
+    return {fix:fix, pct:pct};
+  }
+  function honoSave(id,fix,pct){ try{ if(id) localStorage.setItem('estimake_hono_'+id, JSON.stringify({fix:fix,pct:pct})); }catch(e){} }
   function bienHonoAuto(force){
     var e=bienForm.elements;
     var px=parseFloat(e.v_prix.value)||parseFloat(e.prix.value)||0;
     if(!px) return;
+    var fix=parseFloat(e.v_hfix.value); if(isNaN(fix)) fix=bareme().fix;
+    var pct=parseFloat(e.v_hpct.value); if(isNaN(pct)) pct=bareme().pct;
     if(force || !e.v_hono.value || e.v_hono.dataset.auto==='1'){
-      e.v_hono.value=honorairesPour(px, e.v_pmode.value);
-      e.v_hono.dataset.auto='1';
+      var h;
+      if(e.v_pmode.value==='net'){ h=Math.round(fix + px*pct/100); }
+      else { var net=(px-fix)/(1+pct/100); h=Math.max(0,Math.round(px-net)); }
+      e.v_hono.value=h; e.v_hono.dataset.auto='1';
     }
     bienComPreview();
   }
   function bienComPreview(){
     var e=bienForm.elements, box=document.getElementById('bienPart'); if(!box) return;
     var px=parseFloat(e.v_prix.value)||parseFloat(e.prix.value)||0;
-    var h=parseFloat(e.v_hono.value)|| (px?honorairesPour(px,e.v_pmode.value):0);
-    var pct=((e.v_rentree.checked?25:0)+(e.v_sortie.checked?25:0));
-    var part=Math.round(h*pct/100);
-    var bm=bareme(), net=(e.v_pmode.value==='net')?px:Math.max(0,px-h);
-    var role=(e.v_rentree.checked&&e.v_sortie.checked)?'rentrée + vente'
-      :(e.v_rentree.checked?'rentrée seule (vendu par un collègue)'
-      :(e.v_sortie.checked?'vente seule (mandat d\'un collègue)':'aucune part'));
+    var h=parseFloat(e.v_hono.value)||0;
+    var rent=(e.v_rentree.value==='1'), sort=(e.v_sortie.value==='1');
+    var pct=((rent?25:0)+(sort?25:0));
+    var calc=Math.round(h*pct/100);
+    var forced=parseFloat(e.v_part.value);
+    var part=(!isNaN(forced)&&e.v_part.value!=='')?Math.round(forced):calc;
+    var net=(e.v_pmode.value==='net')?px:Math.max(0,px-h);
+    var fix=parseFloat(e.v_hfix.value); if(isNaN(fix)) fix=bareme().fix;
+    var pctH=parseFloat(e.v_hpct.value); if(isNaN(pctH)) pctH=bareme().pct;
+    var role=(rent&&sort)?'j\'ai rentré ET vendu'
+      :(rent?'rentrée seule — vendu par un collègue'
+      :(sort?'vente seule — mandat d\'un collègue':'ni rentré ni vendu'));
     box.innerHTML='<div style="font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em">Ma part · '+role+'</div>'+
-      '<div style="font-size:26px;font-weight:800;color:var(--accent);margin:2px 0 4px" class="tnum">'+part.toLocaleString('fr-FR')+' €</div>'+
-      '<small style="color:var(--ink-3)">'+pct+' % de '+Math.round(h).toLocaleString('fr-FR')+' € d\'honoraires · net vendeur '+net.toLocaleString('fr-FR')+' € · barème '+bm.fix.toLocaleString('fr-FR')+' € + '+String(bm.pct).replace('.',',')+' %</small>';
+      '<div style="font-size:28px;font-weight:800;color:var(--accent);margin:2px 0 4px" class="tnum">'+part.toLocaleString('fr-FR')+' €'+
+      ((part!==calc)?' <small style="font-size:12px;font-weight:600;color:var(--ink-3)">(forcée · calcul '+calc.toLocaleString('fr-FR')+' €)</small>':'')+'</div>'+
+      '<small style="color:var(--ink-3)">'+pct+' % de '+Math.round(h).toLocaleString('fr-FR')+' € d\'honoraires ('+fix.toLocaleString('fr-FR')+' € + '+String(pctH).replace('.',',')+' % négociables) · net vendeur '+net.toLocaleString('fr-FR')+' €</small>';
   }
   /* ---- tâche automatique selon l'état d'avancement du bien ---- */
   var ETAPE_TACHE={
@@ -2511,6 +2540,9 @@
     e.v_prix.addEventListener('input',function(){ bienHonoAuto(false); });
     e.v_pmode.addEventListener('change',function(){ bienHonoAuto(false); });
     e.v_hono.addEventListener('input',function(){ delete this.dataset.auto; bienComPreview(); });
+    e.v_hfix.addEventListener('input',function(){ bienHonoAuto(true); });
+    e.v_hpct.addEventListener('input',function(){ bienHonoAuto(true); });
+    e.v_part.addEventListener('input',bienComPreview);
     e.v_rentree.addEventListener('change',bienComPreview);
     e.v_sortie.addEventListener('change',bienComPreview);
     document.getElementById('bienBareme').addEventListener('click',function(){ bienHonoAuto(true); toast('Honoraires recalculés au barème.'); });
@@ -2598,15 +2630,27 @@
           var vv=venteForBien({ad:row.adresse});
           var pxV=parseInt(e.v_prix.value,10)||row.prix||null;
           var hoV=parseInt(e.v_hono.value,10)||(pxV?honorairesPour(pxV,e.v_pmode.value):null);
-          var vRow={ bien:row.adresse, client:row.proprietaire||null, prix:pxV, honoraires:hoV,
-            rentree:e.v_rentree.checked, sortie:e.v_sortie.checked,
+          honoSave(savedId, e.v_hfix.value, e.v_hpct.value);
+          var acqN=(e.v_acq.value||'').trim();
+          if(acqN) await ensureContact(acqN,'acquereur',row.adresse,(row.statut==='Vendu')?'Acquéreur — vente actée':'Acquéreur — compromis');
+          var forcedP=parseFloat(e.v_part.value);
+          var vRow={ bien:row.adresse, client:row.proprietaire||null, acquereur:acqN||null, prix:pxV, honoraires:hoV,
+            rentree:(e.v_rentree.value==='1'), sortie:(e.v_sortie.value==='1'),
             statut:(row.statut==='Vendu')?'acte':'compromis',
             date_vente:((row.statut==='Vendu')?e.v_dacte.value:e.v_dcomp.value)||isoD(new Date()) };
           try{
-            var vRes = vv ? await sb.from('ventes').update(vRow).eq('id',vv.id) : await sb.from('ventes').insert(vRow);
+            var saveVente=async function(rw){ return vv ? await sb.from('ventes').update(rw).eq('id',vv.id) : await sb.from('ventes').insert(rw); };
+            if(!isNaN(forcedP) && e.v_part.value!=='') vRow.part_perso=Math.round(forcedP);
+            var vRes = await saveVente(vRow);
+            // colonnes acquereur / part_perso pas encore créées en base → repli automatique
+            if(vRes.error && /column|schema cache|part_perso|acquereur/i.test(vRes.error.message||'')){
+              var rw2={}; for(var k in vRow){ if(k!=='part_perso'&&k!=='acquereur') rw2[k]=vRow[k]; }
+              vRes = await saveVente(rw2);
+              if(!vRes.error) setTimeout(function(){ toast('ℹ️ Acquéreur/commission forcée non stockés — lance ventes_v2.sql dans Supabase.'); },2600);
+            }
             if(vRes.error) throw vRes.error;
             await syncVentes();
-            var partV=Math.round((hoV||0)*((vRow.rentree?0.25:0)+(vRow.sortie?0.25:0)));
+            var partV=(!isNaN(forcedP)&&e.v_part.value!=='')?Math.round(forcedP):Math.round((hoV||0)*((vRow.rentree?0.25:0)+(vRow.sortie?0.25:0)));
             setTimeout(function(){ toast('💶 '+(row.statut==='Vendu'?'Vente actée':'Compromis')+' enregistré · ma commission '+partV.toLocaleString('fr-FR')+' € ✓'); },1300);
           }catch(eV){ setTimeout(function(){ toast('⚠ Vente non synchronisée : '+((eV&&eV.message)||eV)); },1300); }
         }
@@ -3665,6 +3709,7 @@
     if(!el || !el.name) return null;
     if(el.name==='t_lien') return document.getElementById('taskLienSug');
     if(el.name==='lien' && el.form && el.form.id==='rdvForm') return document.getElementById('rdvLienSug');
+    if(el.name==='v_acq') return document.getElementById('bienAcqSug');
     return null;
   }
   function renderContactSug(inp, sug){
@@ -3680,7 +3725,7 @@
   document.addEventListener('input',function(e){ var s=contactSugBox(e.target); if(s) renderContactSug(e.target,s); },true);
   document.addEventListener('focusin',function(e){ var s=contactSugBox(e.target); if(s) renderContactSug(e.target,s); });
   document.addEventListener('mousedown',function(e){
-    var b=e.target.closest('#taskLienSug button[data-n], #rdvLienSug button[data-n]');
+    var b=e.target.closest('#taskLienSug button[data-n], #rdvLienSug button[data-n], #bienAcqSug button[data-n]');
     if(!b) return;
     e.preventDefault();
     var sug=b.parentElement, inp=sug.closest('label').querySelector('input');
@@ -3815,7 +3860,10 @@
   syncTaches();
   /* ---------- VENTES & COMMISSIONS (25 % rentrée + 25 % sortie) ---------- */
   var ventesData=[];
-  function partVente(v){ return Math.round((v.honoraires||0)*(((v.rentree)?0.25:0)+((v.sortie)?0.25:0))); }
+  function partVente(v){
+    if(v && v.part_perso) return Math.round(v.part_perso);   // commission saisie à la main (négociée)
+    return Math.round((v.honoraires||0)*(((v.rentree)?0.25:0)+((v.sortie)?0.25:0)));
+  }
   /* ---- pont fiches clients ↔ stats : un statut Compromis/Vendu sur une fiche compte, même sans vente saisie ---- */
   function fichesStatut(st){
     st=st.toLowerCase();
