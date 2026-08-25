@@ -939,7 +939,17 @@
   .m-p{font-size:9.6px;line-height:1.78;color:#37301f;margin:0 0 3.4mm}
   .m-p b{color:var(--ink2)}
   /* --- couverture --- */
-  .mcover{align-items:center;text-align:center;padding:14mm 16mm 0}
+  .mcover{align-items:center;text-align:center;padding:14mm 16mm 0;
+    background:linear-gradient(160deg,#1b1712 0%,#12100b 55%,#0d0b08 100%)}
+  .mcover .mc-name{color:#EDE6D4}
+  .mcover .mc-eyebrow{color:#9A917C}
+  .mcover .mc-title{color:#F3EDE0}
+  .mcover .mc-line1{color:#EDE6D4}
+  .mcover .mc-meta{border-top-color:rgba(237,230,212,.22)}
+  .mcover .mc-meta small{color:#9A917C}
+  .mcover .mc-meta b{color:#EDE6D4}
+  .mcover .mc-photo{box-shadow:0 0 0 1.6mm #12100b,0 0 0 1.85mm rgba(201,169,107,.45)}
+  .mcover .mc-phold{background:#211c14;border-color:#C9A96B}
   .mc-logo{width:16mm;height:16mm;border-radius:3.4mm;object-fit:cover;margin-top:4mm}
   .mc-name{font-family:var(--serifP);font-size:17px;letter-spacing:.5em;color:var(--ink2);margin-top:4mm;text-indent:.5em}
   .mc-sub{font-size:6.4px;letter-spacing:.34em;color:var(--gold);font-weight:600;text-transform:uppercase;margin-top:1.8mm}
@@ -2853,6 +2863,7 @@
           var p=f.properties, c=f.geometry.coordinates;
           document.getElementById('addrA').textContent=p.name||p.label;
           document.getElementById('addrS').textContent=(p.postcode||'')+' '+(p.city||'')+' · géolocalisé ✓';
+          if(typeof estVilleTxt!=='undefined') estVilleTxt=((p.postcode||'')+' '+(p.city||'')).trim()||null;
           estCoord={lat:c[1], lon:c[0], insee:p.citycode, label:p.label};
           if(typeof editingEstimId!=='undefined') editingEstimId=null;
           document.getElementById('addrSearch').hidden=true; document.getElementById('addrDisplay').hidden=false;
@@ -3526,7 +3537,8 @@
     if(sb){ try{ var full=await sb.from('estimations').select('*').eq('id',r.id).single(); if(!full.error&&full.data) r=full.data; }catch(err){} }
     // recharge les données dans l'écran Estimer
     var g=function(id){return document.getElementById(id);};
-    if(r.adresse){ g('addrA').textContent=r.adresse; g('addrS').textContent='estimation du '+(r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR'):'')+' \u00b7 re-s\u00e9lectionne l\u2019adresse pour recharger le march\u00e9'; }
+    estVilleTxt=(r.data&&r.data.ville)||null;
+    if(r.adresse){ g('addrA').textContent=r.adresse; g('addrS').textContent=(estVilleTxt?estVilleTxt+' \u00b7 ':'')+'estimation du '+(r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR'):'')+' \u00b7 re-s\u00e9lectionne l\u2019adresse pour recharger le march\u00e9'; }
     if(r.type) g('fType').value=r.type;
     if(r.surface) g('fSurf').value=r.surface;
     if(r.complement&&g('fCompl')) g('fCompl').value=r.complement;
@@ -3567,6 +3579,17 @@
         t.classList.toggle('on', !!state.tgls[key]);
       });
     }
+    // ancienne estimation sans médiane mémorisée → on la reconstruit pour retomber
+    // EXACTEMENT sur le prix conseillé enregistré (fidélité au document remis au client)
+    if(!dt.baseM2 && r.prix_conseille){
+      var surfH=parseFloat(g('fSurf').value)||127;
+      var pctH=state.etat+state.dpe+state.terr+state.loc*10, tEurH=0;
+      for(var kH in state.tgls){ if(state.tgls[kH]){ var eH=state.tgls[kH];
+        if(eH.pct) pctH+=parseFloat(eH.pct); if(eH.eur) tEurH+=parseFloat(eH.eur); } }
+      var cEurH=0; (state.custom||[]).forEach(function(c){ cEurH+=c.e; });
+      var baseH=(r.prix_conseille/1.02 - tEurH - cEurH - parseFloat(state.trav||0))/(1+pctH/100);
+      if(baseH>0 && surfH>0) state.baseM2=baseH/surfH;
+    }
     if(dt.cover && typeof window.__setEstCover==='function'){ window.__setEstCover(dt.cover); }
     estLots=Array.isArray(dt.lots)?dt.lots.slice():[];
     if(dt.loyer&&g('fLoyer')) g('fLoyer').value=dt.loyer;
@@ -3588,6 +3611,7 @@
       try{ res(c.toDataURL('image/jpeg',0.82)); }catch(e){ res(null); } };
     im.onerror=function(){ res(null); }; im.src=dataURL; }); }
   var editingEstimId=null;   // estimation rechargée → enregistrer = mettre à jour
+  var estVilleTxt=null;      // ville mémorisée (perdue sinon au rechargement d'une estimation)
   async function saveEstimation(){
     if(!sb) { toast('Base non connectée.'); return false; }
     var g=function(id){return document.getElementById(id);};
@@ -3611,7 +3635,9 @@
              overLow:state.overLow||null, overHigh:state.overHigh||null,
              terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav,
-             baseM2:state.baseM2||null, tgls:state.tgls }
+             baseM2:state.baseM2||null, tgls:state.tgls,
+             ville:(function(){ var s=((g('addrS')||{}).textContent||'').split('·')[0].trim();
+               if(s&&!/estimation du|sélectionne/i.test(s)) return s; return estVilleTxt||null; })() }
     };
     try{
       var res = editingEstimId
@@ -4315,6 +4341,7 @@
       var b=e.target.closest('button'); if(!b||!b.dataset.lat) return;
       document.getElementById('addrA').textContent=b.dataset.name||b.dataset.label;
       document.getElementById('addrS').textContent=b.dataset.ctx+' · géolocalisé ✓';
+      if(typeof estVilleTxt!=='undefined') estVilleTxt=(b.dataset.ctx||'').split('·')[0].trim()||null;
       estCoord={lat:+b.dataset.lat, lon:+b.dataset.lon, insee:b.dataset.insee, label:b.dataset.label};
       if(typeof editingEstimId!=='undefined') editingEstimId=null;
       search.hidden=true; disp.hidden=false; sug.innerHTML='';
@@ -4335,9 +4362,10 @@
     var adresse=(document.querySelector('#estimation .addrbox .a')||{}).textContent||'';
     var ville=(document.querySelector('#estimation .addrbox small')||{}).textContent||'';
     var vClean=(ville.split('·')[0]||'').trim();
-    var mV=vClean.match(/^(\d{5})\s+(.+)$/); var vNom=vClean||'—', vCp='';
+    if(/estimation du|sélectionne/i.test(vClean)) vClean='';   // ancienne estimation sans ville mémorisée
+    var mV=vClean.match(/^(\d{5})\s+(.+)$/); var vNom=vClean||'', vCp='';
     if(mV){ vCp=mV[1]; vNom=mV[2]; }
-    var villeAff=vNom+(vCp?' ('+vCp+')':'');
+    var villeAff=vNom?(vNom+(vCp?' ('+vCp+')':'')):'';
     var reco=txt('rReco'), low=txt('rLow'), high=txt('rHigh');
     var dd=new Date(); var dateStr=dd.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
     var yr=dd.getFullYear(), doy=Math.floor((dd-new Date(yr,0,0))/86400000);
@@ -4382,7 +4410,7 @@
       '<div class="mc-div"><i></i></div>'+
       coverPh+
       '<div class="mc-line1">'+escH(line1)+'</div>'+
-      '<div class="mc-addr">'+escH(adresse)+(compl1?' · '+escH(compl1):'')+' · '+escH(villeAff)+'</div>'+
+      '<div class="mc-addr">'+escH(adresse)+(compl1?' · '+escH(compl1):'')+(villeAff?' · '+escH(villeAff):'')+'</div>'+
       (specsBits.length?'<div class="mc-specs">'+escH(specsBits.join(' · ')).toUpperCase()+'</div>':'')+
       '<div class="mc-meta">'+
         '<div><small>Préparé pour</small><b>'+escH(cliN)+'</b></div>'+
@@ -4396,7 +4424,7 @@
     var descClamped=descV.length>620;
     var descShort=descClamped?(descV.slice(0,600).replace(/\s+\S*$/,'')+'…'):descV;
     var introBien=descShort?escH(descShort).replace(/\n/g,'<br>')
-      :('Ce bien de type '+escH(type)+(surfV?' de '+surfV+' m² habitables':'')+', situé '+escH(adresse)+' à '+escH(vNom)+', a fait l\'objet d\'une visite et d\'une analyse détaillée de ses caractéristiques, de ses prestations et de son environnement immédiat.');
+      :('Ce bien de type '+escH(type)+(surfV?' de '+surfV+' m² habitables':'')+', situé '+escH(adresse)+(vNom?' à '+escH(vNom):'')+', a fait l\'objet d\'une visite et d\'une analyse détaillée de ses caractéristiques, de ses prestations et de son environnement immédiat.');
     var photoBlock='';
     if(photos.length===1){ photoBlock='<div class="m-ph big" style="height:56mm;margin-bottom:5.5mm;background-image:url('+photos[0]+')"></div>'; }
     else if(photos.length>1){
@@ -4431,7 +4459,7 @@
     var chipLbls=Object.keys(state.tgls).filter(function(k){return state.tgls[k];}).map(function(k){ return (state.tgls[k].label||'').replace(/\s*·.*$/,'').trim(); }).filter(Boolean);
     var chipsHtml=chipLbls.length?('<div class="m-chips">'+chipLbls.slice(0,6).map(function(c){return '<span><i></i>'+escH(c)+'</span>';}).join('')+'</div>'):'';
     var bienBody=eyebrow('02','Votre bien')+
-      '<h1 class="m-h1">'+escH(type==='Immeuble'?'Votre immeuble':(type==='Terrain'?'Votre terrain':'Votre '+type.toLowerCase()))+' <i>à '+escH(vNom)+'</i></h1>'+
+      '<h1 class="m-h1">'+escH(type==='Immeuble'?'Votre immeuble':(type==='Terrain'?'Votre terrain':'Votre '+type.toLowerCase()))+(vNom?' <i>à '+escH(vNom)+'</i>':'')+'</h1>'+
       '<p class="m-p">'+introBien+'</p>'+photoBlock+specTbl+chipsHtml;
 
     /* ---- page 4 · marché ---- */
@@ -4469,7 +4497,7 @@
     var envHtml='<div class="m-env" style="margin-top:4mm"><div id="dMapSlot"></div><div><div class="m-lbl" style="margin-top:0">Environnement &amp; accès</div>'+
       (envRows||'<p class="m-p" style="font-size:8px;color:#9a917f">Commodités non renseignées pour cette adresse.</p>')+'</div></div>';
     var marcheBody=eyebrow('03','Le marché')+
-      '<h1 class="m-h1">Lecture du marché <i>'+escH(vNom.toLowerCase()==='nevers'?'néversois':('de '+vNom))+'</i></h1>'+
+      '<h1 class="m-h1">Lecture du marché <i>'+escH(vNom?(vNom.toLowerCase()==='nevers'?'néversois':('de '+vNom)):'local')+'</i></h1>'+
       tiles+compTable+scaleHtml+envHtml;
 
     /* ---- page 5 · estimation ---- */
@@ -4589,8 +4617,12 @@
     }
     var CAPX=225;
     var sheetsArr=[], usedArr=[];
-    blocks.forEach(function(b){
-      if(!sheetsArr.length || usedArr[usedArr.length-1]+b.h>CAPX){ sheetsArr.push([]); usedArr.push(0); }
+    blocks.forEach(function(b,bi){
+      // un titre de chapitre ne doit JAMAIS rester seul en bas de page :
+      // il ne passe que s'il reste la place pour lui + un morceau de son contenu
+      var need=b.h;
+      if(b.html.indexOf('<h2')===0 && blocks[bi+1]) need=b.h+Math.min(blocks[bi+1].h,40);
+      if(!sheetsArr.length || usedArr[usedArr.length-1]+need>CAPX){ sheetsArr.push([]); usedArr.push(0); }
       sheetsArr[sheetsArr.length-1].push(b.html); usedArr[usedArr.length-1]+=b.h;
     });
     var K=sheetsArr.length;
