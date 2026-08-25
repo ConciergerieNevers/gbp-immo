@@ -1415,7 +1415,7 @@
                 <div class="field"><label>Année (approx.)</label>
                   <input class="inp" id="fAnnee" type="number" value="1972"></div>
                 <div class="field"><label>Classe DPE</label>
-                  <select class="inp" id="fDpeCl"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div>
+                  <select class="inp" id="fDpeCl"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option value="ND">N/D (à vérifier)</option></select></div>
                 <div class="field"><label>Loyer potentiel (€/mois)</label>
                   <input class="inp" id="fLoyer" type="number" placeholder="650"></div>
               </div>
@@ -1921,7 +1921,7 @@
         <label class="mf lot-hab"><span>Pièces</span><input name="l_pieces" type="number" placeholder="3"></label>
         <label class="mf lot-hab"><span>Chambres</span><input name="l_ch" type="number" placeholder="2"></label>
         <label class="mf lot-hab"><span>Salles de bain</span><input name="l_sdb" type="number" placeholder="1"></label>
-        <label class="mf lot-hab"><span>DPE</span><select name="l_dpe"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></label>
+        <label class="mf lot-hab"><span>DPE</span><select name="l_dpe"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option value="ND">N/D (à vérifier)</option></select></label>
         <label class="mf lot-com"><span>Activité / destination</span><input name="l_activite" placeholder="Commerce, restauration, profession libérale…"></label>
         <label class="mf lot-com"><span>Vitrine (m linéaire)</span><input name="l_vitrine" type="number" placeholder="6"></label>
         <label class="mf"><span>Loyer (€/mois)</span><input name="l_loyer" type="number" placeholder="520"></label>
@@ -2019,7 +2019,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-163131';
+  var __BUILD='20260825-163312';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4920,11 +4920,12 @@
     function eyebrow(num,lbl){ return '<div class="m-eyebrow"><em>'+num+'</em>'+lbl+'</div>'; }
     var DPE_COLORS={A:['#00A06D','#fff'],B:['#52B153','#fff'],C:['#A5CC74','#33331a'],D:['#F4E70F','#33331a'],E:['#F0B50F','#33331a'],F:['#EB8235','#fff'],G:['#D7221F','#fff']};
     function dpeBar(cl,sm){
-      if(!cl||!DPE_COLORS[cl]) return '';
+      if(!cl||(cl!=='ND'&&!DPE_COLORS[cl])) return '';
+      // N/D : la barre s'affiche quand même, sans case active (diagnostic à faire vérifier)
       return '<div class="m-dpe'+(sm?' sm':'')+'">'+'ABCDEFG'.split('').map(function(L){
         var c=DPE_COLORS[L];
         return '<span style="background:'+c[0]+';color:'+c[1]+'"'+(L===cl?' class="on"':'')+'>'+L+'</span>';
-      }).join('')+'</div>';
+      }).join('')+(cl==='ND'?'<span style="background:none;color:#7d715a;opacity:1;flex:none;width:auto;padding:0 2mm;font-size:6px;letter-spacing:.1em">N/D</span>':'')+'</div>';
     }
 
     /* ---- couverture ---- */
@@ -5001,7 +5002,9 @@
     var chipsHtml=chipLbls.length?('<div class="m-chips">'+chipLbls.slice(0,6).map(function(c){return '<span><i></i>'+escH(c)+'</span>';}).join('')+'</div>'):'';
     var dpeCl=(g('fDpeCl')&&g('fDpeCl').value)||'';
     var dpeHtml=dpeCl?('<div class="m-lbl">Diagnostic de performance énergétique</div>'+dpeBar(dpeCl,false)+
-      '<p class="m-p" style="font-size:8px;color:#6c6250;margin:1.5mm 0 0">Classe énergie '+dpeCl+' — incidence intégrée à l\'expertise de valeur.</p>'):'';
+      '<p class="m-p" style="font-size:8px;color:#6c6250;margin:1.5mm 0 0">'+(dpeCl==='ND'
+        ? 'DPE non disponible — diagnostic à faire réaliser ou vérifier.'
+        : 'Classe énergie '+dpeCl+' — incidence intégrée à l\'expertise de valeur.')+'</p>'):'';
     var bienBody=eyebrow('02','Votre bien')+
       '<h1 class="m-h1">'+escH(type==='Immeuble'?'Votre immeuble':(type==='Terrain'?'Votre terrain':'Votre '+type.toLowerCase()))+(vNom?' <i>à '+escH(vNom)+'</i>':'')+'</h1>'+
       '<p class="m-p">'+introBien+'</p>'+photoBlock+specTbl+dpeHtml+chipsHtml;
