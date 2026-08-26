@@ -2122,7 +2122,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-160255';
+  var B='20260826-161626';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2230,11 +2230,11 @@
   // étapes d'avancement d'un bien — déclarées tôt : utilisées dès le premier rendu du portefeuille
   var ETAPES=['Mandat signé','En vente · diffusion','Visites en cours','Offre reçue','Offre acceptée','Compromis signé','Vente actée'];
   // cohérence globale : on ne réconcilie qu'une fois biens + ventes + contacts chargés
-  var __loaded={biens:false,ventes:false,contacts:false}, __reconT=null, __reconBusy=false;
+  var __loaded={biens:false,ventes:false,contacts:false}, __reconT=null, __reconBusy=false, __reconTried={};
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-160255';
+  var __BUILD='20260826-161626';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4296,7 +4296,7 @@
       if(!r.error){ c.statut=st; if(action) c.action=action; renderCrm(); } }catch(e){ console.warn('[ESTIMAKE] statut fiche', e); }
   }
   // une vente enregistrée pousse l'état sur SON bien (étape, statut, chiffres) — zéro double saisie
-  async function pushVenteVersBien(row){
+  async function pushVenteVersBien(row, opts){
     if(!sb) return;
     var b=bienForVente(row); if(!b || !b.id) return;
     var want=(row.statut==='acte')?'Vendu':'Compromis';
@@ -4313,7 +4313,7 @@
     try{
       var r=await sb.from('biens').update({statut:want, historique:h2, suivi:sv}).eq('id',b.id);
       if(r.error && /column|schema cache|suivi/i.test(r.error.message||'')) r=await sb.from('biens').update({statut:want, historique:h2}).eq('id',b.id);
-      if(!r.error){ await saveSuivi(b.id, sv); await syncBiens(); }
+      if(!r.error){ await saveSuivi(b.id, sv); if(!(opts&&opts.noSync)) await syncBiens(); }
     }catch(e){ console.warn('[ESTIMAKE] vente → bien', e); }
   }
   // une vente supprimée fait REVENIR son bien en mandat actif (et la fiche client avec)
@@ -4338,12 +4338,16 @@
     var nV=0, nC=0;
     try{
       // 1) une vente enregistrée doit se voir sur son bien (statut + étape)
-      var vs=(ventesData||[]).filter(venteDesynchro);
+      //    une seule tentative par vente et par session : si la base refuse, on ne boucle pas
+      var vs=(ventesData||[]).filter(function(v){ return venteDesynchro(v) && !__reconTried['v'+v.id]; });
       for(var i=0;i<vs.length;i++){
-        try{ await pushVenteVersBien(vs[i]); nV++; }catch(e){}
+        __reconTried['v'+vs[i].id]=1;
+        try{ await pushVenteVersBien(vs[i], {noSync:true}); nV++; }catch(e){}
       }
-      var cs=(contactsData||[]).filter(ficheObsolete);
+      if(nV) await syncBiens();
+      var cs=(contactsData||[]).filter(function(c){ return ficheObsolete(c) && !__reconTried['c'+c.id]; });
       for(var j=0;j<cs.length;j++){
+        __reconTried['c'+cs[j].id]=1;
         var st=statutDepuisBiens(cs[j]);
         try{ var r2=await sb.from('contacts').update({statut:st||null}).eq('id',cs[j].id);
           if(!r2.error){ cs[j].statut=st; nC++; } }catch(e2){}
@@ -5165,7 +5169,17 @@
     });
     if(typeof window.__renderCustomAdj==='function') window.__renderCustomAdj();
     if(typeof updateMandatBtn==='function') updateMandatBtn();
-    try{ document.querySelectorAll('#estGallery .sthumb').forEach(function(t){ t.remove(); }); }catch(e){}
+    try{ if(typeof window.__resetGallery==='function') window.__resetGallery();
+         else document.querySelectorAll('#estGallery .sthumb').forEach(function(t){ t.remove(); }); }catch(e){}
+    // marché, tendance et risques du bien précédent : remis à zéro (ils restaient affichés)
+    try{
+      ['mMed','mEvo1','mEvo5','mVol'].forEach(function(id){ var el=document.getElementById(id); if(el){ el.textContent='—'; el.className=''; } });
+      var tr=document.getElementById('mTrend'); if(tr){ tr.hidden=true; tr.innerHTML=''; }
+      ['rkArgiles','rkRadon','rkSismic'].forEach(function(id){ var el=document.getElementById(id); if(el) el.textContent='—'; });
+      window.__trend=null;
+      var mm=document.getElementById('miniMap'); if(mm) mm.classList.remove('show');
+      if(typeof dvfMarkers!=='undefined'){ try{ dvfMarkers.forEach(function(m){ m.remove(); }); dvfMarkers=[]; }catch(eMk){} }
+    }catch(eS){}
     if(typeof renderLots==='function') renderLots();
     if(typeof renderAllGallery==='function') renderAllGallery();
     compute();
@@ -6047,6 +6061,8 @@
       try{ rbox.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(e){}
     }
     window.__setEstCover=function(du){ estPhotos=[{before:du, after:null}]; selectPhoto(0); };
+    // « Nouvelle estimation » doit aussi vider la galerie et refermer le home-staging
+    window.__resetGallery=function(){ estPhotos=[]; selPhoto=-1; renderGallery(); if(rbox) rbox.hidden=true; };
     input.addEventListener('change',function(){
       var files=[].slice.call(this.files||[]); if(!files.length) return;
       var pending=files.length, firstNew=estPhotos.length;
