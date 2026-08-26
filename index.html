@@ -1499,6 +1499,74 @@
               <div class="restyle-msg" id="dvfMsg" hidden></div>
             </div>
 
+
+            <div class="card estcard" id="acqDataCard">
+              <h3><span class="stepnum">4</span> Charges, énergie &amp; copropriété
+                <span style="margin-left:auto;font-size:11.5px;color:var(--ink-3);font-weight:500">alimente le dossier acquéreur</span></h3>
+              <p style="font-size:12.5px;color:var(--ink-3);margin:0 0 12px;line-height:1.55">Ces informations ne figurent <b>pas</b> dans l'avis de valeur remis au vendeur. Elles servent au dossier acquéreur : coût réel, rentabilité, simulation de prêt.</p>
+              <div class="fields">
+                <div class="field"><label>Taxe foncière (€/an)</label>
+                  <input class="inp" id="aTaxeF" type="number" inputmode="numeric" placeholder="1240"></div>
+                <div class="field"><label>Copropriété</label>
+                  <select class="inp" id="aCopro">
+                    <option value="">Non concerné — maison individuelle</option>
+                    <option value="pro">Syndic professionnel</option>
+                    <option value="benevole">Syndic bénévole</option>
+                  </select></div>
+                <div class="field acq-copro" hidden><label>Charges de copro (€/an)</label>
+                  <input class="inp" id="aChargesCopro" type="number" inputmode="numeric" placeholder="1080"></div>
+                <div class="field acq-copro" hidden><label>Nom du syndic</label>
+                  <input class="inp" id="aSyndicNom" placeholder="Cabinet…"></div>
+                <div class="field acq-copro" hidden><label>Nombre de lots</label>
+                  <input class="inp" id="aCoproLots" type="number" placeholder="12"></div>
+                <div class="field acq-copro" hidden><label>Fonds travaux ALUR (€)</label>
+                  <input class="inp" id="aFondsTrav" type="number" placeholder="3500"></div>
+                <div class="field acq-copro" hidden><label>Travaux votés à venir (€)</label>
+                  <input class="inp" id="aTravVotes" type="number" placeholder="0"></div>
+                <div class="field acq-copro" hidden><label>Objet des travaux votés</label>
+                  <input class="inp" id="aTravDesc" placeholder="Ravalement, toiture…"></div>
+              </div>
+              <div class="acq-copro" hidden style="margin-top:12px">
+                <label style="font-size:12px;color:var(--ink-2);font-weight:560;display:block;margin-bottom:7px">Les charges comprennent</label>
+                <div class="restyle-styles" id="aChgInc">
+                  <button type="button" class="rst" data-c="Chauffage collectif">Chauffage</button>
+                  <button type="button" class="rst" data-c="Eau froide">Eau</button>
+                  <button type="button" class="rst" data-c="Ascenseur">Ascenseur</button>
+                  <button type="button" class="rst" data-c="Gardien">Gardien</button>
+                  <button type="button" class="rst" data-c="Entretien des parties communes">Entretien</button>
+                  <button type="button" class="rst" data-c="Espaces verts">Espaces verts</button>
+                  <button type="button" class="rst" data-c="Assurance de l'immeuble">Assurance</button>
+                </div>
+              </div>
+              <div class="restyle-sub" style="margin-top:16px">Diagnostic énergétique — détail</div>
+              <div class="fields">
+                <div class="field"><label>Classe GES</label>
+                  <select class="inp" id="aGes"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div>
+                <div class="field"><label>Consommation (kWh/m²/an)</label>
+                  <input class="inp" id="aConso" type="number" placeholder="245"></div>
+                <div class="field"><label>Dépenses énergie — bas (€/an)</label>
+                  <input class="inp" id="aEnergieMin" type="number" placeholder="1490"></div>
+                <div class="field"><label>Dépenses énergie — haut (€/an)</label>
+                  <input class="inp" id="aEnergieMax" type="number" placeholder="2060"></div>
+                <div class="field"><label>Date du DPE</label>
+                  <input class="inp" id="aDpeDate" type="date"></div>
+                <div class="field"><label>Chauffage</label>
+                  <input class="inp" id="aChauffage" placeholder="Gaz individuel, chaudière 2018"></div>
+              </div>
+              <div id="aDpeAlerte"></div>
+              <div class="restyle-sub" style="margin-top:16px">Hypothèses investisseur</div>
+              <div class="fields">
+                <div class="field"><label>Charges non récupérables (%)</label>
+                  <input class="inp" id="aChgNonRec" type="number" placeholder="25"></div>
+                <div class="field"><label>Assurance PNO (€/an)</label>
+                  <input class="inp" id="aPno" type="number" placeholder="180"></div>
+                <div class="field"><label>Gestion locative (%)</label>
+                  <input class="inp" id="aGestion" type="number" step="0.5" placeholder="0"></div>
+                <div class="field"><label>Vacance provisionnée (%)</label>
+                  <input class="inp" id="aVacance" type="number" step="0.5" placeholder="5"></div>
+              </div>
+            </div>
+
             <div class="card estcard" id="lotsCard" hidden>
               <h3><span class="stepnum">🏢</span> Lots de l'immeuble
                 <button type="button" class="btn pri" id="addLotBtn" style="margin-left:auto;padding:8px 13px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="btntext">Lot</span></button></h3>
@@ -1620,6 +1688,9 @@
             <button type="button" class="btn" id="saveEstimBtn" style="width:100%;justify-content:center;margin-top:8px">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
               Enregistrer l’estimation
+            </button>
+            <button type="button" class="btn" id="acqBtn" style="width:100%;justify-content:center;margin-top:8px">
+              👤 Simulation &amp; dossier acquéreur
             </button>
             <div class="foot">
               <button class="btn" id="previewBtn" style="width:100%;justify-content:center;margin-bottom:9px">
@@ -1804,7 +1875,13 @@
           <label class="mf"><span>Budget maximum (€)</span><input name="budget" type="number" inputmode="numeric" placeholder="220000"></label>
           <label class="mf"><span>Apport personnel (€)</span><input name="r_apport" type="number" inputmode="numeric" placeholder="30000"></label>
           <label class="mf mf-wide"><span>Financement</span><select name="r_financement"><option>Non étudié</option><option>Simulation faite</option><option>Courtier en cours</option><option>Accord de principe banque</option><option>Achat comptant</option></select></label>
+          <label class="mf"><span>Revenus nets du foyer (€/mois)</span><input name="r_revenus" type="number" inputmode="numeric" placeholder="3800"></label>
+          <label class="mf"><span>Crédits en cours (€/mois)</span><input name="r_credits" type="number" inputmode="numeric" placeholder="0"></label>
+          <label class="mf"><span>Durée souhaitée</span><select name="r_duree"><option value="">— (les 3 sont présentées)</option><option value="15">15 ans</option><option value="20">20 ans</option><option value="25">25 ans</option></select></label>
+          <label class="mf"><span>Primo-accédant</span><select name="r_primo"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select></label>
+          <label class="mf"><span>Tranche d'imposition (TMI)</span><select name="r_tmi"><option value="">—</option><option value="0">0 %</option><option value="11">11 %</option><option value="30">30 %</option><option value="41">41 %</option><option value="45">45 %</option></select></label>
         </div>
+        <div class="acqhint">Revenus et crédits ne servent qu'à la simulation de prêt du dossier acquéreur. Sans eux, la simulation est présentée « à l'envers » : mensualité par durée et revenu nécessaire pour rester sous 35 %.</div>
         <div class="restyle-sub">Ce qu'il recherche</div>
         <div class="mfields">
           <label class="mf"><span>Type de bien</span><select name="r_type"><option>Maison</option><option>Appartement</option><option>Maison ou appartement</option><option>Terrain</option><option>Immeuble</option><option>Autre</option></select></label>
@@ -2082,6 +2159,65 @@
   </div>
 </div>
 
+
+<!-- ======== SIMULATION & DOSSIER ACQUÉREUR ======== -->
+<div class="modal" id="acqModal" hidden>
+  <div class="modal-card" style="max-width:920px">
+    <div class="modal-hd"><b>Simulation &amp; dossier acquéreur</b>
+      <button class="modal-x" id="acqX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body" style="max-height:74vh;overflow-y:auto">
+      <div id="acqBien" class="acqhint"></div>
+      <div class="mfields">
+        <label class="mf"><span>Pour quel acquéreur ?</span><select id="acqWho"></select></label>
+        <label class="mf"><span>Profil du projet</span><select id="acqProfil">
+          <option value="rp">Résidence principale</option>
+          <option value="rs">Résidence secondaire</option>
+          <option value="inv">Investissement locatif</option>
+        </select></label>
+      </div>
+
+      <div class="restyle-sub">Le budget — tout est modifiable</div>
+      <div class="mfields">
+        <label class="mf"><span>Prix de vente FAI (€)</span><input id="sPrix" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>Travaux à prévoir (€)</span><input id="sTravaux" type="number" inputmode="numeric" placeholder="0"></label>
+      </div>
+      <div class="sl"><div class="sl-hd"><b>Apport personnel</b><span class="sl-v" id="sApportV">—</span></div>
+        <input type="range" id="sApport" min="0" max="150000" step="1000" value="30000">
+        <input class="sl-n" id="sApportN" type="number" inputmode="numeric"></div>
+      <div class="sl"><div class="sl-hd"><b>Durée du prêt</b><span class="sl-v" id="sDureeV">20 ans</span></div>
+        <input type="range" id="sDuree" min="7" max="25" step="1" value="20"></div>
+      <div class="sl"><div class="sl-hd"><b>Taux du crédit</b><span class="sl-v" id="sTauxV">—</span></div>
+        <input type="range" id="sTaux" min="0.5" max="6" step="0.05" value="3.4">
+        <input class="sl-n" id="sTauxN" type="number" step="0.01"></div>
+      <div class="sl"><div class="sl-hd"><b>Assurance emprunteur</b><span class="sl-v" id="sAssV">—</span></div>
+        <input type="range" id="sAss" min="0" max="1" step="0.01" value="0.34">
+        <input class="sl-n" id="sAssN" type="number" step="0.01"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:2px 0 4px">
+        <button type="button" class="chip" id="sTauxRef">↺ Taux de référence</button>
+        <span style="font-size:11.5px;color:var(--ink-3)" id="sTauxSrc"></span>
+      </div>
+
+      <div class="restyle-sub">La capacité de l'acquéreur</div>
+      <div class="mfields">
+        <label class="mf"><span>Revenus nets du foyer (€/mois)</span><input id="sRevenus" type="number" inputmode="numeric" placeholder="vide → simulation à l'envers"></label>
+        <label class="mf"><span>Crédits en cours (€/mois)</span><input id="sCredits" type="number" inputmode="numeric" placeholder="0"></label>
+      </div>
+      <div class="mfields" id="sInvFields" hidden>
+        <label class="mf"><span>Loyer de marché (€/mois)</span><input id="sLoyer" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>Tranche d'imposition (TMI)</span><select id="sTmi"><option value="">—</option><option value="0">0 %</option><option value="11">11 %</option><option value="30">30 %</option><option value="41">41 %</option><option value="45">45 %</option></select></label>
+      </div>
+
+      <div id="acqOut"></div>
+
+      <div class="modal-ft">
+        <button type="button" class="btn" id="acqCancel">Fermer</button>
+        <button type="button" class="btn" id="acqSaveParams">Mémoriser sur la fiche</button>
+        <button type="button" class="btn gold" id="acqGen">📄 Générer le dossier</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ======== CORBEILLE ======== -->
 <div class="modal" id="trashModal" hidden>
   <div class="modal-card">
@@ -2133,7 +2269,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-163939';
+  var B='20260826-164656';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2191,6 +2327,28 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600;700&family=Great+Vibes&display=swap">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <style>
+.acqhint{font-size:12px;color:var(--ink-3);line-height:1.55;margin:10px 0 4px;padding:10px 12px;border-left:2px solid var(--accent);background:rgba(176,138,46,.07);border-radius:0 8px 8px 0}
+.acq-warn{font-size:12.5px;line-height:1.55;margin:12px 0 0;padding:11px 13px;border-radius:9px;background:rgba(211,58,44,.09);border:1px solid rgba(211,58,44,.3);color:var(--ink)}
+.acq-warn b{color:#c0392b}
+.sl{margin:14px 0}
+.sl-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.sl-hd b{font-size:13px;font-weight:600}
+.sl-v{margin-left:auto;font-weight:700;color:var(--accent);font-size:15px;font-variant-numeric:tabular-nums}
+.sl input[type=range]{width:100%;accent-color:var(--accent);height:26px}
+.sl-n{width:120px;margin-top:4px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);font:600 13px/1 inherit;font-variant-numeric:tabular-nums}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+.res .r{border:1px solid var(--line);border-radius:11px;padding:12px 13px}
+.res .r small{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px;line-height:1.3}
+.res .r b{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.res .r.hero{background:#17150F;border-color:#17150F}
+.res .r.hero small{color:#9A917C}
+.res .r.hero b{color:#E3C77E;font-size:25px}
+.res .r.good{border-color:rgba(47,125,91,.45)} .res .r.good b{color:#2F7D5B}
+.res .r.bad{border-color:rgba(211,58,44,.45)} .res .r.bad b{color:#c0392b}
+.rline2{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.rline2:last-child{border-bottom:0}
+.rline2 b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rtot{font-weight:700;border-top:2px solid var(--ink);border-bottom:0!important;margin-top:3px;padding-top:9px}
 .quicklinks{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
 .quicklinks:empty{display:none}
 .quicklinks button{border:1px solid var(--line);background:var(--card-2,transparent);color:var(--accent);
@@ -2245,7 +2403,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-163939';
+  var __BUILD='20260826-164656';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3254,6 +3412,8 @@
     e.r_situation.value=r.situation||'Premier achat';
     e.r_motivation.value=r.motivation||'';
     e.r_apport.value=r.apport||'';
+    e.r_revenus.value=r.revenus||''; e.r_credits.value=r.credits||'';
+    e.r_duree.value=r.duree||''; e.r_primo.value=r.primo||''; e.r_tmi.value=(r.tmi!==undefined&&r.tmi!==null)?r.tmi:'';
     e.r_financement.value=r.financement||'Non étudié';
     e.r_type.value=r.type||'Maison';
     e.r_etat.value=r.etat||'Peu importe';
@@ -3409,6 +3569,8 @@
     if(e.role.value==='acquereur'){
       recherche={ projet:e.r_projet.value, horizon:e.r_horizon.value, situation:e.r_situation.value,
         motivation:e.r_motivation.value.trim(), apport:parseInt(e.r_apport.value,10)||null,
+        revenus:parseInt(e.r_revenus.value,10)||null, credits:parseInt(e.r_credits.value,10)||null,
+        duree:e.r_duree.value||null, primo:e.r_primo.value||null, tmi:e.r_tmi.value||null,
         financement:e.r_financement.value, type:e.r_type.value, etat:e.r_etat.value,
         secteurs:e.r_secteurs.value.trim(), surf_min:parseInt(e.r_surf.value,10)||null,
         terrain_min:parseInt(e.r_terrain.value,10)||null, ch_min:parseInt(e.r_ch.value,10)||null,
@@ -4347,6 +4509,228 @@
       total:Math.round(total), mensuel:Math.round(total/12),
       credit:sim?sim.mensualite*12:0 };
   }
+  /* ============ SIMULATEUR ACQUÉREUR — tout modifiable, recalcul en direct ============ */
+  var acqCtx=null;   // {prixDef, adresse, ville, surface, type, dpe, photos, estimId, bienId, data}
+  var eurF=function(n){ return Math.round(n||0).toLocaleString('fr-FR')+' €'; };
+  function sg(id){ var e=document.getElementById(id); return e?e.value:''; }
+  function sn(id){ var v=parseFloat(sg(id)); return isNaN(v)?0:v; }
+  function sset(id,v){ var e=document.getElementById(id); if(e) e.value=v; }
+
+  function acqOuvrir(ctx){
+    acqCtx=ctx||{};
+    var tr=tauxRef();
+    document.getElementById('acqBien').innerHTML='<b>'+escH(acqCtx.adresse||'Bien sans adresse')+'</b>'+
+      (acqCtx.ville?' · '+escH(acqCtx.ville):'')+(acqCtx.surface?' · '+acqCtx.surface+' m²':'')+
+      (acqCtx.type?' · '+escH(acqCtx.type):'')+'<br><span style="color:var(--ink-3)">Le nom du vendeur ne figure jamais dans ce document.</span>';
+    // liste des acquéreurs du CRM
+    var sel=document.getElementById('acqWho');
+    var acqs=(contactsData||[]).filter(function(c){ return c.role==='acquereur'; });
+    sel.innerHTML='<option value="">— Aucun (dossier générique)</option>'+
+      acqs.map(function(c){ return '<option value="'+escH(c.id)+'">'+escH(c.nom||'')+'</option>'; }).join('');
+    sset('sPrix', acqCtx.prixDef||'');
+    sset('sTravaux', acqCtx.travaux||0);
+    sset('sTaux', tr.t20); sset('sTauxN', tr.t20);
+    sset('sAss', tr.tass); sset('sAssN', tr.tass);
+    sset('sDuree', 20);
+    sset('sApport', 30000); sset('sApportN', 30000);
+    sset('sRevenus',''); sset('sCredits','');
+    sset('sLoyer', acqCtx.loyer||''); sset('sTmi','');
+    document.getElementById('sTauxSrc').textContent=tr.src+(tr.date?(' · relevé le '+tr.date.split('-').reverse().join('/')):'');
+    acqMaj(); document.getElementById('acqModal').hidden=false;
+  }
+  // sélection d'un acquéreur → on hérite de SA fiche (profil, apport, revenus, TMI…)
+  function acqDepuisFiche(){
+    var id=sg('acqWho');
+    var c=(contactsData||[]).find(function(x){ return x.id===id; });
+    if(!c){ acqMaj(); return; }
+    var r=c.recherche||{};
+    var pj=(r.projet||'').toLowerCase();
+    var prof=/secondaire/.test(pj)?'rs':(/investis/.test(pj)?'inv':'rp');
+    sset('acqProfil', prof);
+    if(r.apport){ sset('sApport', r.apport); sset('sApportN', r.apport); }
+    if(r.revenus) sset('sRevenus', r.revenus);
+    if(r.credits) sset('sCredits', r.credits);
+    if(r.tmi) sset('sTmi', r.tmi);
+    if(r.duree){ sset('sDuree', r.duree); }
+    acqMaj();
+  }
+  function acqMaj(){
+    var prof=sg('acqProfil');
+    document.getElementById('sInvFields').hidden=(prof!=='inv');
+    var prix=sn('sPrix'), trav=sn('sTravaux'), apport=sn('sApportN')||sn('sApport');
+    var ans=parseInt(sg('sDuree'),10)||20;
+    var taux=sn('sTauxN')||sn('sTaux'), ass=sn('sAssN');
+    document.getElementById('sApportV').textContent=eurF(apport);
+    document.getElementById('sDureeV').textContent=ans+' ans';
+    document.getElementById('sTauxV').textContent=String(taux).replace('.',',')+' %';
+    document.getElementById('sAssV').textContent=String(ass).replace('.',',')+' %/an';
+    // le curseur d'apport s'adapte au prix (sinon il plafonne à 150 k€)
+    var ap=document.getElementById('sApport');
+    var maxA=Math.max(150000, Math.ceil((prix||0)/10000)*10000);
+    if(ap && ap.max!=String(maxA)) ap.max=maxA;
+
+    var d=acqData();
+    var fn=fraisNotaire(prix);
+    var aFinancer=Math.max(0, prix+(fn?fn.total:0)+trav-apport);
+    // simulation avec le taux et l'assurance DU CURSEUR (on n'impose rien)
+    var mois=ans*12;
+    var mHors=mensualite(aFinancer, taux, mois);
+    var mAss=(aFinancer*(ass/100))/12;
+    var m=mHors+mAss;
+    var revenus=sn('sRevenus'), credits=sn('sCredits');
+    var endett=revenus?((m+credits)/revenus*100):null;
+    var sim={ ans:ans, taux:taux, tauxAss:ass, mois:mois, capital:Math.round(aFinancer),
+      mensualite:Math.round(m), mensualiteHorsAss:Math.round(mHors), assurance:Math.round(mAss),
+      coutCredit:Math.round(mHors*mois-aFinancer), coutAssurance:Math.round(mAss*mois),
+      totalRembourse:Math.round(m*mois),
+      endettement:(endett===null?null:Math.round(endett*10)/10),
+      revenuNecessaire:Math.round((m+credits)/0.35),
+      verdict:(endett===null?null:(endett<=33?'ok':(endett<=35?'limite':'depasse'))) };
+    window.__acqSim={sim:sim, prix:prix, trav:trav, apport:apport, fn:fn, d:d, profil:prof,
+      revenus:revenus, credits:credits, loyer:sn('sLoyer'), tmi:sn('sTmi')};
+
+    var out=document.getElementById('acqOut');
+    if(!prix){ out.innerHTML='<div class="estimempty">Renseigne le prix de vente pour lancer la simulation.</div>'; return; }
+
+    var html='<div class="restyle-sub">Le coût réel de l\'acquisition</div>'+
+      '<div class="rline2"><span>Prix de vente FAI</span><b>'+eurF(prix)+'</b></div>'+
+      (fn?('<div class="rline2"><span>Droits de mutation</span><b>'+eurF(fn.droits)+'</b></div>'+
+           '<div class="rline2"><span>Émoluments du notaire (TTC)</span><b>'+eurF(fn.emoluments)+'</b></div>'+
+           '<div class="rline2"><span>Sécurité immobilière &amp; débours</span><b>'+eurF(fn.csi+fn.debours)+'</b></div>'):'')+
+      (trav?('<div class="rline2"><span>Travaux</span><b>'+eurF(trav)+'</b></div>'):'')+
+      '<div class="rline2"><span>Apport personnel</span><b>− '+eurF(apport)+'</b></div>'+
+      '<div class="rline2 rtot"><span>Montant à financer</span><b>'+eurF(aFinancer)+'</b></div>';
+
+    html+='<div class="res">'+
+      '<div class="r hero"><small>Mensualité assurance comprise</small><b>'+eurF(sim.mensualite)+'</b></div>'+
+      '<div class="r"><small>Dont assurance</small><b>'+eurF(sim.assurance)+'</b></div>'+
+      '<div class="r"><small>Coût total du crédit</small><b>'+eurF(sim.coutCredit+sim.coutAssurance)+'</b></div>'+
+      (sim.endettement!==null
+        ? '<div class="r '+(sim.verdict==='ok'?'good':(sim.verdict==='limite'?'':'bad'))+'"><small>Taux d\'endettement</small><b>'+String(sim.endettement).replace('.',',')+' %</b></div>'
+        : '<div class="r"><small>Revenu nécessaire (35 %)</small><b>'+eurF(sim.revenuNecessaire)+'</b></div>')+
+    '</div>';
+
+    if(sim.endettement!==null){
+      html+='<div class="acq-warn'+(sim.verdict==='ok'?' acq-ok':'')+'">'+
+        (sim.verdict==='ok'?'<b>Dossier finançable.</b> L\'endettement reste sous la limite HCSF de 35 % assurance comprise.'
+        :(sim.verdict==='limite'?'<b>Dossier à la limite.</b> Entre 33 et 35 %, la banque regardera le reste à vivre de près.'
+        :'<b>Au-delà de 35 %.</b> En l\'état la banque refusera : allonger la durée, augmenter l\'apport ou revoir le prix.'))+
+        ' Revenus déclarés '+eurF(sim.revenuNecessaire*0+ (window.__acqSim.revenus||0))+'/mois'+
+        ((window.__acqSim.credits)?(', dont '+eurF(window.__acqSim.credits)+' de crédits en cours'):'')+'.</div>';
+    } else {
+      html+='<div class="acqhint">Aucun revenu renseigné : la simulation est présentée <b>à l\'envers</b>. Pour cette mensualité, il faut environ <b>'+eurF(sim.revenuNecessaire)+' net par mois</b> pour rester sous la limite des 35 %.</div>';
+    }
+
+    // les trois durées côte à côte, au taux du curseur
+    html+='<div class="restyle-sub">Comparaison des durées (au taux affiché)</div>';
+    [15,20,25].forEach(function(a){
+      var mh=mensualite(aFinancer, taux, a*12), ma=(aFinancer*(ass/100))/12;
+      var tot=(mh+ma)*a*12;
+      html+='<div class="rline2"><span>'+a+' ans</span><b>'+eurF(mh+ma)+' / mois <span style="color:var(--ink-3);font-weight:500">· coût total '+eurF(tot-aFinancer)+'</span></b></div>';
+    });
+
+    if(prof==='rp'){
+      var cu=coutUsage(prix, sim, d);
+      html+='<div class="restyle-sub">Le coût d\'usage mensuel — tout compris</div>'+
+        '<div class="rline2"><span>Mensualité du prêt</span><b>'+eurF(cu.mensualite)+'</b></div>'+
+        '<div class="rline2"><span>Taxe foncière</span><b>'+eurF(cu.taxeF)+'</b></div>'+
+        (cu.copro?'<div class="rline2"><span>Charges de copropriété</span><b>'+eurF(cu.copro)+'</b></div>':'')+
+        '<div class="rline2"><span>Énergie (moyenne du DPE)</span><b>'+eurF(cu.energie)+'</b></div>'+
+        '<div class="rline2 rtot"><span>Ce que le logement coûte chaque mois</span><b>'+eurF(cu.total)+'</b></div>'+
+        (cu.taxeF===0&&cu.energie===0?'<div class="acqhint">Renseigne la taxe foncière et les dépenses d\'énergie dans l\'étape 4 de l\'estimation pour que ce chiffre soit complet.</div>':'');
+    } else if(prof==='rs'){
+      var cd=coutDetention(prix, d, sim);
+      html+='<div class="restyle-sub">Le coût annuel de détention</div>'+
+        '<div class="rline2"><span>Taxe foncière</span><b>'+eurF(cd.taxeF)+'</b></div>'+
+        '<div class="rline2"><span>Taxe d\'habitation résidence secondaire (estimation)</span><b>'+eurF(cd.thrs)+'</b></div>'+
+        (cd.copro?'<div class="rline2"><span>Charges de copropriété</span><b>'+eurF(cd.copro)+'</b></div>':'')+
+        '<div class="rline2"><span>Énergie (occupation partielle)</span><b>'+eurF(cd.energie)+'</b></div>'+
+        '<div class="rline2"><span>Entretien provisionné (0,5 %/an)</span><b>'+eurF(cd.entretien)+'</b></div>'+
+        '<div class="rline2"><span>Assurance</span><b>'+eurF(cd.assurance)+'</b></div>'+
+        '<div class="rline2 rtot"><span>Total hors crédit</span><b>'+eurF(cd.total)+' / an · '+eurF(cd.mensuel)+' / mois</b></div>';
+    } else {
+      var loy=sn('sLoyer');
+      var rt=rentabilite(prix, loy, d, sim, sn('sTmi'));
+      if(!rt){ html+='<div class="acqhint">Renseigne le loyer de marché pour calculer la rentabilité.</div>'; }
+      else {
+        html+='<div class="restyle-sub">La rentabilité</div>'+
+          '<div class="res">'+
+            '<div class="r"><small>Rendement brut</small><b>'+String(rt.brut).replace('.',',')+' %</b></div>'+
+            '<div class="r"><small>Rendement net de charges</small><b>'+String(rt.net).replace('.',',')+' %</b></div>'+
+            '<div class="r '+(rt.cashflow>=0?'good':'bad')+'"><small>Cash-flow mensuel</small><b>'+(rt.cashflow>=0?'+ ':'− ')+eurF(Math.abs(rt.cashflow))+'</b></div>'+
+            '<div class="r"><small>Investissement total</small><b>'+eurF(rt.invest)+'</b></div>'+
+          '</div>'+
+          '<div class="rline2"><span>Loyers annuels</span><b>'+eurF(rt.loyerAn)+'</b></div>'+
+          '<div class="rline2"><span>Taxe foncière</span><b>− '+eurF(rt.charges.taxeF)+'</b></div>'+
+          (rt.charges.coproNonRec?'<div class="rline2"><span>Charges de copro non récupérables</span><b>− '+eurF(rt.charges.coproNonRec)+'</b></div>':'')+
+          '<div class="rline2"><span>Assurance PNO</span><b>− '+eurF(rt.charges.pno)+'</b></div>'+
+          (rt.charges.gestion?'<div class="rline2"><span>Gestion locative</span><b>− '+eurF(rt.charges.gestion)+'</b></div>':'')+
+          (rt.charges.vacance?'<div class="rline2"><span>Vacance provisionnée</span><b>− '+eurF(rt.charges.vacance)+'</b></div>':'')+
+          '<div class="rline2 rtot"><span>Revenu net de charges</span><b>'+eurF(rt.netAn)+' / an</b></div>'+
+          (rt.effort?'<div class="acq-warn"><b>Effort d\'épargne de '+eurF(rt.effort)+' par mois.</b> Le loyer ne couvre pas la mensualité : à dire clairement à l\'acquéreur.</div>':'')+
+          '<div class="restyle-sub">Selon le régime fiscal (TMI '+(sn('sTmi')||0)+' %)</div>'+
+          rt.regimes.map(function(r){
+            return '<div class="rline2"><span>'+escH(r.nom)+'<br><small style="color:var(--ink-3)">'+escH(r.note)+'</small></span><b>'+String(r.netnet).replace('.',',')+' % net-net</b></div>';
+          }).join('');
+      }
+      var dc=dpeContrainte();
+      if(dc) html+='<div class="acq-warn"><b>Attention — classe '+dc.classe+'.</b> Ce logement '+dc.txt+'. C\'est bloquant pour un investisseur : le dossier le mentionnera, avec le coût des travaux si tu l\'as renseigné.</div>';
+    }
+    out.innerHTML=html;
+  }
+  (function(){
+    var m=document.getElementById('acqModal'); if(!m) return;
+    function close(){ m.hidden=true; }
+    document.getElementById('acqX').addEventListener('click',close);
+    document.getElementById('acqCancel').addEventListener('click',close);
+    m.addEventListener('click',function(e){ if(e.target===m) close(); });
+    // curseurs ⇄ champs numériques : les deux pilotent, tout se recalcule en direct
+    function paire(range, num){
+      var r=document.getElementById(range), n=document.getElementById(num);
+      if(r) r.addEventListener('input',function(){ if(n) n.value=r.value; acqMaj(); });
+      if(n) n.addEventListener('input',function(){ if(r) r.value=n.value; acqMaj(); });
+    }
+    paire('sApport','sApportN'); paire('sTaux','sTauxN'); paire('sAss','sAssN');
+    ['sDuree','sPrix','sTravaux','sRevenus','sCredits','sLoyer','sTmi','acqProfil'].forEach(function(id){
+      var e=document.getElementById(id); if(e) e.addEventListener('input',acqMaj);
+    });
+    document.getElementById('acqWho').addEventListener('change',acqDepuisFiche);
+    document.getElementById('sTauxRef').addEventListener('click',function(){
+      var tr=tauxRef(), ans=parseInt(sg('sDuree'),10)||20;
+      var t=(ans<=17)?tr.t15:(ans<=22?tr.t20:tr.t25);
+      sset('sTaux',t); sset('sTauxN',t); sset('sAss',tr.tass); sset('sAssN',tr.tass); acqMaj();
+      toast('Taux de référence appliqué : '+String(t).replace('.',',')+' %');
+    });
+    // mémoriser les données de capacité sur la fiche de l'acquéreur
+    document.getElementById('acqSaveParams').addEventListener('click',async function(){
+      var id=sg('acqWho');
+      var c=(contactsData||[]).find(function(x){ return x.id===id; });
+      if(!c){ toast('Choisis d\'abord un acquéreur.'); return; }
+      var r=Object.assign({}, c.recherche||{});
+      r.apport=sn('sApportN')||sn('sApport')||null;
+      r.revenus=sn('sRevenus')||null; r.credits=sn('sCredits')||null;
+      r.tmi=sg('sTmi')||null; r.duree=sg('sDuree')||null;
+      r.projet=({rp:'Résidence principale',rs:'Résidence secondaire',inv:'Investissement locatif'})[sg('acqProfil')]||r.projet;
+      try{
+        var res=await sb.from('contacts').update({recherche:r}).eq('id',c.id);
+        if(res.error) throw res.error;
+        c.recherche=r; toast('Fiche de '+(c.nom||'')+' mise à jour ✓');
+      }catch(e){ toast('Enregistrement impossible : '+((e&&e.message)||e)); }
+    });
+    document.getElementById('acqGen').addEventListener('click',function(){
+      if(typeof buildAcq!=='function'){ toast('Le document PDF arrive — la simulation est déjà utilisable.'); return; }
+      acqGenerer();
+    });
+    var ab=document.getElementById('acqBtn');
+    if(ab) ab.addEventListener('click',function(){
+      var adr=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'').trim();
+      var reco=parseInt(((document.getElementById('rReco')||{}).textContent||'').replace(/[^0-9]/g,''),10)||0;
+      acqOuvrir({ adresse:adr, ville:estVilleTxt||'', surface:sg('fSurf'), type:sg('fType'),
+        prixDef:reco, travaux:Math.abs(parseFloat(state.trav)||0),
+        loyer:(typeof loyersMensuels==='function')?loyersMensuels():0,
+        estimId:editingEstimId, photos:(estPhotos||[]).map(function(p){ return p.after||p.before; }) });
+    });
+  })();
   /* ---------- LIENS RAPIDES : depuis n'importe quel formulaire on rebondit sur la fiche liée ---------- */
   function contactParNom(nom){
     nom=(nom||'').trim().toLowerCase(); if(!nom) return null;
