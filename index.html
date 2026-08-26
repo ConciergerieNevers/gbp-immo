@@ -2311,7 +2311,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-173948';
+  var B='20260826-174305';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2459,7 +2459,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-173948';
+  var __BUILD='20260826-174305';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4087,9 +4087,9 @@
   /* ---------- prix final ajustable (plafond psychologique) ---------- */
   (function(){
     var btn=document.getElementById('recoEdit'); if(!btn) return;
-    btn.addEventListener('click',function(){
+    btn.addEventListener('click',async function(){
       var cur=(document.getElementById('rReco').textContent||'').replace(/[^0-9]/g,'');
-      var v=prompt('Prix de mise en vente final (\u20ac) :', cur);
+      var v=await ask({titre:'Prix final', label:'Prix net vendeur conseille (\u20ac)', valeur:cur, type:'number', ok:'Appliquer'});
       if(v===null) return;
       v=parseInt(String(v).replace(/[^0-9]/g,''),10);
       if(!v){ toast('Prix invalide.'); return; }
@@ -4097,12 +4097,13 @@
     });
     document.getElementById('recoReset').addEventListener('click',function(){ state.override=null; compute(); toast('Retour au prix calculé'); });
     var re=document.getElementById('rangeEdit');
-    if(re) re.addEventListener('click',function(){
+    if(re) re.addEventListener('click',async function(){
       var curL=(document.getElementById('rLow').textContent||'').replace(/[^0-9]/g,'');
       var curH=(document.getElementById('rHigh').textContent||'').replace(/[^0-9]/g,'');
-      var vl=prompt('Valeur basse (\u20ac) :', curL); if(vl===null) return;
-      var vh=prompt('Valeur haute (\u20ac) :', curH); if(vh===null) return;
-      vl=parseInt(String(vl).replace(/[^0-9]/g,''),10); vh=parseInt(String(vh).replace(/[^0-9]/g,''),10);
+      var rg2=await ask({titre:'Fourchette de valeur', label:'Valeur basse (\u20ac)', valeur:curL,
+        label2:'Valeur haute (\u20ac)', valeur2:curH, type:'number', ok:'Appliquer'});
+      if(rg2===null) return;
+      var vl=parseInt(String(rg2[0]).replace(/[^0-9]/g,''),10), vh=parseInt(String(rg2[1]).replace(/[^0-9]/g,''),10);
       if(!vl||!vh||vh<vl){ toast('Fourchette invalide.'); return; }
       state.overLow=vl; state.overHigh=vh; compute(); toast('Fourchette ajustée \u2713');
     });
@@ -4700,7 +4701,7 @@
   async function acqDepuisFiche(){
     var id=sg('acqWho');
     if(id==='__new'){
-      var nom=window.prompt('Nom du nouvel acquéreur :','');
+      var nom=await ask({titre:'Nouvel acquéreur', label:'Nom et prénom', placeholder:'M. et Mme Durand', ok:'Créer'});
       var selN=document.getElementById('acqWho');
       if(!nom||!nom.trim()){ selN.value=''; return; }
       var c2=await ensureContact(nom.trim(),'acquereur','','À recontacter');
@@ -8033,7 +8034,7 @@
         if(_e==='PASSWORD_RECOVERY'){
           // lien « changer le mot de passe » cliqué depuis l'e-mail
           setTimeout(async function(){
-            var np=window.prompt('Nouveau mot de passe (8 caractères minimum) :');
+            var np=await ask({titre:'Nouveau mot de passe', label:'Au moins 8 caractères', type:'password', ok:'Changer'});
             if(np&&np.length>=8){
               try{ var r=await sb.auth.updateUser({password:np}); if(r.error) throw r.error; toast('Mot de passe changé ✓'); }
               catch(err){ toast('Changement impossible : '+(err.message||err)); }
