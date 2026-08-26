@@ -2119,7 +2119,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-153937';
+  var B='20260826-154141';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2222,7 +2222,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-153937';
+  var __BUILD='20260826-154141';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4161,6 +4161,7 @@
       if(res.error) throw res.error;
       ventesData=res.data||[];
       updateKpis();
+      if(typeof renderChart==='function') try{ renderChart(); }catch(e){}
       if(typeof renderGoals==='function') renderGoals();
     }catch(e){ console.warn('[ESTIMAKE] ventes', e); }
   }
@@ -4622,6 +4623,155 @@
       }).join('');
   }
   (function(){ var se=document.getElementById('estimSearch'); if(se) se.addEventListener('input',renderEstimList); })();
+  /* ---------- GRAPHIQUE D'ÉVOLUTION (12 derniers mois) ---------- */
+  function serieMois(n){
+    n=n||12;
+    var out=[], now=new Date();
+    for(var i=n-1;i>=0;i--){
+      var d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+      out.push({ y:d.getFullYear(), m:d.getMonth(), lbl:d.toLocaleDateString('fr-FR',{month:'short'}), enc:0, prev:0, vol:0, nb:0 });
+    }
+    (ventesData||[]).forEach(function(v){
+      var ds=v.date_vente||v.created_at; if(!ds) return;
+      var d=new Date(ds);
+      var s=out.find(function(x){ return x.y===d.getFullYear() && x.m===d.getMonth(); });
+      if(!s) return;
+      var part=partVente(v);
+      if(v.statut==='acte'){ s.enc+=part; s.vol+=(v.prix||0); s.nb++; } else { s.prev+=part; }
+    });
+    return out;
+  }
+  function chartSVG(serie, w, h, forPdf){
+    var max=Math.max.apply(null, serie.map(function(s){ return s.enc+s.prev; }).concat([1]));
+    var pad={l:44,r:8,t:12,b:22}, iw=w-pad.l-pad.r, ih=h-pad.t-pad.b;
+    var bw=Math.max(6, iw/serie.length*0.58), gap=iw/serie.length;
+    var g='', grid='';
+    [0,0.5,1].forEach(function(f){
+      var y=pad.t+ih-ih*f;
+      grid+='<line x1="'+pad.l+'" y1="'+y+'" x2="'+(w-pad.r)+'" y2="'+y+'" stroke="'+(forPdf?'#E4DCC9':'rgba(140,130,110,.25)')+'" stroke-width="1"/>'+
+        '<text x="'+(pad.l-6)+'" y="'+(y+3)+'" text-anchor="end" font-size="9" fill="'+(forPdf?'#8d8168':'#9a917f')+'">'+Math.round(max*f/1000)+'k</text>';
+    });
+    serie.forEach(function(s,i){
+      var x=pad.l+i*gap+(gap-bw)/2;
+      var he=ih*(s.enc/max), hp=ih*(s.prev/max);
+      if(hp>0) g+='<rect x="'+x+'" y="'+(pad.t+ih-he-hp)+'" width="'+bw+'" height="'+hp+'" fill="'+(forPdf?'#C9A96B':'#C9A96B')+'" opacity=".45" rx="2"/>';
+      if(he>0) g+='<rect x="'+x+'" y="'+(pad.t+ih-he)+'" width="'+bw+'" height="'+he+'" fill="'+(forPdf?'#A8853B':'#B08A2E')+'" rx="2"/>';
+      g+='<text x="'+(x+bw/2)+'" y="'+(h-7)+'" text-anchor="middle" font-size="9" fill="'+(forPdf?'#8d8168':'#9a917f')+'">'+s.lbl+'</text>';
+    });
+    return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none" style="display:block">'+grid+g+'</svg>';
+  }
+  function renderChart(){
+    var card=document.getElementById('chartCard'); if(!card) return;
+    var serie=serieMois(12);
+    var total=serie.reduce(function(a,s){ return a+s.enc; },0);
+    var totalPrev=serie.reduce(function(a,s){ return a+s.prev; },0);
+    if(!total && !totalPrev){ card.innerHTML='<div class="estimempty">Aucune commission sur les 12 derniers mois — elles apparaîtront ici dès ta première vente.</div>'; return; }
+    card.innerHTML='<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px">'+
+        '<div><div class="eyebrow">Encaissé · 12 mois</div><b class="tnum" style="font-size:20px">'+total.toLocaleString('fr-FR')+' €</b></div>'+
+        '<div><div class="eyebrow">À venir</div><b class="tnum" style="font-size:20px;color:var(--ink-2)">'+totalPrev.toLocaleString('fr-FR')+' €</b></div>'+
+        '<div style="margin-left:auto;align-self:end;font-size:12px;color:var(--ink-3)">■ encaissé &nbsp; <span style="opacity:.5">■</span> à venir</div>'+
+      '</div>'+chartSVG(serie, 720, 170, false);
+  }
+  /* ---------- RAPPORT D'ACTIVITÉ PDF ---------- */
+  function buildRapport(){
+    var rg=ckRange(), per=ckLabelTxt(rg);
+    var inP=(ventesData||[]).filter(function(v){ return ckInRange(v.date_vente||v.created_at,rg); });
+    var actees=inP.filter(function(v){ return v.statut==='acte'; });
+    var compromis=inP.filter(function(v){ return v.statut!=='acte'; });
+    var com=actees.reduce(function(a,v){ return a+partVente(v); },0);
+    var comPrev=compromis.reduce(function(a,v){ return a+partVente(v); },0);
+    var vol=actees.reduce(function(a,v){ return a+(v.prix||0); },0);
+    var mandats=(biens||[]).filter(function(b){ return b.st!=='Vendu'; });
+    var rentres=(biens||[]).filter(function(b){ return b.crea && ckInRange(b.crea,rg); });
+    var nEst=(window.__estimsAll||[]).filter(function(r){ return ckInRange(r.created_at,rg); }).length;
+    var dateStr=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+    var eu=function(n){ return Math.round(n||0).toLocaleString('fr-FR')+' €'; };
+
+    function hd(){ return '<div class="m-hd"><img src="/logo-gb-app.png" alt=""><div class="m-hdname">GB IMMOBILIER<span>Jimmy Garcia — conseiller immobilier</span></div><div class="m-ref">'+escH(per.toUpperCase())+'</div></div>'; }
+    function ft(n,tot){ return '<div class="m-ft"><span>Rapport d\'activité — établi le '+dateStr+'</span><b>'+('0'+n).slice(-2)+' / '+('0'+tot).slice(-2)+'</b></div>'; }
+    function tuile(lbl,val,sub){ return '<div class="m-tile"><b>'+val+'</b><small>'+lbl+'</small>'+(sub?'<small style="opacity:.75;letter-spacing:.06em;text-transform:none;margin-top:1mm">'+sub+'</small>':'')+'</div>'; }
+    function ligne(v){
+      return '<tr><td>'+escH(v.bien||'—')+(v.client?'<br><span style="color:#8A8272;font-size:8.4px">'+escH(v.client)+'</span>':'')+'</td>'+
+        '<td>'+(v.date_vente||'')+'</td><td>'+eu(v.prix)+'</td><td>'+eu(v.honoraires)+'</td>'+
+        '<td><b>'+eu(partVente(v))+'</b></td></tr>';
+    }
+    var tblActees = actees.length
+      ? '<table class="m-comp"><thead><tr><th>Bien</th><th>Date</th><th>Prix</th><th>Honoraires</th><th>Ma part</th></tr></thead><tbody>'+
+        actees.map(ligne).join('')+
+        '<tr class="hl"><td colspan="4"><b>Total encaissé</b></td><td><b>'+eu(com)+'</b></td></tr></tbody></table>'
+      : '<p class="m-p" style="color:#8d8168">Aucune vente actée sur la période.</p>';
+    var tblComp = compromis.length
+      ? '<table class="m-comp"><thead><tr><th>Bien</th><th>Date</th><th>Prix</th><th>Honoraires</th><th>Ma part</th></tr></thead><tbody>'+
+        compromis.map(ligne).join('')+
+        '<tr class="hl"><td colspan="4"><b>Total à venir</b></td><td><b>'+eu(comPrev)+'</b></td></tr></tbody></table>'
+      : '<p class="m-p" style="color:#8d8168">Aucun compromis en cours sur la période.</p>';
+    var tblMand = mandats.length
+      ? '<table class="m-comp"><thead><tr><th>Bien</th><th>État d\'avancement</th><th>Propriétaire</th><th>Prix</th></tr></thead><tbody>'+
+        mandats.slice(0,14).map(function(b){
+          return '<tr><td>'+escH(b.ad||'—')+'</td><td>'+escH((typeof etatBien==='function'?etatBien(b):b.st)||'—')+'</td><td>'+escH(b.owner||'—')+'</td><td>'+eu(b.px)+'</td></tr>';
+        }).join('')+'</tbody></table>'
+      : '<p class="m-p" style="color:#8d8168">Aucun mandat actif.</p>';
+
+    var g=(userGoals||{}), objHtml='';
+    if(g.com||g.ca||g.vte){
+      function bar(nm,val,obj,unit){
+        if(!obj) return '';
+        var pct=Math.min(100,Math.round(val/obj*100));
+        return '<div style="margin-bottom:4mm"><div style="display:flex;justify-content:space-between;font-size:9px"><b>'+nm+'</b><span>'+Math.round(val).toLocaleString('fr-FR')+unit+' / '+Number(obj).toLocaleString('fr-FR')+unit+'</span></div>'+
+          '<div style="height:2.6mm;background:#E4DCC9;border-radius:2mm;margin-top:1.2mm;overflow:hidden"><i style="display:block;height:100%;width:'+pct+'%;background:#A8853B"></i></div>'+
+          '<div style="font-size:8px;color:#8d8168;margin-top:.8mm">'+pct+' % atteint</div></div>';
+      }
+      var anY=new Date().getFullYear();
+      var acteesY=(ventesData||[]).filter(function(v){ return v.statut==='acte' && String(v.date_vente||v.created_at||'').slice(0,4)==String(anY); });
+      objHtml='<div class="m-lbl">Objectifs '+anY+'</div>'+
+        bar('Mes commissions', acteesY.reduce(function(a,v){return a+partVente(v);},0), g.com?parseInt(g.com,10):0, ' €')+
+        bar('Volume de ventes', acteesY.reduce(function(a,v){return a+(v.prix||0);},0), g.ca?parseInt(g.ca,10):0, ' €')+
+        bar('Ventes actées', acteesY.length, g.vte?parseInt(g.vte,10):0, '');
+    }
+
+    var p1='<div class="dsheet mpage">'+hd()+'<div class="m-body">'+
+      '<div class="m-eyebrow"><em>01</em>Mon activité</div>'+
+      '<h1 class="m-h1">Rapport d\'activité <i>'+escH(per)+'</i></h1>'+
+      '<div class="m-tiles">'+
+        tuile('Mes commissions', eu(com), actees.length+' vente'+(actees.length>1?'s':'')+' actée'+(actees.length>1?'s':''))+
+        tuile('Commissions à venir', eu(comPrev), compromis.length+' compromis')+
+        tuile('Volume de ventes', eu(vol), nEst+' estimation'+(nEst>1?'s':''))+
+      '</div>'+
+      '<div class="m-lbl">Évolution des commissions · 12 derniers mois</div>'+
+      chartSVG(serieMois(12), 700, 190, true)+
+      '<div class="m-lbl">Tunnel de conversion</div>'+
+      '<table class="m-comp"><tbody>'+
+        '<tr><td>Estimations réalisées</td><td style="text-align:right"><b>'+nEst+'</b></td></tr>'+
+        '<tr><td>Mandats rentrés</td><td style="text-align:right"><b>'+rentres.length+'</b></td></tr>'+
+        '<tr><td>Compromis signés</td><td style="text-align:right"><b>'+compromis.length+'</b></td></tr>'+
+        '<tr class="hl"><td>Ventes actées</td><td style="text-align:right"><b>'+actees.length+'</b></td></tr>'+
+      '</tbody></table>'+
+      objHtml+
+      '</div>'+ft(1,2)+'</div>';
+
+    var p2='<div class="dsheet mpage">'+hd()+'<div class="m-body">'+
+      '<div class="m-eyebrow"><em>02</em>Le détail</div>'+
+      '<h1 class="m-h1">Ventes &amp; <i>mandats</i></h1>'+
+      '<div class="m-lbl">Ventes actées</div>'+tblActees+
+      '<div class="m-lbl">Compromis en cours</div>'+tblComp+
+      '<div class="m-lbl">Portefeuille de mandats</div>'+tblMand+
+      '<p class="m-legal" style="margin-top:6mm">Document interne — commissions calculées selon la règle 25 % rentrée + 25 % vente sur les honoraires d\'agence. Établi le '+dateStr+' par ESTIMAKE.</p>'+
+      '</div>'+ft(2,2)+'</div>';
+
+    document.getElementById('dossier').innerHTML=p1+p2;
+  }
+  (function(){
+    var b=document.getElementById('rapportBtn'); if(!b) return;
+    b.addEventListener('click',async function(){
+      b.disabled=true; var old=b.innerHTML; b.innerHTML='Génération…';
+      try{
+        buildRapport();
+        await exportPDF('Rapport activite - '+ckLabelTxt(ckRange()).replace(/[^\w\u00c0-\u017f -]/g,'')+'.pdf');
+        toast('Rapport d\'activité téléchargé ✓');
+      }catch(e){ console.warn('[ESTIMAKE] rapport',e); toast('Rapport impossible : '+((e&&e.message)||e)); }
+      finally{ b.disabled=false; b.innerHTML=old; }
+    });
+  })();
   /* ---------- CÉLÉBRATION : compromis signé / vente actée ---------- */
   var CELEB_GIFS=[
     'DfLwM9kttDFEQ','YitBbyU7DNjUs','GCLlQnV7wzKLu','10bHcDcPM925ry','awpqNsKuFtXI4',
@@ -6164,7 +6314,7 @@
   })();
   /* Export PDF déterministe : chaque feuille .dsheet devient une page A4 exacte
      (fini les décalages de l'impression navigateur, notamment sur iPhone). */
-  async function exportPDF(){
+  async function exportPDF(nomFichier){
     if(!(window.html2canvas && window.jspdf && window.jspdf.jsPDF)) throw new Error('libs PDF non charg\u00e9es');
     var el=document.getElementById('dossier');
     el.classList.add('rendering');
@@ -6204,7 +6354,7 @@
         pdf.addImage(cv.toDataURL('image/jpeg',0.95),'JPEG',0,0,210,h);
       }
       var adr=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'bien').trim().replace(/[^\w\u00c0-\u017f -]/g,'').slice(0,40);
-      pdf.save('Avis de valeur - '+adr+'.pdf');
+      pdf.save(nomFichier || ('Avis de valeur - '+adr+'.pdf'));
     } finally{ el.classList.remove('rendering'); }
   }
 
