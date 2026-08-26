@@ -2269,7 +2269,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-164656';
+  var B='20260826-165001';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2403,7 +2403,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-164656';
+  var __BUILD='20260826-165001';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4731,6 +4731,305 @@
         estimId:editingEstimId, photos:(estPhotos||[]).map(function(p){ return p.after||p.before; }) });
     });
   })();
+  /* =====================================================================
+     LE DOSSIER ACQUÉREUR — document PDF remis à l'acheteur.
+     Builder SÉPARÉ de l'avis de valeur : le net vendeur, le détail des
+     honoraires, ma commission et le nom du vendeur n'y entrent JAMAIS.
+     ===================================================================== */
+  function buildAcq(){
+    var S=window.__acqSim; if(!S) return false;
+    var ctx=acqCtx||{}, d=S.d, sim=S.sim, prof=S.profil, fn=S.fn;
+    var who=(contactsData||[]).find(function(x){ return x.id===sg('acqWho'); })||null;
+    var cliN=who?(who.nom||''):'';
+    var dateStr=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+    var tr=tauxRef();
+    var dpeCl=(document.getElementById('fDpeCl')||{}).value||'';
+    var photos=(ctx.photos||[]).filter(Boolean);
+    var PROFN={rp:'Résidence principale', rs:'Résidence secondaire', inv:'Investissement locatif'};
+    var eu=eurF;
+    var pages=[], TOT=0;
+
+    function hd(){ return '<div class="m-hd"><img src="/logo-gb-app.png" alt=""><div class="m-hdname">GB IMMOBILIER<span>Jimmy Garcia — conseiller immobilier</span></div><div class="m-ref">'+escH((PROFN[prof]||'').toUpperCase())+'</div></div>'; }
+    function ft(n){ return '<div class="m-ft"><span>Dossier de présentation — '+escH(ctx.adresse||'')+'</span><b>__P'+n+'__</b></div>'; }
+    function page(body,n){ return '<div class="dsheet mpage">'+hd()+'<div class="m-body">'+body+'</div>'+ft(n)+'</div>'; }
+    function eyebrow(num,lbl){ return '<div class="m-eyebrow"><em>'+num+'</em>'+lbl+'</div>'; }
+    function L(lib,val,fort){ return '<div class="m-sprow"><span>'+escH(lib)+'</span><b'+(fort?' style="color:#A8853B"':'')+'>'+val+'</b></div>'; }
+    var DPE_COLORS={A:['#00A06D','#fff'],B:['#52B153','#fff'],C:['#A5CC74','#33331a'],D:['#F4E70F','#33331a'],E:['#F0B50F','#33331a'],F:['#EB8235','#fff'],G:['#D7221F','#fff']};
+    function dpeBar2(cl){
+      if(!cl||(cl!=='ND'&&!DPE_COLORS[cl])) return '';
+      return '<div class="m-dpe">'+'ABCDEFG'.split('').map(function(X){
+        var c=DPE_COLORS[X];
+        return '<span style="background:'+c[0]+';color:'+c[1]+'"'+(X===cl?' class="on"':'')+'>'+X+'</span>';
+      }).join('')+'</div>';
+    }
+
+    /* ---- couverture ---- */
+    var cover='<div class="dsheet mcover">'+
+      '<img class="mc-logo" src="/logo-gb-app.png" alt="GB Immobilier">'+
+      '<div class="mc-name">GB IMMOBILIER</div>'+
+      '<div class="mc-sub">Agence immobilière — Nevers</div>'+
+      '<div class="mc-eyebrow">Dossier de présentation — document confidentiel</div>'+
+      '<div class="mc-title">Votre projet<i>'+escH(prof==='inv'?'d\'investissement':(prof==='rs'?'de résidence secondaire':'immobilier'))+'</i></div>'+
+      '<div class="mc-div"><i></i></div>'+
+      '<div class="mc-photo" style="background-image:url('+(photos[0]||'/photo-base.jpg')+')"></div>'+
+      '<div class="mc-line1">'+escH((ctx.type||'Bien')+(ctx.surface?' — '+ctx.surface+' m²':''))+'</div>'+
+      '<div class="mc-addr">'+escH(ctx.adresse||'')+(ctx.ville?' · '+escH(ctx.ville):'')+'</div>'+
+      '<div class="mc-specs">'+eu(S.prix)+' FRAIS D\'AGENCE INCLUS</div>'+
+      '<div class="mc-meta">'+
+        '<div><small>Préparé pour</small><b>'+escH(cliN||'Vous')+'</b></div>'+
+        '<div><small>Date</small><b>'+dateStr+'</b></div>'+
+        '<div><small>Votre conseiller</small><b>Jimmy Garcia</b></div>'+
+      '</div></div>';
+
+    /* ---- 01 · le bien ---- */
+    var specs=[];
+    specs.push(['Type de bien', escH(ctx.type||'—')]);
+    if(ctx.surface) specs.push(['Surface habitable', ctx.surface+' m²']);
+    var gv=function(id){ var e=document.getElementById(id); return e?e.value:''; };
+    if(gv('fTerr')&&gv('fTerr')!=='0') specs.push(['Terrain', gv('fTerr')+' m²']);
+    if(gv('fPieces')) specs.push(['Pièces', gv('fPieces')]);
+    if(gv('fChambres')) specs.push(['Chambres', gv('fChambres')]);
+    if(gv('fSdb')) specs.push(['Salles de bain', gv('fSdb')]);
+    if(gv('fAnnee')) specs.push(['Année de construction', gv('fAnnee')]);
+    if(d.chauffage) specs.push(['Chauffage', escH(d.chauffage)]);
+    if(ctx.surface&&S.prix) specs.push(['Prix au m²', eu(S.prix/parseFloat(ctx.surface))+'/m²']);
+    var half=Math.ceil(specs.length/2);
+    var col=function(a){ return a.map(function(x){ return '<div class="m-sprow"><span>'+escH(x[0])+'</span><b>'+x[1]+'</b></div>'; }).join(''); };
+    var desc=(gv('fDesc')||'').trim();
+    var photoBlk='';
+    if(photos.length===1) photoBlk='<div class="m-ph big" style="height:54mm;margin:5mm 0;background-image:url('+photos[0]+')"></div>';
+    else if(photos.length>1) photoBlk='<div class="m-photos" style="margin:5mm 0"><div class="m-ph big" style="background-image:url('+photos[0]+')"></div><div class="side">'+
+      photos.slice(1,3).map(function(x){ return '<div class="m-ph" style="background-image:url('+x+')"></div>'; }).join('')+(photos.length===2?'<div></div>':'')+'</div></div>';
+    var energie=(d.energieMin||d.energieMax)
+      ? ('<p class="m-p" style="font-size:8.4px;color:#6c6250;margin-top:1.5mm">Dépenses annuelles d\'énergie estimées : entre <b>'+eu(d.energieMin)+'</b> et <b>'+eu(d.energieMax)+'</b>'+(d.conso?' · consommation '+d.conso+' kWh/m²/an':'')+(d.dpeDate?' · diagnostic du '+d.dpeDate.split('-').reverse().join('/'):'')+'.</p>')
+      : (dpeCl?'<p class="m-p" style="font-size:8.4px;color:#6c6250;margin-top:1.5mm">Montant des dépenses d\'énergie à consulter sur le diagnostic remis lors de la visite.</p>':'');
+    var p1=eyebrow('01','Le bien')+
+      '<h1 class="m-h1">'+escH(ctx.adresse||'Le bien')+(ctx.ville?' <i>'+escH(ctx.ville)+'</i>':'')+'</h1>'+
+      (desc?'<p class="m-p">'+escH(desc).replace(/\n/g,'<br>')+'</p>':'')+
+      photoBlk+
+      '<div class="m-spectbl"><div>'+col(specs.slice(0,half))+'</div><div>'+col(specs.slice(half))+'</div></div>'+
+      (dpeCl?('<div class="m-lbl">Performance énergétique</div>'+dpeBar2(dpeCl)+(d.ges?('<div style="margin-top:2mm">'+dpeBar2(d.ges)+'<div style="font-size:7.4px;letter-spacing:.2em;color:#9a917f;text-transform:uppercase;margin-top:1mm">Émissions de gaz à effet de serre</div></div>'):'')+energie):'');
+    pages.push(p1);
+
+    /* ---- 02 · le budget & le financement ---- */
+    var p2=eyebrow('02','Le budget')+
+      '<h1 class="m-h1">Ce que représente <i>votre acquisition</i></h1>'+
+      '<div class="m-spectbl"><div>'+
+        L('Prix de vente, frais d\'agence inclus', eu(S.prix))+
+        (fn?L('Droits de mutation (« frais de notaire »)', eu(fn.droits)):'')+
+        (fn?L('Émoluments du notaire, TTC', eu(fn.emoluments)):'')+
+        (fn?L('Sécurité immobilière et débours', eu(fn.csi+fn.debours)):'')+
+      '</div><div>'+
+        (S.trav?L('Travaux à prévoir', eu(S.trav)):'')+
+        L('Apport personnel', '− '+eu(S.apport))+
+        L('Montant à financer', eu(sim.capital), true)+
+        (fn?L('Frais d\'acquisition', String(fn.pct).replace('.',',')+' % du prix'):'')+
+      '</div></div>'+
+      '<div class="m-dark">'+
+        '<div class="lb1">Mensualité, assurance comprise</div>'+
+        '<div class="px">'+eu(sim.mensualite)+'</div>'+
+        '<div class="pm">sur '+sim.ans+' ans, au taux de '+String(sim.taux).replace('.',',')+' % (assurance '+String(sim.tauxAss).replace('.',',')+' %)</div>'+
+        '<div class="m-fourch">'+
+          '<div><small>Coût total du crédit</small><b>'+eu(sim.coutCredit+sim.coutAssurance)+'</b><i>intérêts et assurance sur '+sim.ans+' ans</i></div>'+
+          '<div><small>'+(sim.endettement!==null?'Taux d\'endettement':'Revenu nécessaire')+'</small><b>'+
+            (sim.endettement!==null?(String(sim.endettement).replace('.',',')+' %'):eu(sim.revenuNecessaire))+
+            '</b><i>'+(sim.endettement!==null?'limite recommandée : 35 %':'pour rester sous la limite de 35 %')+'</i></div>'+
+        '</div></div>'+
+      '<div class="m-lbl">Selon la durée du prêt</div>'+
+      '<table class="m-comp"><thead><tr><th>Durée</th><th>Mensualité</th><th>Coût du crédit</th><th>Total remboursé</th></tr></thead><tbody>'+
+      [15,20,25].map(function(a){
+        var mh=mensualite(sim.capital, sim.taux, a*12), ma=(sim.capital*(sim.tauxAss/100))/12;
+        var tot=(mh+ma)*a*12;
+        return '<tr'+(a===sim.ans?' class="hl"':'')+'><td>'+a+' ans</td><td><b>'+eu(mh+ma)+'</b></td><td>'+eu(tot-sim.capital)+'</td><td>'+eu(tot)+'</td></tr>';
+      }).join('')+'</tbody></table>'+
+      '<p class="m-p" style="font-size:8px;color:#6c6250;margin-top:3mm">Simulation établie à partir de '+escH(tr.src)+
+      '. Elle est <b>indicative et non contractuelle</b> : elle ne constitue ni une offre de prêt, ni un conseil en financement. Seul un établissement bancaire ou un courtier peut vous remettre une proposition ferme.</p>';
+    pages.push(p2);
+
+    /* ---- 03 · la page qui dépend du projet ---- */
+    var p3='';
+    if(prof==='rp'){
+      var cu=coutUsage(S.prix, sim, d);
+      p3=eyebrow('03','Votre budget mensuel')+
+        '<h1 class="m-h1">Ce que le logement <i>vous coûtera chaque mois</i></h1>'+
+        '<p class="m-p">Au-delà de la mensualité du prêt, voici le coût réel d\'occupation du logement — celui qu\'il faut comparer à votre loyer actuel.</p>'+
+        '<div class="m-spectbl"><div>'+
+          L('Mensualité du prêt', eu(cu.mensualite))+
+          L('Taxe foncière (par mois)', eu(cu.taxeF))+
+        '</div><div>'+
+          (cu.copro?L('Charges de copropriété', eu(cu.copro)):'')+
+          L('Énergie (moyenne du DPE)', eu(cu.energie))+
+        '</div></div>'+
+        '<div class="m-dark" style="margin-top:5mm">'+
+          '<div class="lb1">Coût mensuel tout compris</div>'+
+          '<div class="px">'+eu(cu.total)+'</div>'+
+          '<div class="pm">dont '+eu(cu.mensualite)+' de mensualité, qui constitue votre patrimoine</div></div>'+
+        '<div class="m-lbl">Ce qu\'il faut savoir</div>'+
+        '<div class="m-adjrow"><span>Une part de chaque mensualité rembourse le capital : elle n\'est pas perdue, contrairement à un loyer.</span><b></b></div>'+
+        '<div class="m-adjrow"><span>La revente d\'une résidence principale est exonérée d\'impôt sur la plus-value.</span><b></b></div>'+
+        (/^[EFG]$/.test(dpeCl)?'<div class="m-adjrow"><span>Des travaux de rénovation énergétique peuvent ouvrir droit à MaPrimeRénov\' et à l\'éco-prêt à taux zéro — à étudier avec votre conseiller.</span><b></b></div>':'')+
+        '<div class="m-adjrow"><span>Si vous êtes primo-accédant, l\'éligibilité au prêt à taux zéro est à vérifier auprès de votre banque ou de votre courtier.</span><b></b></div>';
+    } else if(prof==='rs'){
+      var cd=coutDetention(S.prix, d, sim);
+      p3=eyebrow('03','Le coût de détention')+
+        '<h1 class="m-h1">Ce que représente <i>une résidence secondaire</i></h1>'+
+        '<p class="m-p">Une résidence secondaire se raisonne en coût annuel de détention plutôt qu\'en rentabilité. Voici les postes à prévoir, hors mensualité de prêt.</p>'+
+        '<div class="m-spectbl"><div>'+
+          L('Taxe foncière', eu(cd.taxeF))+
+          L('Taxe d\'habitation (résidence secondaire)', eu(cd.thrs))+
+          (cd.copro?L('Charges de copropriété', eu(cd.copro)):'')+
+        '</div><div>'+
+          L('Énergie (occupation partielle)', eu(cd.energie))+
+          L('Entretien provisionné', eu(cd.entretien))+
+          L('Assurance', eu(cd.assurance))+
+        '</div></div>'+
+        '<div class="m-dark" style="margin-top:5mm">'+
+          '<div class="lb1">Coût annuel de détention, hors crédit</div>'+
+          '<div class="px">'+eu(cd.total)+'</div>'+
+          '<div class="pm">soit '+eu(cd.mensuel)+' par mois'+(sim.capital?' — auxquels s\'ajoute la mensualité de '+eu(sim.mensualite):'')+'</div></div>'+
+        (S.loyer?('<div class="m-lbl">Amortir par la location saisonnière</div>'+
+          '<p class="m-p">Une occupation partielle laisse la possibilité de louer le bien en meublé de tourisme sur les périodes d\'inoccupation. À titre indicatif, un revenu locatif de '+eu(S.loyer)+' par mois couvrirait '+Math.round(Math.min(100,(S.loyer*12)/cd.total*100))+' % du coût annuel de détention. Ce régime relève du meublé non professionnel (abattement forfaitaire de 50 % en micro-BIC) et suppose une déclaration en mairie.</p>'):'')+
+        '<div class="m-adjrow"><span>La taxe d\'habitation reste due sur les résidences secondaires. Le montant indiqué est un ordre de grandeur, à confirmer sur l\'avis d\'imposition.</span><b></b></div>'+
+        '<div class="m-adjrow"><span>La plus-value de revente n\'est pas exonérée, sauf après vingt-deux ans de détention.</span><b></b></div>';
+    } else {
+      var rt=rentabilite(S.prix, S.loyer, d, sim, S.tmi);
+      p3=eyebrow('03','La rentabilité')+
+        '<h1 class="m-h1">Ce que le bien <i>peut rapporter</i></h1>';
+      if(!rt){
+        p3+='<p class="m-p">Le loyer de marché n\'a pas été renseigné : la rentabilité sera calculée dès que ce montant sera connu.</p>';
+      } else {
+        p3+='<div class="m-tiles">'+
+          '<div class="m-tile"><b>'+String(rt.brut).replace('.',',')+' <em>%</em></b><small>Rendement brut</small></div>'+
+          '<div class="m-tile"><b>'+String(rt.net).replace('.',',')+' <em>%</em></b><small>Rendement net de charges</small></div>'+
+          '<div class="m-tile"><b>'+(rt.cashflow>=0?'+ ':'− ')+eu(Math.abs(rt.cashflow))+'</b><small>Cash-flow mensuel</small></div>'+
+        '</div>'+
+        '<div class="m-lbl">Du loyer au revenu net</div>'+
+        '<table class="m-comp"><tbody>'+
+          '<tr><td>Loyers annuels</td><td style="text-align:right"><b>'+eu(rt.loyerAn)+'</b></td></tr>'+
+          '<tr><td>Taxe foncière</td><td style="text-align:right">− '+eu(rt.charges.taxeF)+'</td></tr>'+
+          (rt.charges.coproNonRec?'<tr><td>Charges de copropriété non récupérables</td><td style="text-align:right">− '+eu(rt.charges.coproNonRec)+'</td></tr>':'')+
+          '<tr><td>Assurance propriétaire non occupant</td><td style="text-align:right">− '+eu(rt.charges.pno)+'</td></tr>'+
+          (rt.charges.gestion?'<tr><td>Gestion locative</td><td style="text-align:right">− '+eu(rt.charges.gestion)+'</td></tr>':'')+
+          (rt.charges.vacance?'<tr><td>Vacance locative provisionnée</td><td style="text-align:right">− '+eu(rt.charges.vacance)+'</td></tr>':'')+
+          '<tr class="hl"><td><b>Revenu net de charges</b></td><td style="text-align:right"><b>'+eu(rt.netAn)+' / an</b></td></tr>'+
+        '</tbody></table>'+
+        '<div class="m-lbl">Selon le régime fiscal retenu'+(S.tmi?' (tranche d\'imposition '+S.tmi+' %)':'')+'</div>'+
+        '<table class="m-comp"><thead><tr><th>Régime</th><th>Base imposable</th><th>Impôt + prélèvements</th><th>Net-net</th></tr></thead><tbody>'+
+        rt.regimes.map(function(r){
+          return '<tr><td>'+escH(r.nom)+'<br><span style="color:#8A8272;font-size:8.2px">'+escH(r.note)+'</span></td><td>'+eu(r.base)+'</td><td>'+eu(r.impot)+'</td><td><b>'+String(r.netnet).replace('.',',')+' %</b></td></tr>';
+        }).join('')+'</tbody></table>'+
+        (rt.effort?'<p class="m-p" style="margin-top:3mm"><b>Effort d\'épargne mensuel : '+eu(rt.effort)+'.</b> Le loyer ne couvre pas la totalité de la mensualité ; la différence reste à votre charge.</p>':'')+
+        (rt.seuilVacance?'<p class="m-p" style="font-size:8.4px;color:#6c6250">L\'opération reste à l\'équilibre jusqu\'à environ '+rt.seuilVacance+' % de vacance locative annuelle.</p>':'');
+      }
+      var dc=dpeContrainte();
+      if(dc) p3+='<div class="m-lbl">Point de vigilance — performance énergétique</div>'+
+        '<p class="m-p"><b>Le logement est classé '+dc.classe+'.</b> À ce titre, il '+dc.txt+' au sens de la loi Climat et Résilience. Une rénovation énergétique est donc à prévoir pour sécuriser l\'exploitation locative dans la durée — ce point est également un levier de négociation.</p>';
+      p3+='<p class="m-p" style="font-size:8px;color:#6c6250;margin-top:3mm">Rendements calculés sur le prix augmenté des frais d\'acquisition. Les régimes fiscaux sont présentés à titre de comparaison générale et ne constituent pas un conseil fiscal personnalisé : votre situation propre doit être validée par votre conseiller fiscal ou votre expert-comptable.</p>';
+    }
+    pages.push(p3);
+
+    /* ---- 04 · charges, copropriété & quartier ---- */
+    var copro='';
+    if(d.copro){
+      copro='<div class="m-lbl">La copropriété</div>'+
+        '<div class="m-spectbl"><div>'+
+          L('Type de gestion', d.copro==='benevole'?'Syndic bénévole':'Syndic professionnel')+
+          (d.syndic?L('Syndic', escH(d.syndic)):'')+
+          (d.coproLots?L('Nombre de lots', d.coproLots):'')+
+        '</div><div>'+
+          (d.chargesCopro?L('Charges annuelles', eu(d.chargesCopro)):'')+
+          (d.fondsTrav?L('Fonds travaux (ALUR)', eu(d.fondsTrav)):'')+
+          (d.travVotes?L('Travaux votés', eu(d.travVotes)):'')+
+        '</div></div>'+
+        (d.chgInc&&d.chgInc.length?'<p class="m-p" style="font-size:8.6px">Les charges comprennent : '+escH(d.chgInc.join(', ')).toLowerCase()+'.</p>':'')+
+        (d.travVotes?'<p class="m-p" style="font-size:8.6px"><b>Travaux votés à venir : '+eu(d.travVotes)+'</b>'+(d.travDesc?' — '+escH(d.travDesc):'')+'. Ce montant est à intégrer à votre budget ; la répartition entre vendeur et acquéreur se négocie au compromis.</p>':'')+
+        (d.copro==='benevole'?'<p class="m-p" style="font-size:8.6px">La copropriété est gérée par un syndic bénévole : les charges sont généralement plus faibles qu\'avec un syndic professionnel, mais les provisions et le fonds de travaux peuvent être plus réduits. Les procès-verbaux des trois dernières assemblées générales vous seront remis.</p>':'');
+    }
+    var poiHtml=(poiList||[]).slice(0,8).map(function(x){
+      var dd=(x.m>=1000)?((x.m/1000).toFixed(1).replace('.',',')+' km'):(x.m+' m');
+      return '<div class="m-envrow"><span>'+escH(x.label)+'</span><b>'+dd+'</b></div>'; }).join('');
+    var risks=[].slice.call(document.querySelectorAll('#estimation .risks .risk')).map(function(r){
+      var b=r.querySelector('b'), s=r.querySelector('small');
+      return '<div class="m-envrow"><span>'+escH(b?b.textContent:'')+'</span><b>'+escH(s?s.textContent:'')+'</b></div>'; }).join('');
+    var p4=eyebrow('04','Charges & environnement')+
+      '<h1 class="m-h1">Le fonctionnement <i>au quotidien</i></h1>'+
+      '<div class="m-spectbl"><div>'+
+        L('Taxe foncière', d.taxeF?eu(d.taxeF)+' / an':'à communiquer')+
+        (d.chargesCopro?L('Charges de copropriété', eu(d.chargesCopro)+' / an'):'')+
+      '</div><div>'+
+        L('Dépenses d\'énergie', (d.energieMin||d.energieMax)?(eu(d.energieMin)+' à '+eu(d.energieMax)+' / an'):'voir le diagnostic')+
+        (d.chauffage?L('Chauffage', escH(d.chauffage)):'')+
+      '</div></div>'+
+      copro+
+      (poiHtml?('<div class="m-lbl">À proximité</div>'+poiHtml):'')+
+      (risks?('<div class="m-lbl">Environnement &amp; risques · Géorisques</div>'+risks):'')+
+      '<p class="m-p" style="font-size:8px;color:#6c6250;margin-top:3mm">Taxe foncière, charges de copropriété et travaux votés sont indiqués d\'après les éléments communiqués par le vendeur, sous réserve de vérification sur les pièces officielles (avis d\'imposition, appels de fonds, procès-verbaux d\'assemblée générale) qui vous seront remises.</p>';
+    pages.push(p4);
+
+    /* ---- 05 · et maintenant ---- */
+    var p5=eyebrow('05','La suite')+
+      '<h1 class="m-h1">De la visite <i>à la remise des clés</i></h1>'+
+      '<div class="m-steps">'+
+        '<div class="m-step"><div class="num"><i>1</i></div><b>Votre offre</b><p>Nous formalisons votre proposition par écrit et je la défends auprès du vendeur. Vous restez informé à chaque étape de la négociation.</p></div>'+
+        '<div class="m-step"><div class="num"><i>2</i></div><b>Le compromis</b><p>Signature chez le notaire, puis dix jours de rétractation. Votre offre de prêt est une condition suspensive : si le financement est refusé, vous récupérez votre dépôt.</p></div>'+
+        '<div class="m-step"><div class="num"><i>3</i></div><b>Le financement</b><p>Environ 45 jours pour obtenir votre accord de prêt, puis 11 jours de réflexion obligatoires avant acceptation de l\'offre.</p></div>'+
+        '<div class="m-step"><div class="num"><i>4</i></div><b>L\'acte authentique</b><p>Trois mois environ après le compromis, signature définitive et remise des clés le jour même.</p></div>'+
+      '</div>'+
+      '<div class="m-contact">'+
+        '<div class="lg"><img src="/logo-gb-app.png" alt=""><b>GB IMMOBILIER</b><span>Nevers</span></div>'+
+        '<div class="inf"><h3>Une question ? Appelez-moi.</h3>'+
+          '<div class="m-crow"><small>Votre conseiller</small><b>Jimmy Garcia</b></div>'+
+          '<div class="m-crow"><small>Téléphone</small><b class="gold">06 78 86 56 12</b></div>'+
+          '<div class="m-crow"><small>E-mail</small><b>garciaj@gbimmobilier.net</b></div>'+
+          '<div class="m-crow"><small>Agence</small><b>26 Avenue Pierre Bérégovoy · 58000 Nevers · 03 86 61 14 15</b></div>'+
+        '</div>'+
+        '<div class="sg"><div class="av-sign" style="color:#EDE6D4">Jimmy Garcia<small style="color:#9A917C">Conseiller immobilier</small></div></div>'+
+      '</div>'+
+      '<p class="m-legal">Document d\'information établi le '+dateStr+' à votre attention, sans valeur contractuelle. Les simulations financières sont indicatives et ne constituent ni une offre de prêt, ni un conseil en investissement ou en fiscalité. Les surfaces, charges et diagnostics figurant dans ce dossier vous seront confirmés par les pièces officielles annexées au compromis de vente. '+
+      'GB Immobilier · Siren 6718 417 RCS Nevers · Cartes Transaction N°113 et Gestion N°112 · Caisse de Garantie de l\'Immobilier FNAIM, 89 rue de la Boétie — 75008 Paris.</p>';
+    pages.push(p5);
+
+    /* ---- galerie en annexe ---- */
+    var reste=photos.slice(3);
+    for(var i=0;i<reste.length;i+=4){
+      var lot=reste.slice(i,i+4);
+      pages.push((i===0?eyebrow('06','Galerie')+'<h1 class="m-h1">Le bien <i>en images</i></h1>':'')+
+        '<div class="dpair" style="grid-template-columns:1fr 1fr;gap:4mm">'+
+        lot.map(function(x){ return '<div class="dimg m-ph" style="background-image:url('+x+');height:62mm"></div>'; }).join('')+'</div>');
+    }
+
+    TOT=pages.length+1;
+    var html=cover;
+    pages.forEach(function(b,i){ html+=page(b,i+2); });
+    html=html.replace(/__P(\d+)__/g, function(_,n){ return ('0'+n).slice(-2)+' / '+('0'+TOT).slice(-2); });
+    document.getElementById('dossier').innerHTML=html;
+    return { client:cliN, adresse:ctx.adresse||'bien' };
+  }
+  async function acqGenerer(){
+    var b=document.getElementById('acqGen');
+    b.disabled=true; var old=b.innerHTML; b.innerHTML='Génération…';
+    try{
+      var info=buildAcq();
+      if(!info) throw new Error('renseigne d\'abord le prix');
+      var nom='Dossier acquereur - '+String(info.adresse).replace(/[^\wÀ-ſ -]/g,'').slice(0,40)+(info.client?(' - '+String(info.client).replace(/[^\wÀ-ſ -]/g,'')):'')+'.pdf';
+      await exportPDF(nom);
+      await acqTracer(info);
+      toast('Dossier acquéreur téléchargé ✓');
+      document.getElementById('acqModal').hidden=true;
+    }catch(e){ console.warn('[ESTIMAKE] dossier acquéreur',e); toast('Génération impossible : '+((e&&e.message)||e)); }
+    finally{ b.disabled=false; b.innerHTML=old; }
+  }
+  // trace sur la fiche de l'acquéreur : à qui j'ai présenté quoi, et quand
+  async function acqTracer(info){
+    var id=sg('acqWho'); if(!id||!sb) return;
+    var c=(contactsData||[]).find(function(x){ return x.id===id; }); if(!c) return;
+    var r=Object.assign({}, c.recherche||{});
+    var list=Array.isArray(r.dossiers)?r.dossiers.slice(0,19):[];
+    list.unshift({ bien:info.adresse, profil:sg('acqProfil'), prix:sn('sPrix'),
+      mensualite:(window.__acqSim&&window.__acqSim.sim)?window.__acqSim.sim.mensualite:null, date:isoD(new Date()) });
+    r.dossiers=list;
+    try{ var res=await sb.from('contacts').update({recherche:r}).eq('id',c.id); if(!res.error) c.recherche=r; }catch(e){}
+  }
   /* ---------- LIENS RAPIDES : depuis n'importe quel formulaire on rebondit sur la fiche liée ---------- */
   function contactParNom(nom){
     nom=(nom||'').trim().toLowerCase(); if(!nom) return null;
