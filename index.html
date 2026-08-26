@@ -1916,6 +1916,7 @@
           <label class="mf mf-wide"><span>Notes de découverte</span><textarea name="r_notes" class="restyle-notes" rows="2" placeholder="Contexte, visites déjà faites, remarques…"></textarea></label>
         </div>
       </div>
+      <div id="cliDossiers"></div>
       <div id="cliBiens"></div>
       <div id="cliEstims"></div>
       <div id="cliRdvs"></div>
@@ -2274,7 +2275,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-165113';
+  var B='20260826-165342';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2408,7 +2409,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-165113';
+  var __BUILD='20260826-165342';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2644,6 +2645,7 @@
               ((isEtape&&b.id)?'<button type="button" class="cadjdel hist-del" data-hi="'+hi+'" title="Retirer cette étape">✕</button>':'')+'</li>';
           }).join('')+
           '</ul></div>'+
+        '<button class="btn" id="drawerAcq" style="width:100%;justify-content:center;margin-bottom:10px">👤 Dossier acquéreur pour ce bien</button>'+
         '<div style="display:grid;grid-template-columns:'+(b.id?'1fr auto':'1fr')+';gap:10px">'+
           '<button class="btn pri" id="drawerEdit" style="justify-content:center">Modifier ce bien</button>'+
           (b.id?'<button class="btn danger-o" id="drawerDelete" title="Mettre à la corbeille"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>':'')+
@@ -2733,11 +2735,23 @@
         closeDrawer(); toast('Bien déplacé dans la corbeille ✓'); syncBiens();
       }catch(err){ dd.disabled=false; if(!authFail(err)) toast('Suppression impossible : '+((err&&err.message)||err)); }
     });
+    drawer.querySelectorAll('.acq-doc').forEach(function(el){
+      el.addEventListener('click',function(ev){
+        ev.stopPropagation();
+        contactReturn=null; closeDrawer();
+        if(typeof window.__acqDepuisBien==='function') window.__acqDepuisBien(b, el.dataset.doc);
+      });
+    });
     drawer.querySelectorAll('.acq-open').forEach(function(el){
       el.addEventListener('click',function(){
         var c=(contactsData||[]).find(function(x){ return x.id===el.dataset.cid; });
         if(c){ contactReturn=null; closeDrawer(); go('crm'); openContactForm(c); }
       });
+    });
+    var dq=document.getElementById('drawerAcq');
+    if(dq) dq.addEventListener('click',function(){
+      contactReturn=null; closeDrawer();
+      if(typeof window.__acqDepuisBien==='function') window.__acqDepuisBien(b);
     });
     var de=document.getElementById('drawerEdit');
     if(de) de.addEventListener('click',function(){
@@ -2764,7 +2778,7 @@
     return list.slice(0,4).map(function(c){
       var ini=(c.nom||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var sub=[c.budget?Math.round(c.budget/1000)+' k€':null,(c.recherche&&c.recherche.type)||null,(c.recherche&&c.recherche.secteurs)||null].filter(Boolean).join(' · ');
-      return '<div class="acq acq-open" data-cid="'+c.id+'" style="cursor:pointer"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+escH(ini)+'</div><div class="g"><b>'+escH(c.nom||'')+'</b><small>'+escH(sub)+'</small></div><span class="pill info">Match</span></div>';
+      return '<div class="acq"><div class="acq-open" data-cid="'+c.id+'" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+escH(ini)+'</div><div class="g"><b>'+escH(c.nom||'')+'</b><small>'+escH(sub)+'</small></div></div><button type="button" class="mkclient acq-doc" data-doc="'+c.id+'" title="Générer son dossier acquéreur">📄 Dossier</button></div>';
     }).join('')+(list.length>4?'<div style="color:var(--ink-3);font-size:12px;padding-top:6px">+ '+(list.length-4)+' autre'+(list.length-4>1?'s':'')+' dans le CRM</div>':'');
   }
   function closeDrawer(){
@@ -3430,6 +3444,7 @@
       b.classList.toggle('on', Array.isArray(r.must)&&r.must.indexOf(b.dataset.m)>-1);
     });
     toggleAcqSection();
+    renderCliDossiers(c);
     renderCliBiens(c);
     renderCliEstims(c);
     renderCliRdvs(c);
@@ -3441,6 +3456,20 @@
     paSel.addEventListener('change',function(){ document.getElementById('paAutreWrap').hidden=(paSel.value!=='__autre'); });
     paDelai.addEventListener('change',function(){ document.getElementById('paDateWrap').hidden=(paDelai.value!=='custom'); });
   })();
+  // « à qui j'ai présenté quoi, et quand »
+  function renderCliDossiers(c){
+    var box=document.getElementById('cliDossiers'); if(!box) return;
+    box.innerHTML='';
+    var l=(c&&c.recherche&&Array.isArray(c.recherche.dossiers))?c.recherche.dossiers:[];
+    if(!l.length) return;
+    var PN={rp:'Résidence principale',rs:'Résidence secondaire',inv:'Investissement'};
+    box.innerHTML='<div class="restyle-sub">Dossiers remis ('+l.length+')</div>'+l.slice(0,8).map(function(x){
+      var d=x.date?new Date(x.date+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
+      return '<div class="cadjrow"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">📄 '+escH(x.bien||'—')+
+        ' · <span class="pill info">'+escH(PN[x.profil]||'')+'</span> · '+d+'</span>'+
+        '<b class="tnum">'+(x.prix?Math.round(x.prix/1000)+' k€':'')+(x.mensualite?' · '+x.mensualite.toLocaleString('fr-FR')+' €/mois':'')+'</b></div>';
+    }).join('');
+  }
   function renderCliBiens(c){
     var box=document.getElementById('cliBiens'); if(!box) return;
     box.innerHTML='';
