@@ -2000,6 +2000,17 @@
         <label class="mf"><span>% du prix de vente</span><input name="g_hpct" type="number" step="0.5" placeholder="5"></label>
       </div>
       <div style="font-size:12px;color:var(--ink-3);margin-top:6px">Utilisé pour pré-calculer les honoraires d'une vente (3 000 € + 5 % par défaut) — toujours modifiables à la main.</div>
+      <div class="restyle-sub" style="margin-top:16px">Taux de crédit — simulation du dossier acquéreur</div>
+      <div class="mfields">
+        <label class="mf"><span>Taux 15 ans (%)</span><input name="g_t15" type="number" step="0.01" placeholder="3.25"></label>
+        <label class="mf"><span>Taux 20 ans (%)</span><input name="g_t20" type="number" step="0.01" placeholder="3.40"></label>
+        <label class="mf"><span>Taux 25 ans (%)</span><input name="g_t25" type="number" step="0.01" placeholder="3.55"></label>
+        <label class="mf"><span>Assurance emprunteur (%/an)</span><input name="g_tass" type="number" step="0.01" placeholder="0.34"></label>
+        <label class="mf mf-wide"><span>Source citée dans le document</span><input name="g_tsrc" placeholder="Observatoire Crédit Logement / CSA"></label>
+        <label class="mf"><span>Relevé le</span><input name="g_tdate" type="date"></label>
+      </div>
+      <button type="button" class="btn" id="tauxAuto" style="width:100%;justify-content:center;margin-top:10px">↻ Proposer les taux Banque de France</button>
+      <div class="acqhint" id="tauxMsg">Les taux sont imprimés dans le dossier acquéreur avec leur source et leur date. Une mise à jour par mois suffit — c'est toi qui les assumes, pas une moyenne nationale qui retarde.</div>
       <div class="modal-ft">
         <button type="button" class="btn" id="goalsCancel">Annuler</button>
         <button type="submit" class="btn pri">Enregistrer</button>
@@ -2122,7 +2133,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-162042';
+  var B='20260826-163939';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2234,7 +2245,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-162042';
+  var __BUILD='20260826-163939';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4164,6 +4175,178 @@
     var tr=e.target.closest('.task-row[data-tid]');
     if(tr){ var t2=tachesData.find(function(x){ return x.id===tr.dataset.tid; })||tachesFaites.find(function(x){ return x.id===tr.dataset.tid; }); if(t2) openTaskForm(t2); }
   });
+  /* =====================================================================
+     DOSSIER ACQUÉREUR — moteur de calcul
+     Rien de ce qui suit ne touche à l'avis de valeur du vendeur : le net
+     vendeur, le détail des honoraires et ma commission n'entrent JAMAIS ici.
+     ===================================================================== */
+  var TAUX_DEF={t15:3.25, t20:3.40, t25:3.55, tass:0.34};
+  function tauxRef(){
+    var g=userGoals||{};
+    return { t15:parseFloat(g.t15)||TAUX_DEF.t15, t20:parseFloat(g.t20)||TAUX_DEF.t20,
+             t25:parseFloat(g.t25)||TAUX_DEF.t25, tass:(g.tass!==undefined&&g.tass!=='')?parseFloat(g.tass):TAUX_DEF.tass,
+             src:g.tsrc||'taux indicatifs de marché', date:g.tdate||'' };
+  }
+  /* Frais d'acquisition dans l'ANCIEN, barème légal :
+     droits de mutation (départemental + communal + frais d'assiette),
+     émoluments de notaire (barème dégressif art. A444-91 + TVA), CSI, débours. */
+  function fraisNotaire(prix){
+    prix=parseFloat(prix)||0; if(!prix) return null;
+    var dmtoDep=prix*0.045;                  // taux départemental de droit commun
+    var dmtoCom=prix*0.012;                  // taxe communale additionnelle
+    var assiette=dmtoDep*0.0237;             // frais d'assiette et de recouvrement
+    var csi=prix*0.001;                      // contribution de sécurité immobilière
+    var T=[[6500,0.03870],[17000,0.01596],[60000,0.01064],[Infinity,0.00799]];
+    var emol=0, prev=0;
+    for(var i=0;i<T.length;i++){
+      var haut=Math.min(prix,T[i][0]);
+      if(haut>prev) emol+=(haut-prev)*T[i][1];
+      prev=T[i][0]; if(prix<=T[i][0]) break;
+    }
+    var emolTTC=emol*1.2;
+    var debours=1300;
+    var total=dmtoDep+dmtoCom+assiette+csi+emolTTC+debours;
+    return { total:Math.round(total), droits:Math.round(dmtoDep+dmtoCom+assiette),
+             emoluments:Math.round(emolTTC), csi:Math.round(csi), debours:debours,
+             pct:Math.round(total/prix*1000)/10 };
+  }
+  // mensualité d'un prêt amortissable
+  function mensualite(capital, tauxAnnuel, mois){
+    capital=parseFloat(capital)||0; mois=parseInt(mois,10)||0;
+    if(capital<=0||mois<=0) return 0;
+    var t=(parseFloat(tauxAnnuel)||0)/100/12;
+    if(!t) return capital/mois;
+    return capital*t/(1-Math.pow(1+t,-mois));
+  }
+  /* Simulation complète pour une durée donnée.
+     revenus/credits optionnels → si absents, on renvoie le revenu NÉCESSAIRE (35 % HCSF). */
+  function simuPret(capital, ans, opts){
+    opts=opts||{};
+    var tr=tauxRef(), taux=({15:tr.t15,20:tr.t20,25:tr.t25})[ans]||tr.t20;
+    var mois=ans*12;
+    var mHors=mensualite(capital, taux, mois);
+    var mAss=(capital*(tr.tass/100))/12;
+    var m=mHors+mAss;
+    var coutCredit=mHors*mois-capital;
+    var revenus=parseFloat(opts.revenus)||0, credits=parseFloat(opts.credits)||0;
+    var endett=revenus?((m+credits)/revenus*100):null;
+    var revenuNecessaire=Math.round((m+credits)/0.35);
+    return { ans:ans, taux:taux, tauxAss:tr.tass, mois:mois, capital:Math.round(capital),
+      mensualite:Math.round(m), mensualiteHorsAss:Math.round(mHors), assurance:Math.round(mAss),
+      coutCredit:Math.round(coutCredit), coutAssurance:Math.round(mAss*mois),
+      totalRembourse:Math.round(m*mois),
+      endettement:(endett===null?null:Math.round(endett*10)/10),
+      revenuNecessaire:revenuNecessaire,
+      verdict:(endett===null?null:(endett<=33?'ok':(endett<=35?'limite':'depasse'))) };
+  }
+  // données « charges & fonctionnement » saisies dans l'écran Estimer
+  function acqData(){
+    var g=function(id){ var e=document.getElementById(id); return e?e.value:''; };
+    var n=function(id){ var v=parseFloat(g(id)); return isNaN(v)?null:v; };
+    return {
+      taxeF:n('aTaxeF'), copro:g('aCopro'), chargesCopro:n('aChargesCopro'),
+      syndic:g('aSyndicNom').trim(), coproLots:n('aCoproLots'), fondsTrav:n('aFondsTrav'),
+      travVotes:n('aTravVotes'), travDesc:g('aTravDesc').trim(),
+      chgInc:[].map.call(document.querySelectorAll('#aChgInc .rst.on'),function(b){ return b.dataset.c; }),
+      ges:g('aGes'), conso:n('aConso'), energieMin:n('aEnergieMin'), energieMax:n('aEnergieMax'),
+      dpeDate:g('aDpeDate'), chauffage:g('aChauffage').trim(),
+      chgNonRec:(n('aChgNonRec')===null?25:n('aChgNonRec')), pno:(n('aPno')===null?180:n('aPno')),
+      gestion:(n('aGestion')===null?0:n('aGestion')), vacance:(n('aVacance')===null?5:n('aVacance'))
+    };
+  }
+  function acqRestore(d){
+    d=d||{};
+    var s=function(id,v){ var e=document.getElementById(id); if(e) e.value=(v===null||v===undefined)?'':v; };
+    s('aTaxeF',d.taxeF); s('aCopro',d.copro||''); s('aChargesCopro',d.chargesCopro);
+    s('aSyndicNom',d.syndic); s('aCoproLots',d.coproLots); s('aFondsTrav',d.fondsTrav);
+    s('aTravVotes',d.travVotes); s('aTravDesc',d.travDesc);
+    s('aGes',d.ges||''); s('aConso',d.conso); s('aEnergieMin',d.energieMin); s('aEnergieMax',d.energieMax);
+    s('aDpeDate',d.dpeDate||''); s('aChauffage',d.chauffage);
+    s('aChgNonRec',d.chgNonRec); s('aPno',d.pno); s('aGestion',d.gestion); s('aVacance',d.vacance);
+    var inc=Array.isArray(d.chgInc)?d.chgInc:[];
+    document.querySelectorAll('#aChgInc .rst').forEach(function(b){ b.classList.toggle('on', inc.indexOf(b.dataset.c)>-1); });
+    acqCoproToggle(); acqDpeAlerte();
+  }
+  function acqCoproToggle(){
+    var on=!!(document.getElementById('aCopro')||{}).value;
+    document.querySelectorAll('.acq-copro').forEach(function(el){ el.hidden=!on; });
+  }
+  /* Contrainte locative liée au DPE — l'info qui protège Jimmy autant que l'acquéreur */
+  var DPE_LOC={ G:{an:2025, txt:'interdit à la location depuis le 1er janvier 2025'},
+                F:{an:2028, txt:'sera interdit à la location au 1er janvier 2028'},
+                E:{an:2034, txt:'sera interdit à la location au 1er janvier 2034'} };
+  function dpeContrainte(){
+    var cl=(document.getElementById('fDpeCl')||{}).value||'';
+    return DPE_LOC[cl]?{classe:cl, an:DPE_LOC[cl].an, txt:DPE_LOC[cl].txt}:null;
+  }
+  function acqDpeAlerte(){
+    var box=document.getElementById('aDpeAlerte'); if(!box) return;
+    var c=dpeContrainte();
+    box.innerHTML=c
+      ? '<div class="acq-warn"><b>Classe '+c.classe+' — logement '+c.txt+'.</b> À signaler dans le dossier acquéreur : c\'est bloquant pour un investisseur, et c\'est un levier de négociation. Renseigne le coût des travaux de rénovation énergétique dans les ajustements.</div>'
+      : '';
+  }
+  /* --- Le coût d'usage mensuel : le chiffre qui parle à un acheteur de résidence principale --- */
+  function coutUsage(prix, sim, d){
+    var tf=(d.taxeF||0)/12;
+    var cop=(d.chargesCopro||0)/12;
+    var ener=((d.energieMin||0)+(d.energieMax||0))/2/12;
+    return { mensualite:sim?sim.mensualite:0, taxeF:Math.round(tf), copro:Math.round(cop),
+      energie:Math.round(ener), total:Math.round((sim?sim.mensualite:0)+tf+cop+ener) };
+  }
+  /* --- Rentabilité de l'investisseur : brut, net de charges, net-net après impôt --- */
+  var REGIMES=[
+    {k:'micro_foncier', nom:'Location nue — micro-foncier', abattement:0.30, note:'abattement forfaitaire de 30 %, plafond 15 000 € de recettes'},
+    {k:'reel_foncier',  nom:'Location nue — réel',          abattement:null, note:'charges et intérêts déduits au réel'},
+    {k:'micro_bic',     nom:'Meublé (LMNP) — micro-BIC',    abattement:0.50, note:'abattement forfaitaire de 50 %'},
+    {k:'reel_bic',      nom:'Meublé (LMNP) — réel',         abattement:null, note:'amortissement du bien : base imposable souvent proche de zéro les premières années'}
+  ];
+  function rentabilite(prix, loyerMensuel, d, sim, tmi){
+    prix=parseFloat(prix)||0; loyerMensuel=parseFloat(loyerMensuel)||0;
+    if(!prix||!loyerMensuel) return null;
+    var fn=fraisNotaire(prix), invest=prix+(fn?fn.total:0);
+    var loyerAn=loyerMensuel*12;
+    var vac=loyerAn*((d.vacance||0)/100);
+    var gest=loyerAn*((d.gestion||0)/100);
+    var chgNR=(d.chargesCopro||0)*((d.chgNonRec||25)/100);
+    var chargesTot=(d.taxeF||0)+chgNR+(d.pno||0)+gest+vac;
+    var netAn=loyerAn-chargesTot;
+    var brut=loyerAn/prix*100;
+    var net=netAn/invest*100;
+    var interets=sim?Math.round(sim.coutCredit/sim.ans):0;   // moyenne annuelle, ordre de grandeur
+    var regimes=REGIMES.map(function(r){
+      var base;
+      if(r.abattement!==null) base=loyerAn*(1-r.abattement);
+      else if(r.k==='reel_foncier') base=Math.max(0, loyerAn-chargesTot-interets);
+      else base=Math.max(0, loyerAn-chargesTot-interets-(prix*0.85/30));   // amortissement indicatif sur 30 ans hors terrain
+      var ps=(r.k==='micro_bic'||r.k==='reel_bic')?0.172:0.172;            // prélèvements sociaux 17,2 %
+      var impot=base*(((tmi||0)/100)+ps);
+      return { nom:r.nom, note:r.note, base:Math.round(base), impot:Math.round(impot),
+               netnet:Math.round((netAn-impot)/invest*1000)/10 };
+    });
+    var mens=sim?sim.mensualite:0;
+    var cashflow=Math.round(netAn/12-mens);
+    var seuilVacance=loyerAn?Math.round((loyerAn-chargesTot-mens*12)/loyerAn*100):null;
+    return { invest:Math.round(invest), fraisNotaire:fn, loyerAn:Math.round(loyerAn),
+      charges:{ taxeF:Math.round(d.taxeF||0), coproNonRec:Math.round(chgNR), pno:Math.round(d.pno||0),
+                gestion:Math.round(gest), vacance:Math.round(vac), total:Math.round(chargesTot) },
+      netAn:Math.round(netAn), brut:Math.round(brut*10)/10, net:Math.round(net*10)/10,
+      regimes:regimes, cashflow:cashflow,
+      effort:(cashflow<0?Math.abs(cashflow):0),
+      seuilVacance:(seuilVacance!==null&&seuilVacance>0)?seuilVacance:0 };
+  }
+  /* --- Coût annuel de détention : la lecture d'une résidence secondaire --- */
+  function coutDetention(prix, d, sim){
+    var ener=((d.energieMin||0)+(d.energieMax||0))/2;
+    var entretien=Math.round(prix*0.005);   // provision d'entretien usuelle : 0,5 % de la valeur par an
+    var assur=Math.round(prix*0.0012);
+    var thrs=Math.round((d.taxeF||0)*0.9);  // taxe d'habitation sur résidence secondaire, ordre de grandeur
+    var total=(d.taxeF||0)+thrs+(d.chargesCopro||0)+Math.round(ener*0.6)+entretien+assur;
+    return { taxeF:Math.round(d.taxeF||0), thrs:thrs, copro:Math.round(d.chargesCopro||0),
+      energie:Math.round(ener*0.6), entretien:entretien, assurance:assur,
+      total:Math.round(total), mensuel:Math.round(total/12),
+      credit:sim?sim.mensualite*12:0 };
+  }
   /* ---------- LIENS RAPIDES : depuis n'importe quel formulaire on rebondit sur la fiche liée ---------- */
   function contactParNom(nom){
     nom=(nom||'').trim().toLowerCase(); if(!nom) return null;
@@ -4222,6 +4405,13 @@
       b?{label:'🏠 '+b.ad, go:function(){ allerFicheBien(b); }}:null
     ]);
   }
+  (function(){
+    var c=document.getElementById('aCopro'); if(c) c.addEventListener('change',acqCoproToggle);
+    var inc=document.getElementById('aChgInc');
+    if(inc) inc.addEventListener('click',function(e){ var b=e.target.closest('.rst'); if(b) b.classList.toggle('on'); });
+    var dp=document.getElementById('fDpeCl'); if(dp) dp.addEventListener('change',acqDpeAlerte);
+    acqCoproToggle(); acqDpeAlerte();
+  })();
   /* ---------- repousser une tâche (Demain / Semaine prochaine / date choisie) ---------- */
   var pushModal=document.getElementById('pushModal'), pushTaskId=null;
   function openPushModal(id){ pushTaskId=id; var pd=document.getElementById('pushDate'); if(pd) pd.value=''; pushModal.hidden=false; }
@@ -5174,6 +5364,7 @@
     estPhotos=[]; estLots=[]; state.custom=[]; state.override=null; state.overLow=null; state.overHigh=null;
     ['cliNom','cliMail','fDesc','fCompl','fLoyer','fSurf','fTerr','fPieces','fChambres','fSdb','fAnnee','fDpeCl'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
     estCoord=null; estVilleTxt=null;
+    if(typeof acqRestore==='function') acqRestore({});   // charges/DPE/copro du bien précédent effacés
     // le marché, les ventes comparables et les commodités du bien précédent ne doivent JAMAIS rester
     state.baseM2=null; state.rayon=500;
     try{ dvfComps=null; dvfActive=false; dvfYearsOff={}; }catch(eD){}
@@ -5297,6 +5488,7 @@
       if(baseH>0 && surfH>0) state.baseM2=baseH/surfH;
     }
     if(dt.cover && typeof window.__setEstCover==='function'){ window.__setEstCover(dt.cover); }
+    if(typeof acqRestore==='function') acqRestore(dt.acq||{});
     estLots=Array.isArray(dt.lots)?dt.lots.slice():[];
     if(dt.loyer&&g('fLoyer')) g('fLoyer').value=dt.loyer;
     if(typeof renderLots==='function') renderLots();
@@ -5382,6 +5574,7 @@
              terrain:g('fTerr').value, pieces:g('fPieces').value, chambres:g('fChambres').value, sdb:(g('fSdb')&&g('fSdb').value)||null, annee:g('fAnnee').value,
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav,
              baseM2:state.baseM2||null, tgls:state.tgls, dpeClasse:(g('fDpeCl')&&g('fDpeCl').value)||null,
+             acq:(typeof acqData==='function')?acqData():null,
              coord:estCoord||null,
              ville:(function(){ var s=((g('addrS')||{}).textContent||'').split('·')[0].trim();
                if(s&&!/estimation du|sélectionne/i.test(s)) return s; return estVilleTxt||null; })() }
@@ -6748,7 +6941,31 @@
       form.elements.g_ca.value=g.ca||''; form.elements.g_com.value=g.com||'';
       form.elements.g_mand.value=g.mand||''; form.elements.g_vte.value=g.vte||'';
       form.elements.g_hfix.value=g.hfix||''; form.elements.g_hpct.value=g.hpct||'';
+      form.elements.g_t15.value=g.t15||''; form.elements.g_t20.value=g.t20||''; form.elements.g_t25.value=g.t25||'';
+      form.elements.g_tass.value=(g.tass!==undefined&&g.tass!=='')?g.tass:''; form.elements.g_tsrc.value=g.tsrc||'';
+      form.elements.g_tdate.value=g.tdate||'';
       modal.hidden=false;
+    });
+    // suggestion de taux : moyenne officielle Banque de France / BCE, à valider par Jimmy
+    var ta=document.getElementById('tauxAuto');
+    if(ta) ta.addEventListener('click',async function(){
+      var msg=document.getElementById('tauxMsg');
+      ta.disabled=true; var old=ta.textContent; ta.textContent='Interrogation de la Banque de France…';
+      try{
+        var r=await fetch('/api/taux');
+        var j=await r.json().catch(function(){ return {}; });
+        if(!r.ok || !j.reference) throw new Error(j.error||('Erreur '+r.status));
+        form.elements.g_t15.value=j.t15; form.elements.g_t20.value=j.t20; form.elements.g_t25.value=j.t25;
+        if(!form.elements.g_tass.value) form.elements.g_tass.value='0.34';
+        form.elements.g_tsrc.value=j.source;
+        form.elements.g_tdate.value=isoD(new Date());
+        if(msg) msg.innerHTML='<b>Proposition : '+String(j.reference).replace('.',',')+' % de moyenne en '+escH(j.periode_fr||'')+'.</b> '+escH(j.avertissement||'')+' Corrige les trois durées si ton courtier te donne mieux, puis Enregistrer.';
+        toast('Taux proposés — vérifie puis Enregistrer.');
+      }catch(e){
+        if(msg) msg.textContent='⚠️ '+((e&&e.message)||e);
+        toast('Taux non récupérés — saisis-les à la main.');
+      }
+      finally{ ta.disabled=false; ta.textContent=old; }
     });
     document.getElementById('goalsX').addEventListener('click',function(){ modal.hidden=true; });
     document.getElementById('goalsCancel').addEventListener('click',function(){ modal.hidden=true; });
@@ -6757,7 +6974,9 @@
       ev.preventDefault();
       userGoals={ ca:form.elements.g_ca.value, com:form.elements.g_com.value,
         mand:form.elements.g_mand.value, vte:form.elements.g_vte.value,
-        hfix:form.elements.g_hfix.value, hpct:form.elements.g_hpct.value };
+        hfix:form.elements.g_hfix.value, hpct:form.elements.g_hpct.value,
+        t15:form.elements.g_t15.value, t20:form.elements.g_t20.value, t25:form.elements.g_t25.value,
+        tass:form.elements.g_tass.value, tsrc:form.elements.g_tsrc.value.trim(), tdate:form.elements.g_tdate.value };
       try{ localStorage.setItem('estimake_goals',JSON.stringify(userGoals)); }catch(e){}
       if(sb){ sb.auth.updateUser({data:{goals:userGoals}}); }
       modal.hidden=true; renderGoals();
