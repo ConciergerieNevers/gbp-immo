@@ -1875,6 +1875,7 @@
         <label class="mf mf-check"><input type="checkbox" name="sortie" checked><span>J'ai fait la vente <b style="color:var(--accent)">+25 %</b></span></label>
       </div>
       <div class="ventepart" id="ventePart">Ma commission : <b>—</b></div>
+      <div class="quicklinks" id="venteLinks"></div>
       <div class="autherr" id="venteErr"></div>
       <div class="modal-ft">
         <button type="button" class="btn danger-o" id="venteDelete" style="margin-right:auto" hidden>Supprimer</button>
@@ -1921,6 +1922,7 @@
         <label class="mf"><span>Lié à (optionnel)</span><input name="t_lien" list="taskLienOptions" placeholder="Contact…" autocomplete="off"><datalist id="taskLienOptions"></datalist><div class="addrsug" id="taskLienSug"></div></label>
         <label class="mf mf-wide"><span>Note</span><input name="t_note" placeholder="Détail…"></label>
       </div>
+      <div class="quicklinks" id="taskLinks"></div>
       <div class="autherr" id="taskErr"></div>
       <div class="modal-ft">
         <button type="button" class="btn danger-o" id="taskDelete" style="margin-right:auto" hidden>Supprimer</button>
@@ -2092,6 +2094,7 @@
         <label class="mf"><span>Lié à (client / bien) — optionnel</span><input name="lien" list="rdvLienOptions" placeholder="Tape un nom, ou choisis un existant…" autocomplete="off"><datalist id="rdvLienOptions"></datalist><div class="addrsug" id="rdvLienSug"></div></label>
         <label class="mf mf-wide"><span>Note</span><input name="note" placeholder="Apporter les diagnostics"></label>
       </div>
+      <div class="quicklinks" id="rdvLinks"></div>
       <div class="autherr" id="rdvErr"></div>
       <div class="modal-ft">
         <button type="button" class="btn danger-o" id="rdvDelete" style="margin-right:auto" hidden>Supprimer</button>
@@ -2119,7 +2122,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-154141';
+  var B='20260826-160255';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2176,6 +2179,13 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600;700&family=Great+Vibes&display=swap">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<style>
+.quicklinks{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.quicklinks:empty{display:none}
+.quicklinks button{border:1px solid var(--line);background:var(--card-2,transparent);color:var(--accent);
+  border-radius:999px;padding:7px 13px;font:600 12.5px/1 inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.quicklinks button:active{transform:scale(.97)}
+</style>
 <script>
 (function(){
   "use strict";
@@ -2219,10 +2229,12 @@
   var euro=function(n){return Math.round(n).toLocaleString('fr-FR')+' €';};
   // étapes d'avancement d'un bien — déclarées tôt : utilisées dès le premier rendu du portefeuille
   var ETAPES=['Mandat signé','En vente · diffusion','Visites en cours','Offre reçue','Offre acceptée','Compromis signé','Vente actée'];
+  // cohérence globale : on ne réconcilie qu'une fois biens + ventes + contacts chargés
+  var __loaded={biens:false,ventes:false,contacts:false}, __reconT=null, __reconBusy=false;
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-154141';
+  var __BUILD='20260826-160255';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2395,11 +2407,11 @@
         '<button class="dclose" id="dclose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>'+
         '<label class="dphoto-btn" title="'+(b.photo?'Changer':'Ajouter')+' la photo"><input type="file" accept="image/*" id="dPhotoInput" hidden>'+
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg></label>'+
-        '<div class="status">'+statusPill(b.st)+'</div>'+
+        '<div class="status">'+statusPill(etatBien(b)||b.st)+(etatBien(b)&&b.st&&etatBien(b)!==b.st?' <span class="pill">'+escH(b.st)+'</span>':'')+'</div>'+
         '<div class="price tnum">'+euro(b.px)+'</div></div>'+
       '<div class="dbody">'+
-        '<div style="display:flex;align-items:center;gap:8px"><span class="pill">Réf. '+b.ref+'</span><span class="dpe" style="background:'+dpeColors[b.dpe]+'">DPE '+b.dpe+'</span></div>'+
-        '<h2 style="margin-top:10px">'+b.ad+'</h2><div class="town">'+b.tw+' · '+b.ty+'</div>'+
+        '<div style="display:flex;align-items:center;gap:8px"><span class="pill">Réf. '+escH(b.ref||'—')+'</span><span class="dpe" style="background:'+(dpeColors[b.dpe]||'#8A938C')+'">DPE '+escH(b.dpe||'N/D')+'</span></div>'+
+        '<h2 style="margin-top:10px">'+escH(b.ad||'')+'</h2><div class="town">'+escH([b.tw,b.ty].filter(Boolean).join(' · '))+'</div>'+
         '<div class="specrow">'+
           '<div class="specbox"><b class="tnum">'+(b.m2||'—')+'</b><small>m² habitables</small></div>'+
           '<div class="specbox"><b class="tnum">'+(b.terr||'—')+'</b><small>m² terrain</small></div>'+
@@ -2411,13 +2423,27 @@
           '<div class="kv"><span>Prix / m²</span><b class="tnum">'+(b.m2?euro(b.px/b.m2)+'/m²':'—')+'</b></div>'+
           '<div class="kv"><span>Garage</span><b>'+(b.gar?'Oui':'Non')+'</b></div></div>'+
         (function(){
-          if(!b.px || typeof honorairesPour!=='function') return '';
-          var h=honorairesPour(b.px,'fai'), net=b.px-h, bm=bareme();
-          return '<div class="dsec"><div class="eyebrow">💶 Honoraires &amp; ma commission <small style="text-transform:none;letter-spacing:0">(barème '+bm.fix.toLocaleString('fr-FR')+' € + '+String(bm.pct).replace('.',',')+' % · prix FAI)</small></div>'+
-            '<div class="kv"><span>Net vendeur estimé</span><b class="tnum">'+net.toLocaleString('fr-FR')+' €</b></div>'+
-            '<div class="kv"><span>Honoraires agence</span><b class="tnum">'+h.toLocaleString('fr-FR')+' €</b></div>'+
-            '<div class="kv"><span>Ma part si je rentre ET je vends (50 %)</span><b class="tnum" style="color:var(--good)">'+Math.round(h*0.5).toLocaleString('fr-FR')+' €</b></div>'+
-            '<div class="kv"><span>Ma part rentrée OU sortie (25 %)</span><b class="tnum">'+Math.round(h*0.25).toLocaleString('fr-FR')+' €</b></div>'+
+          // les MÊMES chiffres que la fiche « Modifier ce bien » : barème négocié du bien,
+          // prix et honoraires réels de la vente si elle existe — jamais deux vérités différentes
+          var vv=venteForBien(b), sv=(typeof loadSuivi==='function')?(loadSuivi(b)||{}):{}, hb=honoDetail(b);
+          var px=(vv&&vv.prix)||parseFloat(sv.prix)||b.px||0;
+          if(!px) return '';
+          var pmode=sv.pmode||'fai';
+          var h=(vv&&vv.honoraires)||parseFloat(sv.hono)||0;
+          var reel=!!h;
+          if(!h){ h=(pmode==='net')?Math.round(hb.fix+px*hb.pct/100):Math.max(0,Math.round(px-(px-hb.fix)/(1+hb.pct/100))); }
+          var net=(pmode==='net')?px:Math.max(0,px-h);
+          var rent=vv?!!vv.rentree:(sv.rentree!==undefined?sv.rentree==='1':true);
+          var sort=vv?!!vv.sortie:(sv.sortie!==undefined?sv.sortie==='1':false);
+          var pctP=(rent?25:0)+(sort?25:0);
+          var forced=(vv&&vv.part_perso)?Math.round(vv.part_perso):(sv.part!==undefined&&sv.part!==''?Math.round(parseFloat(sv.part)):0);
+          var part=forced||Math.round(h*pctP/100);
+          var role=(rent&&sort)?'rentré ET vendu (50 %)':(rent?'rentrée seule (25 %)':(sort?'vente seule (25 %)':'ni rentré ni vendu'));
+          return '<div class="dsec"><div class="eyebrow">💶 Honoraires &amp; ma commission <small style="text-transform:none;letter-spacing:0">('+(reel?'chiffres réels saisis':'barème '+hb.fix.toLocaleString('fr-FR')+' € + '+String(hb.pct).replace('.',',')+' % · prix FAI')+')</small></div>'+
+            '<div class="kv"><span>Prix '+(pmode==='net'?'net vendeur':'FAI')+'</span><b class="tnum">'+Math.round(px).toLocaleString('fr-FR')+' €</b></div>'+
+            '<div class="kv"><span>Net vendeur</span><b class="tnum">'+Math.round(net).toLocaleString('fr-FR')+' €</b></div>'+
+            '<div class="kv"><span>Honoraires agence</span><b class="tnum">'+Math.round(h).toLocaleString('fr-FR')+' €</b></div>'+
+            '<div class="kv"><span>Ma part · '+role+'</span><b class="tnum" style="color:var(--good)">'+part.toLocaleString('fr-FR')+' €'+(forced?' <small style="color:var(--ink-3);font-weight:600">(forcée)</small>':'')+'</b></div>'+
             (b.id?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+
               ['Exclusif','Simple','Compromis','Vendu'].map(function(s){
                 return '<button type="button" class="chip drawer-st'+(b.st===s?' on':'')+'" data-st="'+s+'">'+s+'</button>';
@@ -2489,6 +2515,8 @@
           }
           b.hist=h2; b.st=stNew;
           await syncBiens();
+          // la fiche du vendeur suit l'état réel du bien (sinon le cockpit gardait un compromis fantôme)
+          if(b.owner) await setContactStatut(b.owner, (stNew==='Vendu')?'Vendu':(stNew==='Compromis')?'Compromis':(stNew==='Simple'?'Mandat simple':'Mandat exclusif'));
           toast('« '+lbl+' » retiré — statut : '+stNew+' ✓');
           var ni=biens.findIndex(function(x){ return x.id===b.id; });
           if(ni>-1) openDrawer(ni); else closeDrawer();
@@ -2531,6 +2559,12 @@
         closeDrawer(); toast('Bien déplacé dans la corbeille ✓'); syncBiens();
       }catch(err){ dd.disabled=false; if(!authFail(err)) toast('Suppression impossible : '+((err&&err.message)||err)); }
     });
+    drawer.querySelectorAll('.acq-open').forEach(function(el){
+      el.addEventListener('click',function(){
+        var c=(contactsData||[]).find(function(x){ return x.id===el.dataset.cid; });
+        if(c){ contactReturn=null; closeDrawer(); go('crm'); openContactForm(c); }
+      });
+    });
     var de=document.getElementById('drawerEdit');
     if(de) de.addEventListener('click',function(){
       // « Modifier ce bien » n'a rien à voir avec une fiche contact : on désarme tout retour en attente
@@ -2556,7 +2590,7 @@
     return list.slice(0,4).map(function(c){
       var ini=(c.nom||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var sub=[c.budget?Math.round(c.budget/1000)+' k€':null,(c.recherche&&c.recherche.type)||null,(c.recherche&&c.recherche.secteurs)||null].filter(Boolean).join(' · ');
-      return '<div class="acq"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+ini+'</div><div class="g"><b>'+(c.nom||'')+'</b><small>'+sub+'</small></div><span class="pill info">Match</span></div>';
+      return '<div class="acq acq-open" data-cid="'+c.id+'" style="cursor:pointer"><div class="av" style="background:'+(c.couleur||'#6a9')+'">'+escH(ini)+'</div><div class="g"><b>'+escH(c.nom||'')+'</b><small>'+escH(sub)+'</small></div><span class="pill info">Match</span></div>';
     }).join('')+(list.length>4?'<div style="color:var(--ink-3);font-size:12px;padding-top:6px">+ '+(list.length-4)+' autre'+(list.length-4>1?'s':'')+' dans le CRM</div>':'');
   }
   function closeDrawer(){
@@ -2644,8 +2678,16 @@
   // barème propre à CE bien (négociable) — mémorisé par bien, défaut = barème agence
   function honoDetail(b){
     var bm=bareme(), fix=bm.fix, pct=bm.pct;
-    try{ if(b&&b.id){ var s=JSON.parse(localStorage.getItem('estimake_hono_'+b.id)||'null');
-      if(s){ if(s.fix!==undefined&&s.fix!=='') fix=s.fix; if(s.pct!==undefined&&s.pct!=='') pct=s.pct; } } }catch(e){}
+    // priorité à la BASE (biens.suivi) : le barème négocié suit sur tous les appareils
+    var sv=(b&&b.suivi&&typeof b.suivi==='object')?b.suivi:null;
+    if(sv && ((sv.hfix!==undefined&&sv.hfix!=='')||(sv.hpct!==undefined&&sv.hpct!==''))){
+      if(sv.hfix!==undefined&&sv.hfix!=='') fix=parseFloat(sv.hfix);
+      if(sv.hpct!==undefined&&sv.hpct!=='') pct=parseFloat(sv.hpct);
+    } else {
+      try{ if(b&&b.id){ var s=JSON.parse(localStorage.getItem('estimake_hono_'+b.id)||'null');
+        if(s){ if(s.fix!==undefined&&s.fix!=='') fix=parseFloat(s.fix); if(s.pct!==undefined&&s.pct!=='') pct=parseFloat(s.pct); } } }catch(e){}
+    }
+    if(isNaN(fix)) fix=bm.fix; if(isNaN(pct)) pct=bm.pct;
     return {fix:fix, pct:pct};
   }
   function honoSave(id,fix,pct){ try{ if(id) localStorage.setItem('estimake_hono_'+id, JSON.stringify({fix:fix,pct:pct})); }catch(e){} }
@@ -2827,8 +2869,8 @@
     try{
       if(sb){
         var res;
-        if(!editingBienId && mandatFlow && mandatFlow.photo){ row.photo_url=mandatFlow.photo; }   // la photo de l'estimation habille le bien
-        var savedId=editingBienId;
+        if(mandatFlow && mandatFlow.photo){ row.photo_url=mandatFlow.photo; }   // la photo de l'estimation habille le bien
+        var savedId=editingBienId, etaitNouveau=!editingBienId;
         if(!editingBienId){
           var jum=(biens||[]).find(function(b){ return b && b.id && (b.ad||'').trim().toLowerCase()===row.adresse.toLowerCase(); });
           if(jum){ editingBienId=jum.id; savedId=jum.id; }   // même adresse déjà au portefeuille → mise à jour
@@ -2846,7 +2888,7 @@
           try{ await uploadBienPhoto({id:savedId, ad:row.adresse, photo:''}, pf); }catch(ep){}
         }
         await syncBiens();
-        toast(editingBienId?'Bien modifié ✓':'Bien ajouté ✓');
+        toast(etaitNouveau&&!editingBienId?'Bien ajouté ✓':'Bien modifié ✓');
         // le suivi commercial est TOUJOURS mémorisé (même sans compromis) : rien à ressaisir
         await saveSuivi(savedId, { etape:e.v_etape.value, prix:e.v_prix.value, pmode:e.v_pmode.value,
           hfix:e.v_hfix.value, hpct:e.v_hpct.value, hono:e.v_hono.value,
@@ -2862,7 +2904,8 @@
             try{
               var dv=await sb.from('ventes').update({deleted:true}).eq('id',vOld.id);
               if(!dv.error){ await syncVentes();
-                setTimeout(function(){ toast('↩ Retour à « '+etapeNew+' » — compromis/vente annulé, cockpit à jour.'); },1300); }
+                if(row.proprietaire) await setContactStatut(row.proprietaire, (row.statut==='Simple')?'Mandat simple':'Mandat exclusif');
+                setTimeout(function(){ toast('↩ Retour à « '+etapeNew+' » — compromis/vente annulé, fiche client et cockpit à jour.'); },1300); }
             }catch(eD){ console.warn('[ESTIMAKE] annulation vente', eD); }
           }
         }
@@ -2891,12 +2934,14 @@
             }
             if(vRes.error) throw vRes.error;
             await syncVentes();
+            if(row.proprietaire) await setContactStatut(row.proprietaire, (row.statut==='Vendu')?'Vendu':'Compromis',
+              (row.statut==='Vendu')?'Suivi post-vente':'Suivi du compromis');
             var partV=(!isNaN(forcedP)&&e.v_part.value!=='')?Math.round(forcedP):Math.round((hoV||0)*((vRow.rentree?0.25:0)+(vRow.sortie?0.25:0)));
             setTimeout(function(){ celebrate(row.statut==='Vendu'?'acte':'compromis', partV, row.adresse); },900);
           }catch(eV){ setTimeout(function(){ toast('⚠ Vente non synchronisée : '+((eV&&eV.message)||eV)); },1300); }
         }
         // flux MANDAT : la fiche client passe au statut mandat correspondant + relance datée
-        if(!editingBienId && mandatFlow){
+        if(mandatFlow){
           var mfC=(mandatFlow.client||row.proprietaire||'').trim();
           mandatFlow=null;
           if(mfC){
@@ -3133,6 +3178,7 @@
           statut:r.statut, budget:r.budget, relance:r.derniere_relance, action:r.prochaine_action, couleur:r.couleur||'#6a9',
           tel:r.telephone, email:r.email, recherche:r.recherche||null}; });
         renderCrm();
+        scheduleReconcile('contacts');
         if(typeof updateKpis==='function') try{ updateKpis(); }catch(e2){}   // statuts de fiches → stats cockpit
       }
     }catch(e){ console.warn('[ESTIMAKE] Supabase contacts → démo', e); }
@@ -3279,7 +3325,7 @@
     box.innerHTML='<div class="restyle-sub">Estimations li\u00e9es ('+linked.length+')</div>'+linked.map(function(r){
       var d=r.created_at?new Date(r.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
       var prix=(r.prix_final||r.prix_conseille);
-      return '<div class="cadjrow cliestim" data-eid="'+r.id+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+(r.adresse||'\u2014')+' \u00b7 '+(r.type||'')+' \u00b7 '+d+'</span><b class="tnum" style="color:var(--accent)">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</b>'+
+      return '<div class="cadjrow cliestim" data-eid="'+r.id+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+escH(r.adresse||'\u2014')+' \u00b7 '+escH(r.type||'')+' \u00b7 '+d+'</span><b class="tnum" style="color:var(--accent)">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</b>'+
         '<button type="button" class="cadjdel cliestimdel" data-edel="'+r.id+'" title="Mettre \u00e0 la corbeille">\u2715</button></div>';
     }).join('');
     box.querySelectorAll('.cliestimdel').forEach(function(btn){
@@ -3495,9 +3541,11 @@
       var cls=TYPECOL[r.type]||'', sub=r.lien?(r.lien+(r.note?' · '+r.note:'')):(r.note||'');
       return '<div class="card rdv-row" data-id="'+r.id+'"><div class="rdv-time">'+(r.heure||'--:--')+'</div>'+
         '<div class="rdv-main"><b>'+escH(r.titre)+'</b>'+(sub?'<small>'+escH(sub)+'</small>':'')+'</div>'+
-        '<span class="pill '+cls+'">'+r.type+'</span>'+
+        '<span class="pill '+cls+'">'+escH(r.type||'')+'</span>'+
         '<a class="gcal" href="'+gcalUrl(r)+'" target="_blank" rel="noopener" title="Ajouter à Google Agenda" aria-label="Google Agenda">'+gcalSvg+'</a></div>';
-    }).join('');
+    }).join('')
+    // les tâches du jour restent visibles même quand il y a des RDV (elles disparaissaient)
+    + (dayTasks.length?('<div class="card" style="padding:4px 14px;margin-top:10px">'+dayTasks.map(taskRow).join('')+'</div>'):'');
   }
   document.getElementById('agViews').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; agView=b.dataset.v; renderAgenda(); if(typeof renderTodoAgenda==='function') renderTodoAgenda(); });
   function shiftAg(n){ if(agView==='mois') agRef.setMonth(agRef.getMonth()+n); else if(agView==='semaine') agRef.setDate(agRef.getDate()+7*n); else agRef.setDate(agRef.getDate()+n); renderAgenda(); if(typeof renderTodoAgenda==='function') renderTodoAgenda(); }
@@ -3567,6 +3615,7 @@
     biens.forEach(function(x){ if(x.ad) opts+='<option value="'+esc(x.ad+(x.ref?(' · '+x.ref):''))+'">'; });
     document.getElementById('rdvLienOptions').innerHTML=opts;
     document.getElementById('rdvDelete').hidden = !editingRdvId;
+    if(typeof majLiensRdv==='function') majLiensRdv();
     rdvErr.classList.remove('show'); rdvErr.textContent=''; rdvModal.hidden=false;
   }
   function closeRdvForm(){ rdvModal.hidden=true; if(typeof returnToContact==='function') returnToContact(); }
@@ -3632,7 +3681,7 @@
     renderDvfComps();
   }
   function compute(){
-    var surf=parseFloat(document.getElementById('fSurf').value)||127;
+    var surf=parseFloat(document.getElementById('fSurf').value)||0;
     var pctLoc=state.loc*10;           // quartier moyen −10 % / bon secteur 0 / recherché +10 %
     // IMMEUBLE avec lots valorisés : la SOMMATION DES LOTS devient le prix principal
     // (chaque lot porte déjà son état/DPE/ajustements — les curseurs généraux et équipements ne s'appliquent pas)
@@ -3905,7 +3954,7 @@
       var res=await readTable('taches',function(t){ return t.select('*').eq('deleted',false).eq('fait',false).order('echeance',{ascending:true,nullsFirst:false}); });
       if(res.error) throw res.error;
       tachesData=res.data||[];
-      try{ var rf=await sb.from('taches').select('*').eq('deleted',false).eq('fait',true).order('created_at',{ascending:false}).limit(200);
+      try{ var rf=await readTable('taches',function(t){ return t.select('*').eq('deleted',false).eq('fait',true).order('created_at',{ascending:false}).limit(200); });
         tachesFaites=(rf.data||[]); }catch(e2){}
       renderToday(); renderTodoAgenda();
       if(typeof renderAgenda==='function') try{ renderAgenda(); }catch(e){}
@@ -4023,9 +4072,12 @@
     (contactsData||[]).forEach(function(c){ if(c.nom) o+='<option value="'+esc(c.nom)+'">'; });
     document.getElementById('taskLienOptions').innerHTML=o;
     document.getElementById('taskErr').classList.remove('show');
+    if(typeof majLiensTache==='function') majLiensTache();
     taskModal.hidden=false;
   }
   document.getElementById('addTaskBtn').addEventListener('click',function(){ openTaskForm(null); });
+  taskForm.addEventListener('input',function(){ if(typeof majLiensTache==='function') majLiensTache(); });
+  rdvForm.addEventListener('input',function(){ if(typeof majLiensRdv==='function') majLiensRdv(); });
   function closeTaskForm(){ taskModal.hidden=true; if(typeof returnToContact==='function') returnToContact(); }
   document.getElementById('taskX').addEventListener('click',closeTaskForm);
   document.getElementById('taskCancel').addEventListener('click',closeTaskForm);
@@ -4104,6 +4156,64 @@
     var tr=e.target.closest('.task-row[data-tid]');
     if(tr){ var t2=tachesData.find(function(x){ return x.id===tr.dataset.tid; })||tachesFaites.find(function(x){ return x.id===tr.dataset.tid; }); if(t2) openTaskForm(t2); }
   });
+  /* ---------- LIENS RAPIDES : depuis n'importe quel formulaire on rebondit sur la fiche liée ---------- */
+  function contactParNom(nom){
+    nom=(nom||'').trim().toLowerCase(); if(!nom) return null;
+    return (contactsData||[]).find(function(c){ return (c.nom||'').trim().toLowerCase()===nom; })||null;
+  }
+  function bienParAdresse(ad){
+    ad=(ad||'').trim().toLowerCase(); if(!ad) return null;
+    return (biens||[]).find(function(b){ return b && (b.ad||'').trim().toLowerCase()===ad; })||null;
+  }
+  // boxId : conteneur ; items : [{label, go}]
+  function renderQuickLinks(boxId, items){
+    var box=document.getElementById(boxId); if(!box) return;
+    box.innerHTML='';
+    (items||[]).filter(Boolean).forEach(function(it){
+      var b=document.createElement('button'); b.type='button'; b.textContent=it.label;
+      b.addEventListener('click',it.go); box.appendChild(b);
+    });
+  }
+  function fermerTousLesModals(){
+    ['taskModal','venteModal','rdvModal','contactModal','bienModal','statsModal','trashModal','lotModal'].forEach(function(id){
+      var m=document.getElementById(id); if(m) m.hidden=true;
+    });
+  }
+  function allerFicheContact(c){ fermerTousLesModals(); contactReturn=null; go('crm'); openContactForm(c); }
+  function allerFicheBien(b){
+    var i=(biens||[]).indexOf(b); if(i<0) return;
+    fermerTousLesModals(); contactReturn=null; go('portefeuille'); openDrawer(i);
+  }
+  function allerEstimation(r){ fermerTousLesModals(); estimReturn=null; hydrateEstimation(r); }
+  function estimPourAdresse(ad){
+    ad=(ad||'').trim().toLowerCase(); if(!ad) return null;
+    return (window.__estimsAll||[]).find(function(r){ return (r.adresse||'').trim().toLowerCase()===ad; })||null;
+  }
+  function majLiensVente(){
+    var e=venteForm.elements;
+    var b=bienParAdresse(e.bien.value), c=contactParNom(e.client.value), es=estimPourAdresse(e.bien.value);
+    renderQuickLinks('venteLinks',[
+      b?{label:'🏠 Fiche du bien', go:function(){ allerFicheBien(b); }}:null,
+      c?{label:'👤 Fiche '+c.nom, go:function(){ allerFicheContact(c); }}:null,
+      es?{label:'📄 Avis de valeur', go:function(){ allerEstimation(es); }}:null
+    ]);
+  }
+  function majLiensTache(){
+    var c=contactParNom(taskForm.elements.t_lien.value);
+    var b=bienParAdresse(taskForm.elements.t_lien.value);
+    renderQuickLinks('taskLinks',[
+      c?{label:'👤 Fiche '+c.nom, go:function(){ allerFicheContact(c); }}:null,
+      b?{label:'🏠 '+b.ad, go:function(){ allerFicheBien(b); }}:null
+    ]);
+  }
+  function majLiensRdv(){
+    var v=rdvForm.elements.lien.value;
+    var c=contactParNom(v), b=bienParAdresse((v||'').split(' · ')[0]);
+    renderQuickLinks('rdvLinks',[
+      c?{label:'👤 Fiche '+c.nom, go:function(){ allerFicheContact(c); }}:null,
+      b?{label:'🏠 '+b.ad, go:function(){ allerFicheBien(b); }}:null
+    ]);
+  }
   /* ---------- repousser une tâche (Demain / Semaine prochaine / date choisie) ---------- */
   var pushModal=document.getElementById('pushModal'), pushTaskId=null;
   function openPushModal(id){ pushTaskId=id; var pd=document.getElementById('pushDate'); if(pd) pd.value=''; pushModal.hidden=false; }
@@ -4138,11 +4248,126 @@
     if(v && v.part_perso) return Math.round(v.part_perso);   // commission saisie à la main (négociée)
     return Math.round((v.honoraires||0)*(((v.rentree)?0.25:0)+((v.sortie)?0.25:0)));
   }
+  /* =====================================================================
+     COHÉRENCE GLOBALE — une information saisie quelque part se retrouve PARTOUT.
+     Chaîne : bien ⇄ vente ⇄ fiche client ⇄ cockpit.
+     Rattrape aussi les incohérences héritées (compromis retiré d'un bien mais
+     fiche client restée « Compromis » → le cockpit comptait un compromis fantôme).
+     ===================================================================== */
+  function bienForVente(v){
+    var ad=((v&&v.bien)||'').trim().toLowerCase(); if(!ad) return null;
+    return (biens||[]).find(function(b){ return b && (b.ad||'').trim().toLowerCase()===ad; })||null;
+  }
+  // vente vivante dont le bien ne suit pas encore : c'est le BIEN qui s'aligne (une vente = de l'argent, jamais supprimée toute seule)
+  function venteDesynchro(v){
+    if(!v || v.deleted) return false;
+    var b=bienForVente(v); if(!b) return false;          // vente sans bien au portefeuille → rien à aligner
+    var want=(v.statut==='acte')?'Vendu':'Compromis';
+    return b.st!==want;
+  }
+  // pour les fiches : une vente n'est « sans objet » que si elle est déjà supprimée
+  function venteObsolete(v){ return !v || !!v.deleted; }
+  // une fiche client reste « Compromis / Vendu » à tort si TOUS ses biens disent le contraire
+  function ficheObsolete(c){
+    var st=((c&&c.statut)||'').trim().toLowerCase();
+    if(st!=='compromis' && st!=='vendu') return false;
+    var v=venteForClient(c.nom);
+    if(v && !venteObsolete(v)) return false;             // une vente vivante justifie le statut
+    var bs=biensForContact(c);
+    if(!bs.length) return false;                         // aucun bien rattaché → saisie manuelle, on respecte
+    return !bs.some(function(b){ return (st==='vendu') ? (b.st==='Vendu') : (b.st==='Compromis'||b.st==='Vendu'); });
+  }
+  // statut de fiche déduit des biens réellement au portefeuille
+  function statutDepuisBiens(c){
+    var bs=biensForContact(c);
+    if(bs.some(function(b){ return b.st==='Vendu'; })) return 'Vendu';
+    if(bs.some(function(b){ return b.st==='Compromis'; })) return 'Compromis';
+    if(bs.some(function(b){ return b.st==='Exclusif'; })) return 'Mandat exclusif';
+    if(bs.some(function(b){ return b.st==='Simple'; })) return 'Mandat simple';
+    return '';
+  }
+  async function setContactStatut(nom, st, action){
+    if(!sb) return;
+    var c=(contactsData||[]).find(function(x){ return (x.nom||'').trim().toLowerCase()===(nom||'').trim().toLowerCase(); });
+    if(!c || !c.id || String(c.id).length<5) return;
+    if((c.statut||'')===st && !action) return;
+    var upd={statut:st||null}; if(action) upd.prochaine_action=action;
+    try{ var r=await sb.from('contacts').update(upd).eq('id',c.id);
+      if(!r.error){ c.statut=st; if(action) c.action=action; renderCrm(); } }catch(e){ console.warn('[ESTIMAKE] statut fiche', e); }
+  }
+  // une vente enregistrée pousse l'état sur SON bien (étape, statut, chiffres) — zéro double saisie
+  async function pushVenteVersBien(row){
+    if(!sb) return;
+    var b=bienForVente(row); if(!b || !b.id) return;
+    var want=(row.statut==='acte')?'Vendu':'Compromis';
+    var etape=(row.statut==='acte')?'Vente actée':'Compromis signé';
+    var dejaEtape=etapeCourante(b);
+    if(b.st===want && dejaEtape===etape) return;
+    var h2=Array.isArray(b.hist)?b.hist.slice():[];
+    if(dejaEtape!==etape) h2.push([etape, new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})]);
+    var sv=loadSuivi(b)||{}; sv.etape=etape;
+    if(row.prix) sv.prix=row.prix;
+    if(row.honoraires) sv.hono=row.honoraires;
+    sv.rentree=row.rentree?'1':'0'; sv.sortie=row.sortie?'1':'0';
+    if(row.statut==='acte') sv.dacte=row.date_vente||sv.dacte||''; else sv.dcomp=row.date_vente||sv.dcomp||'';
+    try{
+      var r=await sb.from('biens').update({statut:want, historique:h2, suivi:sv}).eq('id',b.id);
+      if(r.error && /column|schema cache|suivi/i.test(r.error.message||'')) r=await sb.from('biens').update({statut:want, historique:h2}).eq('id',b.id);
+      if(!r.error){ await saveSuivi(b.id, sv); await syncBiens(); }
+    }catch(e){ console.warn('[ESTIMAKE] vente → bien', e); }
+  }
+  // une vente supprimée fait REVENIR son bien en mandat actif (et la fiche client avec)
+  async function rollbackBienDeVente(v){
+    if(!sb || !v) return;
+    var b=bienForVente(v); if(!b || !b.id) return;
+    if(b.st!=='Compromis' && b.st!=='Vendu') return;
+    var iComp=ETAPES.indexOf('Compromis signé');
+    var h2=(Array.isArray(b.hist)?b.hist:[]).filter(function(x){ var i=ETAPES.indexOf(x&&x[0]); return i===-1 || i<iComp; });
+    var etNew=''; for(var i=h2.length-1;i>=0;i--){ if(ETAPES.indexOf(h2[i]&&h2[i][0])>-1){ etNew=h2[i][0]; break; } }
+    var sv=loadSuivi(b)||{}; sv.etape=etNew; sv.dcomp=''; sv.dacte='';
+    var stNew=(sv.rentree==='0')?'Simple':'Exclusif';
+    try{
+      var r=await sb.from('biens').update({statut:stNew, historique:h2, suivi:sv}).eq('id',b.id);
+      if(r.error && /column|schema cache|suivi/i.test(r.error.message||'')) r=await sb.from('biens').update({statut:stNew, historique:h2}).eq('id',b.id);
+      if(!r.error){ await saveSuivi(b.id, sv); await syncBiens(); }
+    }catch(e){ console.warn('[ESTIMAKE] rollback bien', e); }
+    if(v.client) await setContactStatut(v.client, (stNew==='Simple')?'Mandat simple':'Mandat exclusif');
+  }
+  async function reconcile(){
+    if(!sb || __reconBusy) return; __reconBusy=true;
+    var nV=0, nC=0;
+    try{
+      // 1) une vente enregistrée doit se voir sur son bien (statut + étape)
+      var vs=(ventesData||[]).filter(venteDesynchro);
+      for(var i=0;i<vs.length;i++){
+        try{ await pushVenteVersBien(vs[i]); nV++; }catch(e){}
+      }
+      var cs=(contactsData||[]).filter(ficheObsolete);
+      for(var j=0;j<cs.length;j++){
+        var st=statutDepuisBiens(cs[j]);
+        try{ var r2=await sb.from('contacts').update({statut:st||null}).eq('id',cs[j].id);
+          if(!r2.error){ cs[j].statut=st; nC++; } }catch(e2){}
+      }
+    }finally{ __reconBusy=false; }
+    if(nV||nC){
+      renderCrm(); updateKpis();
+      toast('🔄 Cohérence rétablie : '+[nV?nV+' bien'+(nV>1?'s':'')+' aligné'+(nV>1?'s':'')+' sur sa vente':null,
+        nC?nC+' fiche'+(nC>1?'s':'')+' client remise'+(nC>1?'s':'')+' à jour':null].filter(Boolean).join(' · '));
+    }
+  }
+  function scheduleReconcile(what){
+    if(!__loaded) return;
+    __loaded[what]=true;
+    if(!__loaded.biens || !__loaded.ventes || !__loaded.contacts) return;
+    clearTimeout(__reconT); __reconT=setTimeout(function(){ reconcile(); }, 700);
+  }
   /* ---- pont fiches clients ↔ stats : un statut Compromis/Vendu sur une fiche compte, même sans vente saisie ---- */
   function fichesStatut(st){
     st=st.toLowerCase();
     return (contactsData||[]).filter(function(c){
-      return (c.role==='vendeur'||c.role==='prospect') && (c.statut||'').trim().toLowerCase()===st && c.id && String(c.id).length>4;
+      if(!(c.role==='vendeur'||c.role==='prospect') || !c.id || String(c.id).length<=4) return false;
+      if((c.statut||'').trim().toLowerCase()!==st) return false;
+      return !ficheObsolete(c);   // fiche contredite par ses biens → jamais recomptée dans le cockpit
     });
   }
   function venteForClient(nom){
@@ -4160,6 +4385,7 @@
       var res=await readTable('ventes',function(t){ return t.select('*').eq('deleted',false).order('date_vente',{ascending:false}); });
       if(res.error) throw res.error;
       ventesData=res.data||[];
+      scheduleReconcile('ventes');
       updateKpis();
       if(typeof renderChart==='function') try{ renderChart(); }catch(e){}
       if(typeof renderGoals==='function') renderGoals();
@@ -4183,7 +4409,12 @@
     if(cockState.mode==='jour') return cockState.ref.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
     if(cockState.mode==='semaine') return rg.from.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' \u2013 '+rg.to.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
     if(cockState.mode==='annee') return String(cockState.ref.getFullYear());
-    if(cockState.mode==='perso') return 'P\u00e9riode libre';
+    if(cockState.mode==='perso'){
+      var pf=(document.getElementById('ckFrom')||{}).value, pt=(document.getElementById('ckTo')||{}).value;
+      if(pf||pt){ var fmp=function(d){ return d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'\u2026'; };
+        return fmp(pf)+' \u2192 '+fmp(pt); }
+      return 'P\u00e9riode libre \u2014 choisis les dates';
+    }
     return cockState.ref.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
   }
   function ckInRange(dstr,rg){ if(!dstr) return false; var d=new Date(dstr); return d>=rg.from && d<=rg.to; }
@@ -4191,6 +4422,8 @@
     var rg=ckRange();
     var lb=document.getElementById('ckLabel'); if(lb) lb.textContent=ckLabelTxt(rg);
     var cp=document.getElementById('ckPerso'); if(cp) cp.hidden=(cockState.mode!=='perso');
+    // en mode « Période », les flèches n'ont aucun effet : on les masque
+    ['ckPrev','ckNext'].forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display=(cockState.mode==='perso')?'none':''; });
     // plus de mode démo : on affiche toujours les chiffres réels (0 € si rien)
     document.getElementById('kCaYear').textContent=ckLabelTxt(rg);
     var inP=ventesData.filter(function(v){ return ckInRange(v.date_vente||v.created_at,rg); });
@@ -4302,7 +4535,7 @@
     document.getElementById('ventePart').innerHTML='Ma commission ('+pct+' %) : <b>'+p.toLocaleString('fr-FR')+' \u20ac</b>'+
       '<br><small style="color:var(--ink-3)">Bar\u00e8me : '+b.fix.toLocaleString('fr-FR')+' \u20ac + '+String(b.pct).replace('.',',')+' % '+(venteForm.elements.pmode.value==='fai'?'(prix FAI \u2192 honoraires d\u00e9duits)':'(sur le net vendeur)')+'</small>';
   }
-  venteForm.addEventListener('input',ventePartPreview);
+  venteForm.addEventListener('input',function(){ ventePartPreview(); if(typeof majLiensVente==='function') majLiensVente(); });
   venteForm.elements.prix.addEventListener('input',function(){ applyBareme(false); });
   venteForm.elements.pmode.addEventListener('change',function(){ applyBareme(false); });
   venteForm.elements.honoraires.addEventListener('input',function(){ delete this.dataset.auto; });
@@ -4323,7 +4556,7 @@
     var e=venteForm.elements;
     e.bien.value=v?(v.bien||''):''; e.client.value=v?(v.client||''):'';
     e.prix.value=v?(v.prix||''):''; e.honoraires.value=v?(v.honoraires||''):'';
-    e.date_vente.value=v?(v.date_vente||''):new Date().toISOString().slice(0,10);
+    e.date_vente.value=v?(v.date_vente||''):isoD(new Date());
     e.statut.value=v?(v.statut||'compromis'):'compromis';
     e.pmode.value='fai'; delete e.honoraires.dataset.auto;
     e.rentree.checked=v?!!v.rentree:true; e.sortie.checked=v?!!v.sortie:true;
@@ -4334,6 +4567,7 @@
     document.getElementById('venteCliOptions').innerHTML=oc;
     document.getElementById('venteErr').classList.remove('show');
     ventePartPreview();
+    if(typeof majLiensVente==='function') majLiensVente();
     venteModal.hidden=false;
   }
   document.getElementById('addVenteBtn').addEventListener('click',function(){ openVenteForm(null); });
@@ -4356,15 +4590,26 @@
       if(typeof returnToContact==='function') returnToContact();
       toast(editingVenteId?'Vente modifi\u00e9e \u2713':'Vente enregistr\u00e9e \u2713 \u00b7 ma part : '+partVente(row).toLocaleString('fr-FR')+' \u20ac');
       setTimeout(function(){ celebrate(row.statut==='acte'?'acte':'compromis', partVente(row), row.bien); },500);
-      if(row.client){ ensureContact(row.client, 'vendeur', row.bien, 'Client'); bumpRelance(row.client); }
+      // TOUT suit : le bien passe en Compromis/Vendu et la fiche client aussi
+      if(row.bien) await pushVenteVersBien(row);
+      if(row.client){
+        await ensureContact(row.client, 'vendeur', row.bien, (row.statut==='acte')?'Vendu':'Compromis');
+        await setContactStatut(row.client, (row.statut==='acte')?'Vendu':'Compromis', (row.statut==='acte')?'Suivi post-vente':'Suivi du compromis');
+        bumpRelance(row.client);
+      }
       syncVentes();
     }catch(err){ if(authFail(err)){ venteModal.hidden=true; } else { var el=document.getElementById('venteErr'); el.textContent='Erreur : '+((err&&err.message)||err); el.classList.add('show'); } }
     finally{ if(vSub) vSub.disabled=false; }
   });
   document.getElementById('venteDelete').addEventListener('click',async function(){
     if(!editingVenteId||!sb) return;
+    var vDel=(ventesData||[]).find(function(x){ return x.id===editingVenteId; })||null;
     try{ var r=await sb.from('ventes').update({deleted:true}).eq('id',editingVenteId); if(r.error) throw r.error;
-      venteModal.hidden=true; toast('Vente d\u00e9plac\u00e9e dans la corbeille \u2713'); syncVentes();
+      venteModal.hidden=true;
+      // le bien redevient un mandat actif et la fiche client suit — plus de compromis fant\u00f4me
+      if(vDel) await rollbackBienDeVente(vDel);
+      toast('Vente supprim\u00e9e \u2713 \u2014 bien et fiche client remis \u00e0 jour');
+      syncVentes();
     }catch(e){ toast('Suppression impossible.'); }
   });
   /* --- statistiques par période (KPI cliquables) --- */
@@ -4416,12 +4661,13 @@
     } else if(statState.tab==='com'){
       var rent=inP.reduce(function(x,v){return x+((v.rentree)?(v.honoraires||0)*0.25:0);},0);
       var sor=inP.reduce(function(x,v){return x+((v.sortie)?(v.honoraires||0)*0.25:0);},0);
-      body.innerHTML=tiles([['Part rentr\u00e9es (25 %)',eu(Math.round(rent))],['Part sorties (25 %)',eu(Math.round(sor))],['Total commissions',eu(Math.round(rent+sor))],['Ventes concern\u00e9es',inP.length]])+lignes(inP);
+      var totC=inP.reduce(function(x,v){return x+partVente(v);},0);   // tient compte des commissions forc\u00e9es
+      body.innerHTML=tiles([['Part rentr\u00e9es (25 %)',eu(Math.round(rent))],['Part sorties (25 %)',eu(Math.round(sor))],['Total commissions',eu(totC)],['Ventes concern\u00e9es',inP.length]])+lignes(inP);
     } else {
       var actifs=(biens||[]).filter(function(b){ return b.st!=='Vendu'; });
       var rentres=(biens||[]).filter(function(b){ return b.crea && inRange(b.crea, rg); });
       body.innerHTML=tiles([['Mandats actifs',actifs.length],['Exclusifs',actifs.filter(function(b){return b.st==='Exclusif';}).length],['Rentr\u00e9s sur la p\u00e9riode',rentres.length],['Sous compromis',actifs.filter(function(b){return b.st==='Compromis';}).length]])+
-        (actifs.length?actifs.map(function(b){ return '<div class="cadjrow"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+(b.ad||'')+' \u00b7 '+(b.st||'')+'</span><b>'+((b.px||0).toLocaleString('fr-FR'))+' \u20ac</b></div>'; }).join(''):'<div class="estimempty">Aucun mandat actif.</div>');
+        (actifs.length?actifs.map(function(b){ return '<div class="cadjrow" data-bad="'+escH(b.ad||'')+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+escH(b.ad||'\u2014')+' \u00b7 <span class="pill '+etatCls(etatBien(b))+'">'+escH(etatBien(b)||b.st||'\u2014')+'</span></span><b class="tnum">'+((b.px||0).toLocaleString('fr-FR'))+' \u20ac</b></div>'; }).join(''):'<div class="estimempty">Aucun mandat actif.</div>');
     }
   }
   (function(){
@@ -4457,9 +4703,17 @@
     document.getElementById('statsFrom').addEventListener('change',renderStats);
     document.getElementById('statsTo').addEventListener('change',renderStats);
     document.getElementById('statsBody').addEventListener('click',function(e){
-      var row=e.target.closest('[data-vid]'); if(!row) return;
-      var v=ventesData.find(function(x){return x.id===row.dataset.vid;});
-      if(v){ document.getElementById('statsModal').hidden=true; openVenteForm(v); }
+      var row=e.target.closest('[data-vid]');
+      if(row){
+        var v=ventesData.find(function(x){return x.id===row.dataset.vid;});
+        if(v){ document.getElementById('statsModal').hidden=true; openVenteForm(v); }
+        return;
+      }
+      // un mandat listé s'ouvre directement dans sa fiche bien (tout est cliquable de partout)
+      var bm=e.target.closest('[data-bad]'); if(!bm) return;
+      var ad=bm.dataset.bad.trim().toLowerCase();
+      var i=(biens||[]).findIndex(function(b){ return b && (b.ad||'').trim().toLowerCase()===ad; });
+      if(i>-1){ document.getElementById('statsModal').hidden=true; contactReturn=null; go('portefeuille'); openDrawer(i); }
     });
   })();
   syncVentes();
@@ -4491,12 +4745,12 @@
       if(!sb){ body.innerHTML='<div class="estimempty">Corbeille indisponible hors connexion.</div>'; return; }
       try{
         var qs=await Promise.all([
-          sb.from('biens').select('id,adresse,prix').eq('deleted',true),
-          sb.from('contacts').select('id,nom,role,detail').eq('deleted',true),
-          sb.from('estimations').select('id,adresse,prix_conseille,created_at').eq('deleted',true).order('created_at',{ascending:false}),
-          sb.from('rdv').select('id,titre,date,heure').eq('deleted',true).order('date',{ascending:false}),
-          sb.from('ventes').select('id,bien,client,prix').eq('deleted',true),
-          sb.from('taches').select('id,titre,echeance,lien').eq('deleted',true)
+          readTable('biens',function(t){ return t.select('id,adresse,prix').eq('deleted',true); }),
+          readTable('contacts',function(t){ return t.select('id,nom,role,detail').eq('deleted',true); }),
+          readTable('estimations',function(t){ return t.select('id,adresse,prix_conseille,created_at').eq('deleted',true).order('created_at',{ascending:false}); }),
+          readTable('rdv',function(t){ return t.select('id,titre,date,heure').eq('deleted',true).order('date',{ascending:false}); }),
+          readTable('ventes',function(t){ return t.select('id,bien,client,prix').eq('deleted',true); }),
+          readTable('taches',function(t){ return t.select('id,titre,echeance,lien').eq('deleted',true); })
         ]);
         var html='';
         function grp(titre, rows, fmt, table){
@@ -4618,7 +4872,7 @@
             '<div class="price tnum">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</div></div>'+
           '<div class="body"><div><div class="addr">'+escH(r.adresse||'\u2014')+'</div>'+
             '<div class="town">'+(r.valeur_basse?(Math.round(r.valeur_basse/1000)+' \u2013 '+Math.round((r.valeur_haute||0)/1000)+' k\u20ac'):'')+(r.client?' \u00b7 '+escH(r.client):'')+'</div></div>'+
-            '<div class="specs"><span>'+(r.type||'')+'</span>'+(r.surface?'<span>'+r.surface+' m\u00b2</span>':'')+'<span>'+d+'</span></div></div>'+
+            '<div class="specs"><span>'+escH(r.type||'')+'</span>'+(r.surface?'<span>'+r.surface+' m\u00b2</span>':'')+'<span>'+d+'</span></div></div>'+
         '</div>';
       }).join('');
   }
@@ -4658,7 +4912,7 @@
       if(he>0) g+='<rect x="'+x+'" y="'+(pad.t+ih-he)+'" width="'+bw+'" height="'+he+'" fill="'+(forPdf?'#A8853B':'#B08A2E')+'" rx="2"/>';
       g+='<text x="'+(x+bw/2)+'" y="'+(h-7)+'" text-anchor="middle" font-size="9" fill="'+(forPdf?'#8d8168':'#9a917f')+'">'+s.lbl+'</text>';
     });
-    return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none" style="display:block">'+grid+g+'</svg>';
+    return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="xMidYMid meet" style="display:block;max-width:100%">'+grid+g+'</svg>';
   }
   function renderChart(){
     var card=document.getElementById('chartCard'); if(!card) return;
@@ -4881,6 +5135,16 @@
     estPhotos=[]; estLots=[]; state.custom=[]; state.override=null; state.overLow=null; state.overHigh=null;
     ['cliNom','cliMail','fDesc','fCompl','fLoyer','fSurf','fTerr','fPieces','fChambres','fSdb','fAnnee','fDpeCl'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
     estCoord=null; estVilleTxt=null;
+    // le marché, les ventes comparables et les commodités du bien précédent ne doivent JAMAIS rester
+    state.baseM2=null; state.rayon=500;
+    try{ dvfComps=null; dvfActive=false; dvfYearsOff={}; }catch(eD){}
+    try{ poiList=[]; poiCacheKey=null; if(typeof renderPoiChips==='function') renderPoiChips(); }catch(eP){}
+    try{ window.__market=null; window.__keepBaseOnce=false; }catch(eM){}
+    try{ var yb=document.getElementById('yearBar'); if(yb) yb.hidden=true;
+         var dm=document.getElementById('dvfMsg'); if(dm) dm.hidden=true;
+         var db=document.getElementById('dvfBtn'); if(db){ db.disabled=false; db.lastChild.textContent=' Charger les ventes réelles (DVF)'; }
+         document.querySelectorAll('#rayonBar button').forEach(function(x){ x.classList.toggle('on', x.dataset.r==='500'); });
+         if(typeof renderComps==='function') renderComps(); }catch(eR){}
     var aa=document.getElementById('addrA'), as=document.getElementById('addrS');
     if(aa) aa.textContent='Aucune adresse';
     if(as) as.textContent='clique « Modifier » et sélectionne l’adresse du bien';
@@ -4975,7 +5239,7 @@
     // ancienne estimation sans médiane mémorisée → on la reconstruit pour retomber
     // EXACTEMENT sur le prix conseillé enregistré (fidélité au document remis au client)
     if(!dt.baseM2 && r.prix_conseille){
-      var surfH=parseFloat(g('fSurf').value)||127;
+      var surfH=parseFloat(g('fSurf').value)||0;
       var pctH=state.etat+state.dpe+state.terr+state.loc*10, tEurH=0;
       for(var kH in state.tgls){ if(state.tgls[kH]){ var eH=state.tgls[kH];
         if(eH.pct) pctH+=parseFloat(eH.pct); if(eH.eur) tEurH+=parseFloat(eH.eur); } }
@@ -5173,7 +5437,7 @@
     var flt=[]; dvfComps.forEach(function(c,i){ if(compFilterPass(c)) flt.push({c:c,i:i}); });
     var shown=flt.slice(0,45);
     body.innerHTML=shown.map(function(x){ var c=x.c;
-      return '<tr class="selrow'+(c.sel?'':' out')+'" data-i="'+x.i+'"><td><span class="ck">'+(c.sel?'\u2611':'\u2610')+'</span> '+(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
+      return '<tr class="selrow'+(c.sel?'':' out')+'" data-i="'+x.i+'"><td><span class="ck">'+(c.sel?'\u2611':'\u2610')+'</span> '+escH(c.adresse||'\u2014')+' \u00b7 '+fmtDate(c.date)+'</td><td>'+c.surface+' m\u00b2</td><td>'+euro(c.prix)+'</td><td>'+c.pm2.toLocaleString('fr-FR')+'</td></tr>';
     }).join('') + (flt.length>45?'<tr><td colspan="4" style="color:var(--ink-3);font-size:12px;text-align:center;padding:8px">'+(flt.length-45)+' autres ventes correspondantes (affine les filtres pour les voir) \u2014 toutes comptent dans la m\u00e9diane</td></tr>':'');
     var kept=flt.map(function(x){return x.c;}).filter(function(c){return c.sel;}).map(function(c){return c.pm2;});
     if(kept.length){
@@ -6371,6 +6635,7 @@
       if(res.error) throw res.error;
       if(res.data){                     // la base a répondu → vraies données, même vides
         biens=res.data.map(mapBien);
+        scheduleReconcile('biens');
         updateBienChips();
         var f=document.querySelector('#bienChips .chip.on');
         renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
