@@ -1925,6 +1925,7 @@
         <button type="button" class="btn" id="cNewEstim">🏠 Estimation</button>
         <button type="button" class="btn" id="cNewRdv">📅 RDV</button>
         <button type="button" class="btn" id="cNewTask">✅ Tâche</button>
+        <button type="button" class="btn" id="cNewDossier" hidden>👤 Dossier acquéreur</button>
       </div>
       <div class="autherr" id="contactErr"></div>
       <div class="modal-ft">
@@ -2172,6 +2173,9 @@
     <div class="modal-hd"><b>Simulation &amp; dossier acquéreur</b>
       <button class="modal-x" id="acqX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div class="modal-body" style="max-height:74vh;overflow-y:auto">
+      <div class="mfields">
+        <label class="mf mf-wide"><span>Quel bien ?</span><select id="acqBienSel"></select></label>
+      </div>
       <div id="acqBien" class="acqhint"></div>
       <div class="mfields">
         <label class="mf"><span>Pour quel acquéreur ?</span><select id="acqWho"></select></label>
@@ -2275,7 +2279,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-165342';
+  var B='20260826-165517';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2409,7 +2413,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-165342';
+  var __BUILD='20260826-165517';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3387,7 +3391,9 @@
   var CPAL=['#6a9','#7aa','#b78','#a86','#699','#8a7'];
   function toggleAcqSection(){
     var sec=document.getElementById('acqSection');
-    if(sec) sec.hidden = contactForm.elements.role.value!=='acquereur';
+    var estAcq=(contactForm.elements.role.value==='acquereur');
+    if(sec) sec.hidden=!estAcq;
+    var nd=document.getElementById('cNewDossier'); if(nd) nd.hidden=!estAcq;
   }
   var contactCurrent=null;      // fiche ouverte (pour le « retour fiche »)
   var contactReturn=null;       // fiche à rouvrir à la fermeture d'un élément ouvert depuis elle
@@ -3592,6 +3598,20 @@
     if(lf && lf.elements.lien) lf.elements.lien.value=nom;
     toast('Nouveau RDV li\u00e9 \u00e0 '+(nom||'ce contact'));
   });
+  (function(){
+    var nd=document.getElementById('cNewDossier'); if(!nd) return;
+    nd.addEventListener('click',function(){
+      var c=contactCurrent;
+      if(!c||!c.id){ toast('Enregistre d\'abord la fiche.'); return; }
+      var bs=(biens||[]).filter(function(b){ return b && b.id && b.st!=='Vendu'; });
+      if(!bs.length){ toast('Aucun bien au portefeuille — ajoute-en un d\'abord.'); return; }
+      // on part du bien le plus proche de ses critères, il reste changeable dans la modale
+      var match=(typeof acquerersFor==='function')?bs.filter(function(b){ return acquerersFor(b).some(function(x){ return x.id===c.id; }); }):[];
+      var b0=match[0]||bs[0];
+      contactModal.hidden=true;
+      if(typeof window.__acqDepuisBien==='function') window.__acqDepuisBien(b0, c.id);
+    });
+  })();
   document.getElementById('addContactBtn').addEventListener('click',function(){ openContactForm(null); });
   document.getElementById('contactModalX').addEventListener('click',closeContactForm);
   document.getElementById('contactCancel').addEventListener('click',closeContactForm);
@@ -3601,7 +3621,9 @@
     var e=contactForm.elements, budget=parseInt(e.budget.value,10); if(isNaN(budget)) budget=null;
     var recherche=null;
     if(e.role.value==='acquereur'){
-      recherche={ projet:e.r_projet.value, horizon:e.r_horizon.value, situation:e.r_situation.value,
+      // on PART de l'existant : l'historique des dossiers remis ne doit jamais être écrasé
+      var exR=(editingContactId?(contactsData.find(function(x){return x.id===editingContactId;})||{}):{}).recherche;
+      recherche=Object.assign({}, (exR&&typeof exR==='object')?exR:{}, { projet:e.r_projet.value, horizon:e.r_horizon.value, situation:e.r_situation.value,
         motivation:e.r_motivation.value.trim(), apport:parseInt(e.r_apport.value,10)||null,
         revenus:parseInt(e.r_revenus.value,10)||null, credits:parseInt(e.r_credits.value,10)||null,
         duree:e.r_duree.value||null, primo:e.r_primo.value||null, tmi:e.r_tmi.value||null,
@@ -3609,7 +3631,7 @@
         secteurs:e.r_secteurs.value.trim(), surf_min:parseInt(e.r_surf.value,10)||null,
         terrain_min:parseInt(e.r_terrain.value,10)||null, ch_min:parseInt(e.r_ch.value,10)||null,
         etage_max:parseInt(e.r_etage.value,10)||null, redhibitoires:e.r_redhib.value.trim(), notes:e.r_notes.value.trim(),
-        must:[].map.call(document.querySelectorAll('#acqMust .rst.on'),function(b){return b.dataset.m;}) };
+        must:[].map.call(document.querySelectorAll('#acqMust .rst.on'),function(b){return b.dataset.m;}) });
     }
     // prochaine action : valeur du menu, ou texte libre si « Autre… »
     var paVal=(e.pa_sel.value==='__autre') ? e.pa_autre.value.trim() : e.pa_sel.value.trim();
@@ -4556,11 +4578,20 @@
     document.getElementById('acqBien').innerHTML='<b>'+escH(acqCtx.adresse||'Bien sans adresse')+'</b>'+
       (acqCtx.ville?' · '+escH(acqCtx.ville):'')+(acqCtx.surface?' · '+acqCtx.surface+' m²':'')+
       (acqCtx.type?' · '+escH(acqCtx.type):'')+'<br><span style="color:var(--ink-3)">Le nom du vendeur ne figure jamais dans ce document.</span>';
+    // choix du bien : celui en cours, ou n'importe quel bien du portefeuille
+    var bs=document.getElementById('acqBienSel');
+    if(bs){
+      bs.innerHTML='<option value="__ctx">'+escH(acqCtx.adresse||'Bien en cours')+'</option>'+
+        (biens||[]).filter(function(b){ return b && b.id && (b.ad||'').trim().toLowerCase()!==(acqCtx.adresse||'').trim().toLowerCase(); })
+          .map(function(b){ return '<option value="'+escH(b.id)+'">'+escH(b.ad||'')+(b.px?' · '+Math.round(b.px/1000)+' k€':'')+'</option>'; }).join('');
+      bs.value='__ctx';
+    }
     // liste des acquéreurs du CRM
     var sel=document.getElementById('acqWho');
     var acqs=(contactsData||[]).filter(function(c){ return c.role==='acquereur'; });
     sel.innerHTML='<option value="">— Aucun (dossier générique)</option>'+
-      acqs.map(function(c){ return '<option value="'+escH(c.id)+'">'+escH(c.nom||'')+'</option>'; }).join('');
+      acqs.map(function(c){ return '<option value="'+escH(c.id)+'">'+escH(c.nom||'')+'</option>'; }).join('')+
+      '<option value="__new">+ Créer un nouvel acquéreur…</option>';
     sset('sPrix', acqCtx.prixDef||'');
     sset('sTravaux', acqCtx.travaux||0);
     sset('sTaux', tr.t20); sset('sTauxN', tr.t20);
@@ -4573,8 +4604,20 @@
     acqMaj(); document.getElementById('acqModal').hidden=false;
   }
   // sélection d'un acquéreur → on hérite de SA fiche (profil, apport, revenus, TMI…)
-  function acqDepuisFiche(){
+  async function acqDepuisFiche(){
     var id=sg('acqWho');
+    if(id==='__new'){
+      var nom=window.prompt('Nom du nouvel acquéreur :','');
+      var selN=document.getElementById('acqWho');
+      if(!nom||!nom.trim()){ selN.value=''; return; }
+      var c2=await ensureContact(nom.trim(),'acquereur','','À recontacter');
+      var acqs2=(contactsData||[]).filter(function(x){ return x.role==='acquereur'; });
+      selN.innerHTML='<option value="">— Aucun (dossier générique)</option>'+
+        acqs2.map(function(x){ return '<option value="'+escH(x.id)+'">'+escH(x.nom||'')+'</option>'; }).join('')+
+        '<option value="__new">+ Créer un nouvel acquéreur…</option>';
+      if(c2&&c2.id) selN.value=c2.id;
+      acqMaj(); return;
+    }
     var c=(contactsData||[]).find(function(x){ return x.id===id; });
     if(!c){ acqMaj(); return; }
     var r=c.recherche||{};
@@ -4729,6 +4772,17 @@
       var e=document.getElementById(id); if(e) e.addEventListener('input',acqMaj);
     });
     document.getElementById('acqWho').addEventListener('change',acqDepuisFiche);
+    // changer de bien sans quitter la modale
+    var bsel=document.getElementById('acqBienSel');
+    if(bsel) bsel.addEventListener('change',function(){
+      var v=bsel.value; if(v==='__ctx') return;
+      var b=(biens||[]).find(function(x){ return x.id===v; });
+      if(b && typeof window.__acqDepuisBien==='function'){
+        var who=sg('acqWho');
+        m.hidden=true;
+        window.__acqDepuisBien(b, who);
+      }
+    });
     document.getElementById('sTauxRef').addEventListener('click',function(){
       var tr=tauxRef(), ans=parseInt(sg('sDuree'),10)||20;
       var t=(ans<=17)?tr.t15:(ans<=22?tr.t20:tr.t25);
