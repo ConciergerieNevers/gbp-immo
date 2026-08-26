@@ -1657,22 +1657,34 @@
           <!-- RESULT PANEL -->
           <div class="card result">
             <div class="hd">
-              <div class="eyebrow">Valeur de marché estimée <button type="button" class="recoedit" id="rangeEdit" style="color:#D9BC7A" title="Ajuster la fourchette">✎ ajuster</button></div>
+              <div class="eyebrow">Valeur de marché estimée · <b style="color:#E3C77E">net vendeur</b> <button type="button" class="recoedit" id="rangeEdit" style="color:#D9BC7A" title="Ajuster la fourchette">✎ ajuster</button></div>
               <div class="fourchette"><b id="rLow">185 000 €</b> — <b id="rHigh">200 000 €</b></div>
               <div class="recoflag" id="rangeFlag" hidden style="color:#D9BC7A">Fourchette ajustée · <button type="button" id="rangeReset" style="color:#fff">revenir au calcul</button></div>
             </div>
             <div class="reco">
-              <div class="eyebrow">Prix de mise en vente conseillé <button type="button" class="recoedit" id="recoEdit" title="Ajuster le prix final">✎ ajuster</button></div>
+              <div class="eyebrow">Prix conseillé · <b style="color:#E3C77E">net vendeur</b> <button type="button" class="recoedit" id="recoEdit" title="Ajuster le prix final">✎ ajuster</button></div>
               <div class="big tnum" id="rReco">199 000 €</div>
               <div class="pm2 tnum" id="rPm2">soit 1 567 €/m² · marché stable</div>
               <div class="recoflag" id="recoFlag" hidden>Prix ajusté manuellement · <button type="button" id="recoReset">revenir au calcul</button></div>
               <div class="rentbox" id="rentBox" hidden></div>
             </div>
+            <div class="faibox" id="faiBox"></div>
             <div class="gauge">
               <div class="track"><div class="mk" id="gaugeMk" style="left:66%"></div></div>
               <div class="lbls"><span>Vendre vite</span><span>Marché</span><span>Optimiser</span></div>
             </div>
             <div class="rbreak" id="rBreak"></div>
+            <div class="mf" style="margin-top:14px">
+              <span>Prix affiché dans l'avis de valeur remis au vendeur</span>
+              <select id="avPrixMode">
+                <option value="both">Net vendeur + prix de présentation FAI (recommandé)</option>
+                <option value="net">Net vendeur uniquement — honoraires abordés au mandat</option>
+                <option value="fai">Prix de présentation FAI uniquement</option>
+              </select>
+            </div>
+            <label class="mf tgline" id="avHonoWrap" style="margin-top:8px">
+              <input type="checkbox" id="avHonoDetail"> <span>Détailler les honoraires d'agence dans l'avis</span>
+            </label>
             <div class="clifields">
               <label class="mf"><span>Client (M. / Mme…) — tape pour lier un contact</span><input type="text" id="cliNom" list="cliOptions" placeholder="MR et Mme RICHARD André"><datalist id="cliOptions"></datalist></label>
               <label class="mf"><span>E-mail du client</span><input type="email" id="cliMail" placeholder="client@mail.fr"></label>
@@ -2189,9 +2201,15 @@
 
       <div class="restyle-sub">Le budget — tout est modifiable</div>
       <div class="mfields">
-        <label class="mf"><span>Prix de vente FAI (€)</span><input id="sPrix" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>Prix net vendeur (€)</span><input id="sNet" type="number" inputmode="numeric"></label>
+        <label class="mf"><span>Prix FAI — payé par l'acquéreur (€)</span><input id="sPrix" type="number" inputmode="numeric"></label>
         <label class="mf"><span>Travaux à prévoir (€)</span><input id="sTravaux" type="number" inputmode="numeric" placeholder="0"></label>
+        <label class="mf"><span>Honoraires à la charge de</span><select id="sHonoCharge">
+          <option value="acq">L'acquéreur — droits de mutation sur le net vendeur</option>
+          <option value="vend">Le vendeur — droits de mutation sur le prix total</option>
+        </select></label>
       </div>
+      <div id="sHonoInfo" class="acqhint"></div>
       <div class="sl"><div class="sl-hd"><b>Apport personnel</b><span class="sl-v" id="sApportV">—</span></div>
         <input type="range" id="sApport" min="0" max="150000" step="1000" value="30000">
         <input class="sl-n" id="sApportN" type="number" inputmode="numeric"></div>
@@ -2280,7 +2298,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-165704';
+  var B='20260826-173104';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2338,6 +2356,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600;700&family=Great+Vibes&display=swap">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <style>
+.faibox{margin:12px 0 2px;padding:12px 14px;border-radius:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}
+.faibox .fl{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13px;color:#EDE6D4}
+.faibox .fl b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.faibox .fl.tot{border-top:1px solid rgba(227,199,126,.4);margin-top:5px;padding-top:9px;font-weight:700}
+.faibox .fl.tot b{color:#E3C77E;font-size:17px}
+.faibox small{display:block;margin-top:7px;font-size:11px;color:#9A917C;line-height:1.5}
+.tgline{flex-direction:row!important;align-items:center;gap:9px}
+.tgline input{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.tgline span{font-size:13px}
 .acqhint{font-size:12px;color:var(--ink-3);line-height:1.55;margin:10px 0 4px;padding:10px 12px;border-left:2px solid var(--accent);background:rgba(176,138,46,.07);border-radius:0 8px 8px 0}
 .acq-warn{font-size:12.5px;line-height:1.55;margin:12px 0 0;padding:11px 13px;border-radius:9px;background:rgba(211,58,44,.09);border:1px solid rgba(211,58,44,.3);color:var(--ink)}
 .acq-warn b{color:#c0392b}
@@ -2414,7 +2441,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-165704';
+  var __BUILD='20260826-173104';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2608,11 +2635,12 @@
           var vv=venteForBien(b), sv=(typeof loadSuivi==='function')?(loadSuivi(b)||{}):{}, hb=honoDetail(b);
           var px=(vv&&vv.prix)||parseFloat(sv.prix)||b.px||0;
           if(!px) return '';
-          var pmode=sv.pmode||'fai';
+          var pmode=sv.pmode||'net';   // le prix d'un bien vient de l'estimation : il est NET VENDEUR
           var h=(vv&&vv.honoraires)||parseFloat(sv.hono)||0;
           var reel=!!h;
           if(!h){ h=(pmode==='net')?Math.round(hb.fix+px*hb.pct/100):Math.max(0,Math.round(px-(px-hb.fix)/(1+hb.pct/100))); }
           var net=(pmode==='net')?px:Math.max(0,px-h);
+          var fai=net+h;
           var rent=vv?!!vv.rentree:(sv.rentree!==undefined?sv.rentree==='1':true);
           var sort=vv?!!vv.sortie:(sv.sortie!==undefined?sv.sortie==='1':false);
           var pctP=(rent?25:0)+(sort?25:0);
@@ -2620,9 +2648,9 @@
           var part=forced||Math.round(h*pctP/100);
           var role=(rent&&sort)?'rentré ET vendu (50 %)':(rent?'rentrée seule (25 %)':(sort?'vente seule (25 %)':'ni rentré ni vendu'));
           return '<div class="dsec"><div class="eyebrow">💶 Honoraires &amp; ma commission <small style="text-transform:none;letter-spacing:0">('+(reel?'chiffres réels saisis':'barème '+hb.fix.toLocaleString('fr-FR')+' € + '+String(hb.pct).replace('.',',')+' % · prix FAI')+')</small></div>'+
-            '<div class="kv"><span>Prix '+(pmode==='net'?'net vendeur':'FAI')+'</span><b class="tnum">'+Math.round(px).toLocaleString('fr-FR')+' €</b></div>'+
             '<div class="kv"><span>Net vendeur</span><b class="tnum">'+Math.round(net).toLocaleString('fr-FR')+' €</b></div>'+
             '<div class="kv"><span>Honoraires agence</span><b class="tnum">'+Math.round(h).toLocaleString('fr-FR')+' €</b></div>'+
+            '<div class="kv"><span>Prix FAI (annonce)</span><b class="tnum" style="color:var(--accent)">'+Math.round(fai).toLocaleString('fr-FR')+' €</b></div>'+
             '<div class="kv"><span>Ma part · '+role+'</span><b class="tnum" style="color:var(--good)">'+part.toLocaleString('fr-FR')+' €'+(forced?' <small style="color:var(--ink-3);font-weight:600">(forcée)</small>':'')+'</b></div>'+
             (b.id?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+
               ['Exclusif','Simple','Compromis','Vendu'].map(function(s){
@@ -2811,7 +2839,7 @@
     var v=b?venteForBien(b):null, s=loadSuivi(b);
     e.v_prix.value=s.prix||((v&&v.prix)?v.prix:'');
     e.v_hono.value=s.hono||((v&&v.honoraires)?v.honoraires:'');
-    e.v_pmode.value=s.pmode||'fai';
+    e.v_pmode.value=s.pmode||'net';   // l'estimation d'où vient le prix est en net vendeur
     e.v_rentree.value=(s.rentree!==undefined)?s.rentree:((v && !v.rentree)?'0':'1');
     e.v_sortie.value=(s.sortie!==undefined)?s.sortie:((v && v.sortie)?'1':'0');
     e.v_part.value=s.part||((v && v.part_perso)?v.part_perso:'');
@@ -3988,6 +4016,20 @@
       var cls=plain?'':(v>=0?'pos':'neg');
       return '<div class="li"><span>'+x[0]+'</span><b class="'+cls+' tnum">'+sign+v.toLocaleString('fr-FR')+' €</b></div>';
     }).join('');
+    // NET VENDEUR → HONORAIRES → PRIX FAI : Jimmy voit toujours les trois, quel que soit
+    // ce qu'il choisit d'imprimer dans l'avis remis au vendeur
+    var fb=document.getElementById('faiBox');
+    if(fb){
+      if(noAuto || !reco){ fb.innerHTML=''; }
+      else {
+        var bmF=bareme(), hoF=honoDepuisNet(reco), faiF=reco+hoF;
+        var pm2F=(surf?Math.round(faiF/surf):0);
+        fb.innerHTML='<div class="fl"><span>Net vendeur (ce que le vendeur touche)</span><b>'+euro(reco)+'</b></div>'+
+          '<div class="fl"><span>Honoraires d\'agence · '+bmF.fix.toLocaleString('fr-FR')+' € + '+String(bmF.pct).replace('.',',')+' %</span><b>'+euro(hoF)+'</b></div>'+
+          '<div class="fl tot"><span>Prix de présentation FAI</span><b>'+euro(faiF)+'</b></div>'+
+          '<small>C\'est le prix affiché à l\'annonce et celui sur lequel l\'acquéreur emprunte'+(pm2F?' · '+pm2F.toLocaleString('fr-FR')+' €/m² FAI':'')+'.</small>';
+      }
+    }
     // bandeau prix mobile toujours visible
     var spR=document.getElementById('spRange'), spP=document.getElementById('spReco');
     if(spR){ spR.textContent=noAuto?'— k€':(Math.round(low/1000)+' – '+Math.round(high/1000)+' k€'); spP.textContent=noAuto?'—':euro(reco); }
@@ -4409,8 +4451,12 @@
   /* Frais d'acquisition dans l'ANCIEN, barème légal :
      droits de mutation (départemental + communal + frais d'assiette),
      émoluments de notaire (barème dégressif art. A444-91 + TVA), CSI, débours. */
-  function fraisNotaire(prix){
-    prix=parseFloat(prix)||0; if(!prix) return null;
+  /* baseDroits : assiette des droits et des émoluments.
+     Honoraires à la charge de l'ACQUÉREUR → l'acte porte le NET VENDEUR, les honoraires sont
+     payés à part : les droits ne portent que sur le net (l'acquéreur économise ~7,5 % des honoraires).
+     Honoraires à la charge du VENDEUR → l'acte porte le prix FAI : les droits portent sur tout. */
+  function fraisNotaire(prix, baseDroits){
+    prix=parseFloat(baseDroits!==undefined&&baseDroits!==null?baseDroits:prix)||0; if(!prix) return null;
     var dmtoDep=prix*0.045;                  // taux départemental de droit commun
     var dmtoCom=prix*0.012;                  // taxe communale additionnelle
     var assiette=dmtoDep*0.0237;             // frais d'assiette et de recouvrement
@@ -4544,10 +4590,11 @@
     {k:'micro_bic',     nom:'Meublé (LMNP) — micro-BIC',    abattement:0.50, note:'abattement forfaitaire de 50 %'},
     {k:'reel_bic',      nom:'Meublé (LMNP) — réel',         abattement:null, note:'amortissement du bien : base imposable souvent proche de zéro les premières années'}
   ];
-  function rentabilite(prix, loyerMensuel, d, sim, tmi){
+  function rentabilite(prix, loyerMensuel, d, sim, tmi, fnPre){
     prix=parseFloat(prix)||0; loyerMensuel=parseFloat(loyerMensuel)||0;
     if(!prix||!loyerMensuel) return null;
-    var fn=fraisNotaire(prix), invest=prix+(fn?fn.total:0);
+    // le rendement se calcule sur ce que l'acquéreur DÉBOURSE réellement : prix payé + frais d'acquisition
+    var fn=fnPre||fraisNotaire(prix), invest=prix+(fn?fn.total:0);
     var loyerAn=loyerMensuel*12;
     var vac=loyerAn*((d.vacance||0)/100);
     var gest=loyerAn*((d.gestion||0)/100);
@@ -4617,7 +4664,10 @@
     sel.innerHTML='<option value="">— Aucun (dossier générique)</option>'+
       acqs.map(function(c){ return '<option value="'+escH(c.id)+'">'+escH(c.nom||'')+'</option>'; }).join('')+
       '<option value="__new">+ Créer un nouvel acquéreur…</option>';
-    sset('sPrix', acqCtx.prixDef||'');
+    var netD=parseFloat(acqCtx.prixDef)||0;
+    sset('sNet', netD||'');
+    sset('sPrix', netD?faiDepuisNet(netD):'');
+    sset('sHonoCharge','acq');
     sset('sTravaux', acqCtx.travaux||0);
     sset('sTaux', tr.t20); sset('sTauxN', tr.t20);
     sset('sAss', tr.tass); sset('sAssN', tr.tass);
@@ -4660,6 +4710,20 @@
     var prof=sg('acqProfil');
     document.getElementById('sInvFields').hidden=(prof!=='inv');
     var prix=sn('sPrix'), trav=sn('sTravaux'), apport=sn('sApportN')||sn('sApport');
+    var net=sn('sNet');
+    if(!net && prix) net=netDepuisFai(prix);
+    var hono=Math.max(0, prix-net);
+    var chargeAcq=(sg('sHonoCharge')!=='vend');
+    var hi=document.getElementById('sHonoInfo');
+    if(hi){
+      if(!prix){ hi.innerHTML=''; }
+      else {
+        var fnA=fraisNotaire(prix, net), fnV=fraisNotaire(prix, prix);
+        var eco=(fnV&&fnA)?(fnV.total-fnA.total):0;
+        hi.innerHTML='Net vendeur <b>'+eurF(net)+'</b> + honoraires <b>'+eurF(hono)+'</b> = prix payé <b>'+eurF(prix)+'</b>.'+
+          (eco>0?(' Honoraires à la charge de l\'acquéreur : les droits de mutation ne portent que sur le net vendeur, soit <b>'+eurF(eco)+' de frais de notaire en moins</b>. C\'est un argument à donner à l\'acheteur.'):'');
+      }
+    }
     var ans=parseInt(sg('sDuree'),10)||20;
     var taux=sn('sTauxN')||sn('sTaux'), ass=sn('sAssN');
     document.getElementById('sApportV').textContent=eurF(apport);
@@ -4672,7 +4736,7 @@
     if(ap && ap.max!=String(maxA)) ap.max=maxA;
 
     var d=acqData();
-    var fn=fraisNotaire(prix);
+    var fn=fraisNotaire(prix, chargeAcq?net:prix);
     var aFinancer=Math.max(0, prix+(fn?fn.total:0)+trav-apport);
     // simulation avec le taux et l'assurance DU CURSEUR (on n'impose rien)
     var mois=ans*12;
@@ -4688,14 +4752,17 @@
       endettement:(endett===null?null:Math.round(endett*10)/10),
       revenuNecessaire:Math.round((m+credits)/0.35),
       verdict:(endett===null?null:(endett<=33?'ok':(endett<=35?'limite':'depasse'))) };
-    window.__acqSim={sim:sim, prix:prix, trav:trav, apport:apport, fn:fn, d:d, profil:prof,
+    window.__acqSim={sim:sim, prix:prix, net:net, hono:hono, chargeAcq:chargeAcq, trav:trav,
+      apport:apport, fn:fn, d:d, profil:prof,
       revenus:revenus, credits:credits, loyer:sn('sLoyer'), tmi:sn('sTmi')};
 
     var out=document.getElementById('acqOut');
     if(!prix){ out.innerHTML='<div class="estimempty">Renseigne le prix de vente pour lancer la simulation.</div>'; return; }
 
     var html='<div class="restyle-sub">Le coût réel de l\'acquisition</div>'+
-      '<div class="rline2"><span>Prix de vente FAI</span><b>'+eurF(prix)+'</b></div>'+
+      '<div class="rline2"><span>Prix net vendeur</span><b>'+eurF(net)+'</b></div>'+
+      '<div class="rline2"><span>Honoraires d\'agence'+(chargeAcq?' (à votre charge)':' (à la charge du vendeur)')+'</span><b>'+eurF(hono)+'</b></div>'+
+      '<div class="rline2"><span>Prix payé, frais d\'agence inclus</span><b>'+eurF(prix)+'</b></div>'+
       (fn?('<div class="rline2"><span>Droits de mutation</span><b>'+eurF(fn.droits)+'</b></div>'+
            '<div class="rline2"><span>Émoluments du notaire (TTC)</span><b>'+eurF(fn.emoluments)+'</b></div>'+
            '<div class="rline2"><span>Sécurité immobilière &amp; débours</span><b>'+eurF(fn.csi+fn.debours)+'</b></div>'):'')+
@@ -4752,7 +4819,7 @@
         '<div class="rline2 rtot"><span>Total hors crédit</span><b>'+eurF(cd.total)+' / an · '+eurF(cd.mensuel)+' / mois</b></div>';
     } else {
       var loy=sn('sLoyer');
-      var rt=rentabilite(prix, loy, d, sim, sn('sTmi'));
+      var rt=rentabilite(prix, loy, d, sim, sn('sTmi'), fn);
       if(!rt){ html+='<div class="acqhint">Renseigne le loyer de marché pour calculer la rentabilité.</div>'; }
       else {
         html+='<div class="restyle-sub">La rentabilité</div>'+
@@ -4793,8 +4860,12 @@
       if(n) n.addEventListener('input',function(){ if(r) r.value=n.value; acqMaj(); });
     }
     paire('sApport','sApportN'); paire('sTaux','sTauxN'); paire('sAss','sAssN');
-    ['sDuree','sPrix','sTravaux','sRevenus','sCredits','sLoyer','sTmi','acqProfil'].forEach(function(id){
-      var e=document.getElementById(id); if(e) e.addEventListener('input',acqMaj);
+    // net ⇄ FAI : saisir l'un recalcule l'autre au barème
+    var nEl=document.getElementById('sNet'), fEl=document.getElementById('sPrix');
+    if(nEl) nEl.addEventListener('input',function(){ var v=parseFloat(nEl.value)||0; if(fEl) fEl.value=v?faiDepuisNet(v):''; acqMaj(); });
+    if(fEl) fEl.addEventListener('input',function(){ var v=parseFloat(fEl.value)||0; if(nEl) nEl.value=v?netDepuisFai(v):''; acqMaj(); });
+    ['sDuree','sTravaux','sRevenus','sCredits','sLoyer','sTmi','acqProfil','sHonoCharge'].forEach(function(id){
+      var e=document.getElementById(id); if(e){ e.addEventListener('input',acqMaj); e.addEventListener('change',acqMaj); }
     });
     document.getElementById('acqWho').addEventListener('change',acqDepuisFiche);
     // changer de bien sans quitter la modale
@@ -4928,7 +4999,9 @@
     var p2=eyebrow('02','Le budget')+
       '<h1 class="m-h1">Ce que représente <i>votre acquisition</i></h1>'+
       '<div class="m-spectbl"><div>'+
-        L('Prix de vente, frais d\'agence inclus', eu(S.prix))+
+        L('Prix net vendeur', eu(S.net))+
+        L('Honoraires d\'agence'+(S.chargeAcq?' (à votre charge)':' (à la charge du vendeur)'), eu(S.hono))+
+        L('Prix payé, frais d\'agence inclus', eu(S.prix), true)+
         (fn?L('Droits de mutation (« frais de notaire »)', eu(fn.droits)):'')+
         (fn?L('Émoluments du notaire, TTC', eu(fn.emoluments)):'')+
         (fn?L('Sécurité immobilière et débours', eu(fn.csi+fn.debours)):'')+
@@ -4936,8 +5009,10 @@
         (S.trav?L('Travaux à prévoir', eu(S.trav)):'')+
         L('Apport personnel', '− '+eu(S.apport))+
         L('Montant à financer', eu(sim.capital), true)+
-        (fn?L('Frais d\'acquisition', String(fn.pct).replace('.',',')+' % du prix'):'')+
+        (fn?L('Frais d\'acquisition', String(fn.pct).replace('.',',')+' % de l\'assiette'):'')+
+        L('Budget total de l\'opération', eu(S.prix+(fn?fn.total:0)+S.trav))+
       '</div></div>'+
+      (S.chargeAcq?('<p class="m-p" style="font-size:8.4px;color:#6c6250">Les honoraires d\'agence étant à la charge de l\'acquéreur, ils n\'entrent pas dans l\'assiette des droits de mutation : ceux-ci sont calculés sur le prix net vendeur, ce qui réduit vos frais de notaire.</p>'):'')+
       '<div class="m-dark">'+
         '<div class="lb1">Mensualité, assurance comprise</div>'+
         '<div class="px">'+eu(sim.mensualite)+'</div>'+
@@ -5005,7 +5080,7 @@
         '<div class="m-adjrow"><span>La taxe d\'habitation reste due sur les résidences secondaires. Le montant indiqué est un ordre de grandeur, à confirmer sur l\'avis d\'imposition.</span><b></b></div>'+
         '<div class="m-adjrow"><span>La plus-value de revente n\'est pas exonérée, sauf après vingt-deux ans de détention.</span><b></b></div>';
     } else {
-      var rt=rentabilite(S.prix, S.loyer, d, sim, S.tmi);
+      var rt=rentabilite(S.prix, S.loyer, d, sim, S.tmi, fn);
       p3=eyebrow('03','La rentabilité')+
         '<h1 class="m-h1">Ce que le bien <i>peut rapporter</i></h1>';
       if(!rt){
@@ -5205,6 +5280,11 @@
     var c=document.getElementById('aCopro'); if(c) c.addEventListener('change',acqCoproToggle);
     var inc=document.getElementById('aChgInc');
     if(inc) inc.addEventListener('click',function(e){ var b=e.target.closest('.rst'); if(b) b.classList.toggle('on'); });
+    var apm2=document.getElementById('avPrixMode');
+    if(apm2){
+      var maj=function(){ var w=document.getElementById('avHonoWrap'); if(w) w.hidden=(apm2.value==='net'); };
+      apm2.addEventListener('change',maj); maj();
+    }
     var dp=document.getElementById('fDpeCl'); if(dp) dp.addEventListener('change',function(){ acqDpeAlerte(); acqCompletude(); });
     var card=document.getElementById('acqDataCard');
     if(card) card.addEventListener('input',function(){ acqCompletude(); });
@@ -5453,7 +5533,8 @@
     // pipeline du portefeuille : commissions potentielles au bar\u00e8me (part 50 %) sur les mandats en vente
     var potCom=0;
     if(typeof honorairesPour==='function'){
-      actifs.forEach(function(b2){ if(b2.px && (b2.st==='Exclusif'||b2.st==='Simple')){ potCom+=Math.round(honorairesPour(b2.px,'fai')*0.5); } });
+      // b.px est un prix NET VENDEUR (il vient de l'estimation) → honoraires = 3 000 + 5 % du net
+      actifs.forEach(function(b2){ if(b2.px && (b2.st==='Exclusif'||b2.st==='Simple')){ potCom+=Math.round(honoDepuisNet(b2.px)*0.5); } });
     }
     document.getElementById('kMandMeta').innerHTML='<span class="pill info">'+rentres+' rentr\u00e9'+(rentres>1?'s':'')+' sur la p\u00e9riode</span>'+
       (potCom?' <span style="color:var(--ink-3)">potentiel \u2248 '+potCom.toLocaleString('fr-FR')+' \u20ac de com (50 %)</span>':'');
@@ -5510,6 +5591,12 @@
     var g=userGoals||{};
     return { fix:parseFloat(g.hfix)||3000, pct:parseFloat(g.hpct)||5 };
   }
+  /* RÈGLE MÉTIER — l'estimation est TOUJOURS en NET VENDEUR.
+     honoraires = 3 000 € + 5 % du net vendeur (barème modifiable dans Paramètres)
+     prix FAI = net vendeur + honoraires  →  c'est ce qui s'affiche et ce sur quoi l'acquéreur emprunte. */
+  function honoDepuisNet(net){ var b=bareme(); net=parseFloat(net)||0; return net?Math.round(b.fix+net*b.pct/100):0; }
+  function faiDepuisNet(net){ net=parseFloat(net)||0; return net?Math.round(net+honoDepuisNet(net)):0; }
+  function netDepuisFai(fai){ var b=bareme(); fai=parseFloat(fai)||0; return fai?Math.max(0,Math.round((fai-b.fix)/(1+b.pct/100))):0; }
   // prix net vendeur \u2192 honoraires = fixe + %\u00d7prix ; prix FAI \u2192 net=(prix\u2212fixe)/(1+%) et honoraires=prix\u2212net
   function honorairesPour(prix, mode){
     var b=bareme(); prix=parseFloat(prix)||0;
@@ -5559,7 +5646,7 @@
     e.prix.value=v?(v.prix||''):''; e.honoraires.value=v?(v.honoraires||''):'';
     e.date_vente.value=v?(v.date_vente||''):isoD(new Date());
     e.statut.value=v?(v.statut||'compromis'):'compromis';
-    e.pmode.value='fai'; delete e.honoraires.dataset.auto;
+    e.pmode.value=(v&&v.pmode)?v.pmode:'net'; delete e.honoraires.dataset.auto;
     e.rentree.checked=v?!!v.rentree:true; e.sortie.checked=v?!!v.sortie:true;
     var esc=escH, ob='', oc='';
     (biens||[]).forEach(function(b){ if(b.ad) ob+='<option value="'+esc(b.ad)+'">'; });
@@ -6167,6 +6254,8 @@
     ['cliNom','cliMail','fDesc','fCompl','fLoyer','fSurf','fTerr','fPieces','fChambres','fSdb','fAnnee','fDpeCl'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
     estCoord=null; estVilleTxt=null;
     if(typeof acqRestore==='function') acqRestore({});   // charges/DPE/copro du bien précédent effacés
+    var apm0=document.getElementById('avPrixMode'); if(apm0) apm0.value='both';
+    var ahd0=document.getElementById('avHonoDetail'); if(ahd0) ahd0.checked=false;
     // le marché, les ventes comparables et les commodités du bien précédent ne doivent JAMAIS rester
     state.baseM2=null; state.rayon=500;
     try{ dvfComps=null; dvfActive=false; dvfYearsOff={}; }catch(eD){}
@@ -6299,6 +6388,8 @@
     }
     if(dt.cover && typeof window.__setEstCover==='function'){ window.__setEstCover(dt.cover); }
     if(typeof acqRestore==='function') acqRestore(dt.acq||{});
+    var apm=document.getElementById('avPrixMode'); if(apm) apm.value=dt.avPrixMode||'both';
+    var ahd=document.getElementById('avHonoDetail'); if(ahd) ahd.checked=!!dt.avHonoDetail;
     estLots=Array.isArray(dt.lots)?dt.lots.slice():[];
     if(dt.loyer&&g('fLoyer')) g('fLoyer').value=dt.loyer;
     if(typeof renderLots==='function') renderLots();
@@ -6385,6 +6476,8 @@
              custom:state.custom, loc:state.loc, etat:state.etat, dpe:state.dpe, terr_adj:state.terr, travaux:state.trav,
              baseM2:state.baseM2||null, tgls:state.tgls, dpeClasse:(g('fDpeCl')&&g('fDpeCl').value)||null,
              acq:(typeof acqData==='function')?acqData():null,
+             avPrixMode:((document.getElementById('avPrixMode')||{}).value)||'both',
+             avHonoDetail:!!(document.getElementById('avHonoDetail')||{}).checked,
              coord:estCoord||null,
              ville:(function(){ var s=((g('addrS')||{}).textContent||'').split('·')[0].trim();
                if(s&&!/estimation du|sélectionne/i.test(s)) return s; return estVilleTxt||null; })() }
@@ -7339,7 +7432,7 @@
     var selComps=(dvfComps||[]).filter(function(c){ return c.sel && !c.demo && compFilterPass(c); });
     function compTr(c){ return '<tr><td>'+escH(c.adresse||'Adresse non communiquée')+'</td><td>'+c.surface+' m²</td><td><b>'+euro(c.prix)+'</b></td><td>'+c.pm2.toLocaleString('fr-FR')+' €/m²</td><td>'+escH(fmtDate(c.date))+'</td></tr>'; }
     var rowsP4=selComps.slice(0,9), rowsAnnex=selComps.slice(9,20), extraC=Math.max(0,selComps.length-20);
-    var hlRow='<tr class="hl"><td>◆ Votre bien — '+escH(adresse)+'</td><td>'+(surfV||'—')+' m²</td><td><b>'+reco+'</b></td><td>'+(pm2N?pm2N.toLocaleString('fr-FR')+' €/m²':'—')+'</td><td>Estimation</td></tr>';
+    var hlRow='<tr class="hl"><td>◆ Votre bien — '+escH(adresse)+'</td><td>'+(surfV||'—')+' m²</td><td><b>'+reco+'</b></td><td>'+(pm2N?pm2N.toLocaleString('fr-FR')+' €/m²':'—')+'</td><td>Net vendeur</td></tr>';
     var compTable = selComps.length
       ? ('<div class="m-lbl">Transactions comparables récentes (DVF — données notariées)</div>'+
          '<table class="m-comp"><thead><tr><th>Bien</th><th>Surface</th><th>Prix de vente</th><th>Prix / m²</th><th>Date</th></tr></thead><tbody>'+
@@ -7367,15 +7460,25 @@
 
     /* ---- page 5 · estimation ---- */
     var posG=(highN>lowN&&recoN)?Math.max(4,Math.min(96,Math.round((recoN-lowN)/(highN-lowN)*100))):50;
+    // Option choisie par l'agent : ce que le VENDEUR voit dans son avis
+    var avMode=((document.getElementById('avPrixMode')||{}).value)||'both';
+    var avHonoD=!!(document.getElementById('avHonoDetail')||{}).checked;
+    var hoN=honoDepuisNet(recoN), faiN=recoN+hoN, bmA=bareme();
+    var pxAff=(avMode==='fai')?euro(faiN):reco;
+    var lb1=(avMode==='fai')?'Prix de présentation, frais d\'agence inclus':'Valeur vénale estimée — net vendeur';
     var darkPanel='<div class="m-dark">'+
-      '<div class="lb1">Valeur vénale estimée</div>'+
-      '<div class="px">'+reco+'</div>'+
-      (pm2N?'<div class="pm">soit '+pm2N.toLocaleString('fr-FR')+' € par m² habitable</div>':'')+
-      '<div class="lb2">Valeur conseillée</div>'+
+      '<div class="lb1">'+lb1+'</div>'+
+      '<div class="px">'+pxAff+'</div>'+
+      (pm2N?'<div class="pm">soit '+((avMode==='fai'&&surfV)?Math.round(faiN/parseFloat(surfV)).toLocaleString('fr-FR'):pm2N.toLocaleString('fr-FR'))+' € par m² habitable</div>':'')+
+      (avMode==='both'?('<div class="m-fourch" style="margin-top:4mm">'+
+        '<div><small>Net vendeur</small><b>'+reco+'</b><i>ce que vous percevez à la signature</i></div>'+
+        '<div><small>Prix de présentation FAI</small><b>'+euro(faiN)+'</b><i>prix affiché, frais d\'agence inclus</i></div>'+
+      '</div>'):'')+
+      '<div class="lb2">'+(avMode==='fai'?'Prix conseillé':'Valeur conseillée')+'</div>'+
       '<div class="m-gauge"><span class="tr"></span><span class="fi" style="width:'+posG+'%"></span><span class="dia" style="left:'+posG+'%"></span></div>'+
       '<div class="m-fourch">'+
-        '<div><small>Fourchette basse</small><b>'+low+'</b><i>Vente rapide — moins de 60 jours</i></div>'+
-        '<div><small>Fourchette haute</small><b>'+high+'</b><i>Marché patient — au-delà de 120 jours</i></div>'+
+        '<div><small>Fourchette basse</small><b>'+(avMode==='fai'?euro(faiDepuisNet(lowN)):low)+'</b><i>Vente rapide — moins de 60 jours</i></div>'+
+        '<div><small>Fourchette haute</small><b>'+(avMode==='fai'?euro(faiDepuisNet(highN)):high)+'</b><i>Marché patient — au-delà de 120 jours</i></div>'+
       '</div></div>';
     var posItems=[], negItems=[];
     [].slice.call(document.querySelectorAll('#rBreak .li')).forEach(function(li,i){
@@ -7396,9 +7499,19 @@
       ((typeof loyersMensuels==='function'&&loyersMensuels())?', croisée avec l\'approche par le revenu locatif':'')+'.</p></div>'+
       '<div><div class="m-lbl" style="margin-top:0">Validité de l\'avis</div>'+
       '<p>Cet avis de valeur est établi au '+dateStr+' et reste pertinent pour une durée indicative de trois mois, sous réserve d\'évolution notable du marché ou de la consistance du bien. Il ne constitue pas une expertise au sens réglementaire.</p></div></div>';
+    var honoBloc='';
+    if(avHonoD && recoN){
+      honoBloc='<div class="m-lbl">Honoraires d\'agence</div>'+
+        '<table class="m-comp"><tbody>'+
+        '<tr><td>Prix net vendeur</td><td style="text-align:right"><b>'+reco+'</b></td></tr>'+
+        '<tr><td>Honoraires — '+bmA.fix.toLocaleString('fr-FR')+' € + '+String(bmA.pct).replace('.',',')+' % du net vendeur</td><td style="text-align:right">'+euro(hoN)+'</td></tr>'+
+        '<tr class="hl"><td><b>Prix de présentation, frais d\'agence inclus</b></td><td style="text-align:right"><b>'+euro(faiN)+'</b></td></tr>'+
+        '</tbody></table>'+
+        '<p class="m-p" style="font-size:8.4px;color:#6c6250">Honoraires dus en cas de réalisation de la vente, dans les conditions fixées au mandat.</p>';
+    }
     var estimBody=
       '<h1 class="m-h1">Notre conclusion <i>de valeur</i></h1>'+
-      darkPanel+adjCards+methHtml;
+      darkPanel+adjCards+honoBloc+methHtml;
 
     /* ---- annexes (flux continu, packing) ---- */
     var blocks=[];
