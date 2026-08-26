@@ -2298,7 +2298,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-173104';
+  var B='20260826-173215';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2441,7 +2441,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-173104';
+  var __BUILD='20260826-173215';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4721,7 +4721,10 @@
         var fnA=fraisNotaire(prix, net), fnV=fraisNotaire(prix, prix);
         var eco=(fnV&&fnA)?(fnV.total-fnA.total):0;
         hi.innerHTML='Net vendeur <b>'+eurF(net)+'</b> + honoraires <b>'+eurF(hono)+'</b> = prix payé <b>'+eurF(prix)+'</b>.'+
-          (eco>0?(' Honoraires à la charge de l\'acquéreur : les droits de mutation ne portent que sur le net vendeur, soit <b>'+eurF(eco)+' de frais de notaire en moins</b>. C\'est un argument à donner à l\'acheteur.'):'');
+          (eco>0?(chargeAcq
+            ? (' Honoraires à la charge de l\'acquéreur : les droits de mutation ne portent que sur le net vendeur, soit <b>'+eurF(eco)+' de frais de notaire en moins</b> pour l\'acheteur. C\'est un argument à lui donner.')
+            : (' Honoraires à la charge du vendeur : l\'acte porte le prix total, donc les droits de mutation aussi — <b>'+eurF(eco)+' de frais de notaire en plus</b> pour l\'acquéreur qu\'en mandat « honoraires acquéreur ».')
+          ):'');
       }
     }
     var ans=parseInt(sg('sDuree'),10)||20;
