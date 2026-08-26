@@ -136,15 +136,12 @@ begin
   end loop;
 end $$;
 
--- profils : chacun lit et modifie le sien, l'administrateur gère tout le monde
+-- profils : chacun LIT le sien, seul l'administrateur MODIFIE.
+-- (Volontaire : si un utilisateur pouvait modifier sa propre ligne, il lui suffirait
+--  d'y écrire role='admin' pour voir les données de tout le monde.)
 create policy profils_lecture on public.profils
   for select to authenticated
   using (id = auth.uid() or public.est_admin());
-
-create policy profils_maj_soi on public.profils
-  for update to authenticated
-  using (id = auth.uid())
-  with check (id = auth.uid() and role = (select role from public.profils p where p.id = auth.uid()));
 
 create policy profils_admin on public.profils
   for all to authenticated
