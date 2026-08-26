@@ -1928,6 +1928,24 @@
   </div>
 </div>
 
+<!-- ======== POURQUOI RETIRER CETTE ESTIMATION ? ======== -->
+<div class="modal" id="estimDelModal" hidden>
+  <div class="modal-card" style="max-width:460px">
+    <div class="modal-hd"><b>Retirer cette estimation</b>
+      <button class="modal-x" id="edX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body">
+      <div id="edAdr" style="font-weight:700;margin-bottom:4px"></div>
+      <div style="color:var(--ink-3);font-size:13px;margin-bottom:14px">Que s'est-il passé avec ce client ?</div>
+      <div class="mfields" style="grid-template-columns:1fr">
+        <button type="button" class="btn pri" id="edMandat" style="justify-content:flex-start;text-align:left;height:auto;padding:12px 14px">✅ <b style="margin-left:6px">Mandat signé</b> — je garde l'estimation</button>
+        <button type="button" class="btn" id="edPerdu" style="justify-content:flex-start;text-align:left;height:auto;padding:12px 14px">❌ <b style="margin-left:6px">Pas de mandat</b> — le client n'a pas signé → corbeille</button>
+        <button type="button" class="btn" id="edErreur" style="justify-content:flex-start;text-align:left;height:auto;padding:12px 14px">🗑 <b style="margin-left:6px">Doublon / erreur</b> → corbeille</button>
+      </div>
+      <div class="modal-ft"><button type="button" class="btn" id="edCancel">Annuler</button></div>
+    </div>
+  </div>
+</div>
+
 <!-- ======== REPOUSSER UNE TÂCHE ======== -->
 <div class="modal" id="pushModal" hidden>
   <div class="modal-card" style="max-width:420px">
@@ -2083,7 +2101,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260825-183406';
+  var B='20260826-152704';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2186,7 +2204,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260825-183406';
+  var __BUILD='20260826-152704';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4619,8 +4637,9 @@
           if(r1.error) throw r1.error;
           toast('✅ Classée dans « Mandats signés » — estimation conservée.');
         } else {
-          var r2=await sb.from('estimations').update({deleted:true}).eq('id',id);
+          var r2=await sb.from('estimations').update({deleted:true}).eq('id',id).select('id');
           if(r2.error) throw r2.error;
+          if(!r2.data || !r2.data.length) throw new Error('aucune ligne modifiée — reconnecte-toi et réessaie');
           toast(mode==='perdu'?'Estimation en corbeille — client non signé.':'Estimation en corbeille ✓');
         }
         close(); loadEstimations();
@@ -5209,6 +5228,52 @@
     compute();
   });
   /* ---------- Marché & quartier (stats DVF 5 ans + POI + carte) ---------- */
+  /* ---- carte FIXE pour le PDF : les tuiles et les repères sont dessinés ensemble
+         (la capture d'écran de la carte interactive décalait les points) ---- */
+  function lonToX(lon,z){ return (lon+180)/360*Math.pow(2,z); }
+  function latToY(lat,z){ var r=lat*Math.PI/180; return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z); }
+  function staticMap(lat, lon, zoom, w, h, marks){
+    return new Promise(function(resolve){
+      try{
+        var TS=256, cx=lonToX(lon,zoom), cy=latToY(lat,zoom);
+        var c=document.createElement('canvas'); c.width=w; c.height=h;
+        var ctx=c.getContext('2d');
+        ctx.fillStyle='#e8e0d4'; ctx.fillRect(0,0,w,h);
+        var x0=cx*TS-w/2, y0=cy*TS-h/2;                       // coin haut-gauche en pixels monde
+        var tx0=Math.floor(x0/TS), ty0=Math.floor(y0/TS);
+        var tx1=Math.floor((x0+w)/TS), ty1=Math.floor((y0+h)/TS);
+        var jobs=[];
+        for(var tx=tx0; tx<=tx1; tx++){
+          for(var ty=ty0; ty<=ty1; ty++){
+            (function(tx,ty){
+              jobs.push(new Promise(function(done){
+                var im=new Image(); im.crossOrigin='anonymous';
+                im.onload=function(){ try{ ctx.drawImage(im, tx*TS-x0, ty*TS-y0, TS, TS); }catch(e){} done(); };
+                im.onerror=function(){ done(); };
+                var s=['a','b','c'][Math.abs(tx+ty)%3];
+                im.src='https://'+s+'.tile.openstreetmap.org/'+zoom+'/'+((tx%Math.pow(2,zoom))+Math.pow(2,zoom))%Math.pow(2,zoom)+'/'+ty+'.png';
+              }));
+            })(tx,ty);
+          }
+        }
+        Promise.all(jobs).then(function(){
+          // repères : mêmes maths que les tuiles → aucun décalage possible
+          (marks||[]).forEach(function(m){
+            var px=lonToX(m.lon,zoom)*TS-x0, py=latToY(m.lat,zoom)*TS-y0;
+            if(px<-20||py<-20||px>w+20||py>h+20) return;
+            ctx.beginPath(); ctx.arc(px,py,m.big?11:6,0,6.283);
+            ctx.fillStyle=m.big?'#D4AF37':(m.sel?'#B08A2E':'#9a938a');
+            ctx.globalAlpha=m.big?1:(m.sel?.95:.5); ctx.fill(); ctx.globalAlpha=1;
+            ctx.lineWidth=m.big?3:1.5; ctx.strokeStyle=m.big?'#131108':'#fff'; ctx.stroke();
+          });
+          ctx.fillStyle='rgba(255,255,255,.72)'; ctx.fillRect(0,h-16,150,16);
+          ctx.fillStyle='#555'; ctx.font='11px -apple-system,sans-serif';
+          ctx.fillText('© OpenStreetMap',6,h-4);
+          try{ resolve(c.toDataURL('image/jpeg',0.85)); }catch(e){ resolve(null); }
+        });
+      }catch(e){ resolve(null); }
+    });
+  }
   var miniMap=null, miniMarker=null;
   function euroM2(v){ return v ? (Math.round(v).toLocaleString('fr-FR')+' \u20ac/m\u00b2') : '\u2014'; }
   function pctTxt(v){ return (v===null||v===undefined) ? '\u2014' : ((v>0?'+':'')+String(v).replace('.',',')+' %'); }
@@ -5971,8 +6036,13 @@
       var d=document.getElementById('dossier');
       var slot=d.querySelector('#dMapSlot'), mapEl=document.getElementById('miniMap');
       if(slot && mapEl && mapEl.classList.contains('show') && window.html2canvas){
-        try{ var mcv=await html2canvas(mapEl,{scale:1.4,useCORS:true,logging:false});
-          slot.innerHTML='<div class="dmapimg" style="background-image:url('+mcv.toDataURL('image/jpeg',0.88)+')"></div>'; }catch(e){}
+        try{
+          var mk=[{lat:estCoord.lat,lon:estCoord.lon,big:true}].concat(
+            (dvfComps||[]).filter(function(c){return c.lat&&c.lon&&compFilterPass(c);}).slice(0,30)
+              .map(function(c){ return {lat:c.lat,lon:c.lon,sel:c.sel}; }));
+          var du=await staticMap(estCoord.lat,estCoord.lon,15,900,500,mk);
+          if(du) slot.innerHTML='<div class="dmapimg" style="background-image:url('+du+')"></div>';
+        }catch(e){}
       }
       body.innerHTML=d.innerHTML;
       pv.hidden=false;
@@ -6021,8 +6091,13 @@
       // carte du quartier → image dans la feuille Marché (si dispo)
       var slot=el.querySelector('#dMapSlot'), mapEl=document.getElementById('miniMap');
       if(slot && mapEl && mapEl.classList.contains('show')){
-        try{ var mcv=await html2canvas(mapEl,{scale:2,useCORS:true,logging:false});
-          slot.innerHTML='<div class="dmapimg" style="background-image:url('+mcv.toDataURL('image/jpeg',0.92)+')"></div>'; }catch(e){ console.warn('map shot',e); }
+        try{
+          var mk2=[{lat:estCoord.lat,lon:estCoord.lon,big:true}].concat(
+            (dvfComps||[]).filter(function(c){return c.lat&&c.lon&&compFilterPass(c);}).slice(0,30)
+              .map(function(c){ return {lat:c.lat,lon:c.lon,sel:c.sel}; }));
+          var du2=await staticMap(estCoord.lat,estCoord.lon,15,1400,780,mk2);
+          if(du2) slot.innerHTML='<div class="dmapimg" style="background-image:url('+du2+')"></div>';
+        }catch(e){ console.warn('carte PDF',e); }
       }
       var sheets=el.querySelectorAll('.dsheet');
       var pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4',compress:true});
