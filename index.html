@@ -1559,6 +1559,7 @@
                   <input class="inp" id="aChauffage" placeholder="Gaz individuel, chaudière 2018"></div>
               </div>
               <div id="aDpeAlerte"></div>
+              <div id="aComplet"></div>
               <div class="restyle-sub" style="margin-top:16px">Hypothèses investisseur</div>
               <div class="fields">
                 <div class="field"><label>Charges non récupérables (%)</label>
@@ -2279,7 +2280,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-165517';
+  var B='20260826-165704';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2340,11 +2341,11 @@
 .acqhint{font-size:12px;color:var(--ink-3);line-height:1.55;margin:10px 0 4px;padding:10px 12px;border-left:2px solid var(--accent);background:rgba(176,138,46,.07);border-radius:0 8px 8px 0}
 .acq-warn{font-size:12.5px;line-height:1.55;margin:12px 0 0;padding:11px 13px;border-radius:9px;background:rgba(211,58,44,.09);border:1px solid rgba(211,58,44,.3);color:var(--ink)}
 .acq-warn b{color:#c0392b}
-.sl{margin:14px 0}
+.sl{margin:14px 0;overflow:hidden}
 .sl-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
 .sl-hd b{font-size:13px;font-weight:600}
 .sl-v{margin-left:auto;font-weight:700;color:var(--accent);font-size:15px;font-variant-numeric:tabular-nums}
-.sl input[type=range]{width:100%;accent-color:var(--accent);height:26px}
+.sl input[type=range]{display:block;width:100%;margin:0;accent-color:var(--accent);height:26px}
 .sl-n{width:120px;margin-top:4px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);font:600 13px/1 inherit;font-variant-numeric:tabular-nums}
 .res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
 .res .r{border:1px solid var(--line);border-radius:11px;padding:12px 13px}
@@ -2413,7 +2414,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-165517';
+  var __BUILD='20260826-165704';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4483,7 +4484,31 @@
     s('aChgNonRec',d.chgNonRec); s('aPno',d.pno); s('aGestion',d.gestion); s('aVacance',d.vacance);
     var inc=Array.isArray(d.chgInc)?d.chgInc:[];
     document.querySelectorAll('#aChgInc .rst').forEach(function(b){ b.classList.toggle('on', inc.indexOf(b.dataset.c)>-1); });
-    acqCoproToggle(); acqDpeAlerte();
+    acqCoproToggle(); acqDpeAlerte(); acqCompletude();
+  }
+  // « ce document est-il présentable ? » — l'agent voit ce qui manque avant de l'imprimer
+  function acqCompletude(){
+    var box=document.getElementById('aComplet'); if(!box) return;
+    var d=acqData(), g=function(id){ var e=document.getElementById(id); return e?e.value:''; };
+    var checks=[
+      ['la taxe foncière', !!d.taxeF],
+      ['les dépenses d\'énergie du DPE', !!(d.energieMin||d.energieMax)],
+      ['la classe DPE', !!g('fDpeCl')],
+      ['le type de chauffage', !!d.chauffage],
+      ['une description du bien', ((g('fDesc')||'').trim().length>40)],
+      ['une photo du bien', !!(estPhotos&&estPhotos.length)],
+      ['le loyer de marché (investisseurs)', !!((typeof loyersMensuels==='function')?loyersMensuels():0)]
+    ];
+    if(d.copro){
+      checks.push(['les charges de copropriété', !!d.chargesCopro]);
+      checks.push(['le nom du syndic', !!d.syndic]);
+    }
+    var ok=checks.filter(function(c){ return c[1]; }).length;
+    var manque=checks.filter(function(c){ return !c[1]; }).map(function(c){ return c[0]; });
+    box.innerHTML='<div class="acq-warn'+(manque.length?'':' acq-ok')+'" style="margin-top:14px">'+
+      '<b>Dossier acquéreur : '+ok+' / '+checks.length+' informations renseignées.</b>'+
+      (manque.length?(' Il manque '+manque.join(', ')+'. Le document sortira quand même, mais ces lignes y seront vides.'):' Le dossier est complet.')+
+      '</div>';
   }
   function acqCoproToggle(){
     var on=!!(document.getElementById('aCopro')||{}).value;
@@ -5180,8 +5205,11 @@
     var c=document.getElementById('aCopro'); if(c) c.addEventListener('change',acqCoproToggle);
     var inc=document.getElementById('aChgInc');
     if(inc) inc.addEventListener('click',function(e){ var b=e.target.closest('.rst'); if(b) b.classList.toggle('on'); });
-    var dp=document.getElementById('fDpeCl'); if(dp) dp.addEventListener('change',acqDpeAlerte);
-    acqCoproToggle(); acqDpeAlerte();
+    var dp=document.getElementById('fDpeCl'); if(dp) dp.addEventListener('change',function(){ acqDpeAlerte(); acqCompletude(); });
+    var card=document.getElementById('acqDataCard');
+    if(card) card.addEventListener('input',function(){ acqCompletude(); });
+    ['fDesc','fLoyer'].forEach(function(id){ var e=document.getElementById(id); if(e) e.addEventListener('input',acqCompletude); });
+    acqCoproToggle(); acqDpeAlerte(); acqCompletude();
   })();
   /* ---------- repousser une tâche (Demain / Semaine prochaine / date choisie) ---------- */
   var pushModal=document.getElementById('pushModal'), pushTaskId=null;
@@ -5867,8 +5895,11 @@
           (cov
             ?('<div class="ph" style="background-image:url('+cov+');background-size:cover;background-position:center">')
             :('<div class="ph ph-logo" style="background:#17150F">'))+
-            '<div class="top"><span class="pill" style="background:rgba(20,17,10,.55);color:#EFE3C2">Estimation</span>'+
-            '<button type="button" class="estdel" data-del="'+r.id+'" title="Supprimer">\u2715</button></div>'+
+            '<div class="top"><span class="pill" style="background:rgba(20,17,10,.55);color:#EFE3C2">'+(isM(r)?'\ud83c\udfe1 Mandat sign\u00e9':'Estimation')+'</span>'+
+            '<span style="display:flex;gap:6px">'+
+              '<button type="button" class="estdel estacq" data-acq="'+r.id+'" title="Dossier acqu\u00e9reur">\ud83d\udc64</button>'+
+              '<button type="button" class="estdel" data-del="'+r.id+'" title="Supprimer">\u2715</button>'+
+            '</span></div>'+
             '<div class="price tnum">'+(prix?prix.toLocaleString('fr-FR')+' \u20ac':'\u2014')+'</div></div>'+
           '<div class="body"><div><div class="addr">'+escH(r.adresse||'\u2014')+'</div>'+
             '<div class="town">'+(r.valeur_basse?(Math.round(r.valeur_basse/1000)+' \u2013 '+Math.round((r.valeur_haute||0)/1000)+' k\u20ac'):'')+(r.client?' \u00b7 '+escH(r.client):'')+'</div></div>'+
@@ -6189,6 +6220,14 @@
   }
   (function(){ var nb=document.getElementById('newEstimBtn'); if(nb) nb.addEventListener('click',resetEstimation); })();
   document.getElementById('estimList').addEventListener('click',async function(e){
+    var acq=e.target.closest('.estacq');
+    if(acq){
+      e.stopPropagation();
+      var ra=(window.__estimsAll||[]).find(function(x){ return x.id===acq.dataset.acq; });
+      if(ra){ estimReturn=null; hydrateEstimation(ra).then(function(){
+        setTimeout(function(){ var ab=document.getElementById('acqBtn'); if(ab) ab.click(); },500); }); }
+      return;
+    }
     var del=e.target.closest('.estdel');
     if(del){ e.stopPropagation(); openEstimDel(del.dataset.del); return; }
     var it=e.target.closest('.estimcard'); if(!it||!window.__estims) return;
