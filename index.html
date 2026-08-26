@@ -2106,7 +2106,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-153255';
+  var B='20260826-153423';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2209,7 +2209,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-153255';
+  var __BUILD='20260826-153423';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2721,9 +2721,11 @@
         if(!ok){ toast('⚠ Enregistre d\'abord l\'estimation : '+(saveEstimation._lastErr||'réessaie.')); return; }
         if(typeof loadEstimations==='function') loadEstimations();
         // 2) formulaire bien PRÉ-REMPLI depuis l'estimation
-        openBienForm(null);
+        var adrEst=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'').trim();
+        var dejaLa=(biens||[]).find(function(b){ return b && (b.ad||'').trim().toLowerCase()===adrEst.toLowerCase(); });
+        openBienForm(dejaLa||null);   // bien déjà au portefeuille → on le met à jour au lieu d'en créer un second
         var e=bienForm.elements;
-        e.adresse.value=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'').trim();
+        e.adresse.value=adrEst;
         e.secteur.value=(estVilleTxt||'').trim();
         var tSel=g('fType'); if([].some.call(e.type.options,function(o){return o.value===tSel||o.text===tSel;})) e.type.value=tSel;
         e.statut.value='Exclusif';
@@ -2736,7 +2738,7 @@
         var cover=(estPhotos&&estPhotos.length)?(estPhotos[0].after||estPhotos[0].before):null;
         mandatFlow={ photo:null, client:g('cliNom').trim(), estimId:editingEstimId };
         if(cover){ mandatFlow.photo=await makeThumb(cover); }
-        document.getElementById('bienModalTitle').textContent='🏡 Mandat signé — nouveau bien';
+        document.getElementById('bienModalTitle').textContent=dejaLa?'🏡 Mandat signé — mise à jour du bien':'🏡 Mandat signé — nouveau bien';
         toast('Vérifie le type de mandat (Exclusif/Simple) puis Enregistrer.');
       }catch(err){ if(!authFail(err)) toast('Impossible : '+((err&&err.message)||err)); }
       finally{ mb.disabled=false; mb.textContent=old; }
@@ -2781,6 +2783,10 @@
         var res;
         if(!editingBienId && mandatFlow && mandatFlow.photo){ row.photo_url=mandatFlow.photo; }   // la photo de l'estimation habille le bien
         var savedId=editingBienId;
+        if(!editingBienId){
+          var jum=(biens||[]).find(function(b){ return b && b.id && (b.ad||'').trim().toLowerCase()===row.adresse.toLowerCase(); });
+          if(jum){ editingBienId=jum.id; savedId=jum.id; }   // même adresse déjà au portefeuille → mise à jour
+        }
         if(editingBienId){ res=await sb.from('biens').update(row).eq('id',editingBienId); }
         else {
           if(!row.reference) row.reference='EST-'+String(Date.now()).slice(-4);
