@@ -2248,6 +2248,25 @@
   </div>
 </div>
 
+<!-- ======== SAISIE (remplace prompt(), peu fiable en application iOS) ======== -->
+<div class="modal" id="askModal" hidden>
+  <div class="modal-card" style="max-width:420px">
+    <div class="modal-hd"><b id="askTitre">Saisie</b>
+      <button class="modal-x" id="askX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form class="modal-body" id="askForm">
+      <div class="mfields">
+        <label class="mf mf-wide"><span id="askLabel1">Valeur</span><input id="askInput1" autocomplete="off"></label>
+        <label class="mf mf-wide" id="askWrap2" hidden><span id="askLabel2">Valeur</span><input id="askInput2" autocomplete="off"></label>
+      </div>
+      <div class="autherr" id="askErr"></div>
+      <div class="modal-ft">
+        <button type="button" class="btn" id="askCancel">Annuler</button>
+        <button type="submit" class="btn pri" id="askOk">Valider</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ======== DIAGNOSTIC DES DONNÉES ======== -->
 <div class="modal" id="diagModal" hidden>
   <div class="modal-card">
@@ -2311,7 +2330,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-174305';
+  var B='20260826-174357';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2459,7 +2478,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-174305';
+  var __BUILD='20260826-174357';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5872,6 +5891,48 @@
       contactsData=contactsData.filter(function(x){ return x.id!==editingContactId; });
       renderCrm(); closeContactForm(); toast('Contact d\u00e9plac\u00e9 dans la corbeille \u2713');
     });
+  })();
+  /* ---------- saisie : remplace prompt(), bloqué ou disgracieux en application iOS ---------- */
+  var askResolve=null;
+  function ask(opts){
+    opts=opts||{};
+    return new Promise(function(resolve){
+      var m=document.getElementById('askModal');
+      if(!m){ resolve(null); return; }
+      askResolve=resolve;
+      document.getElementById('askTitre').textContent=opts.titre||'Saisie';
+      document.getElementById('askLabel1').textContent=opts.label||'Valeur';
+      var i1=document.getElementById('askInput1');
+      i1.type=opts.type||'text';
+      i1.value=(opts.valeur!==undefined&&opts.valeur!==null)?opts.valeur:'';
+      i1.inputMode=(opts.type==='number')?'numeric':'';
+      i1.placeholder=opts.placeholder||'';
+      var w2=document.getElementById('askWrap2'), i2=document.getElementById('askInput2');
+      w2.hidden=!opts.label2;
+      if(opts.label2){
+        document.getElementById('askLabel2').textContent=opts.label2;
+        i2.type=opts.type||'text';
+        i2.value=(opts.valeur2!==undefined&&opts.valeur2!==null)?opts.valeur2:'';
+      }
+      document.getElementById('askOk').textContent=opts.ok||'Valider';
+      var er=document.getElementById('askErr'); er.classList.remove('show'); er.textContent='';
+      m.hidden=false;
+      setTimeout(function(){ try{ i1.focus(); if(i1.select) i1.select(); }catch(e){} },60);
+    });
+  }
+  (function(){
+    var m=document.getElementById('askModal'); if(!m) return;
+    function fini(v){ m.hidden=true; var r=askResolve; askResolve=null; if(r) r(v); }
+    document.getElementById('askX').addEventListener('click',function(){ fini(null); });
+    document.getElementById('askCancel').addEventListener('click',function(){ fini(null); });
+    m.addEventListener('click',function(e){ if(e.target===m) fini(null); });
+    document.getElementById('askForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      var v1=document.getElementById('askInput1').value;
+      var w2=document.getElementById('askWrap2');
+      fini(w2.hidden ? v1 : [v1, document.getElementById('askInput2').value]);
+    });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !m.hidden) fini(null); });
   })();
   /* ---------- diagnostic : par quel canal les données arrivent-elles vraiment ? ---------- */
   (function(){
