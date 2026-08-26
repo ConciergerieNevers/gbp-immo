@@ -586,6 +586,7 @@
   .estitem .l1 b{font-size:14.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .estitem .prix{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
   .estitem .l2{font-size:12px;color:var(--ink-3);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+  .mandat-ok{background:var(--good,#2F7D5B)!important;color:#fff!important;border-color:transparent!important}
   .descbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px 0}
   .descbtns .btn{min-width:0;padding-left:10px;padding-right:10px;font-size:13.5px}
   @media (max-width:420px){ .descbtns{grid-template-columns:1fr} }
@@ -2106,7 +2107,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-153423';
+  var B='20260826-153544';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2209,7 +2210,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-153423';
+  var __BUILD='20260826-153544';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2708,11 +2709,36 @@
     document.getElementById('bienBareme').addEventListener('click',function(){ bienHonoAuto(true); toast('Honoraires recalculés au barème.'); });
   })();
   function closeBienForm(){ bienModal.hidden=true; mandatFlow=null; if(typeof returnToContact==='function') returnToContact(); }
+  /* ---------- lien INVERSE estimation → bien : le bouton sait si le mandat est déjà signé ---------- */
+  function bienPourAdresseCourante(){
+    var ad=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'').trim().toLowerCase();
+    if(!ad || ad==='aucune adresse') return null;
+    return (biens||[]).find(function(b){ return b && (b.ad||'').trim().toLowerCase()===ad; })||null;
+  }
+  function updateMandatBtn(){
+    var mb=document.getElementById('mandatBtn'); if(!mb) return;
+    var b=bienPourAdresseCourante();
+    if(b){
+      var et=(typeof etatBien==='function')?etatBien(b):(b.st||'');
+      mb.innerHTML='🏡 Mandat déjà signé — ouvrir la fiche du bien'+(et?' <small style="opacity:.8">('+escH(et)+')</small>':'');
+      mb.classList.remove('pri'); mb.classList.add('mandat-ok');
+    } else {
+      mb.textContent='🏡 Mandat signé → créer le bien au portefeuille';
+      mb.classList.add('pri'); mb.classList.remove('mandat-ok');
+    }
+  }
   /* ---------- MANDAT SIGNÉ : l'estimation devient un bien du portefeuille, tout interlié ---------- */
   var mandatFlow=null;   // {photo, client, estimId} pendant la création du bien depuis une estimation
   (function(){
     var mb=document.getElementById('mandatBtn'); if(!mb) return;
     mb.addEventListener('click',async function(){
+      var dejaB=bienPourAdresseCourante();
+      if(dejaB){   // mandat déjà signé : on ouvre directement la fiche du bien
+        var i=biens.indexOf(dejaB);
+        if(typeof contactReturn!=='undefined') contactReturn=null;
+        if(i>-1){ go('portefeuille'); openDrawer(i); }
+        return;
+      }
       var g=function(id){ var el=document.getElementById(id); return el?el.value:''; };
       mb.disabled=true; var old=mb.textContent; mb.textContent='Préparation du bien…';
       try{
@@ -3737,7 +3763,8 @@
           // idem : la géolocalisation ne casse pas le mode « mise à jour »
           document.getElementById('addrSearch').hidden=true; document.getElementById('addrDisplay').hidden=false;
           document.getElementById('pgSub').textContent=p.label+' · en cours';
-          if(typeof updateRisks==='function') updateRisks(estCoord.lat, estCoord.lon, estCoord.insee);
+          if(typeof updateMandatBtn==='function') updateMandatBtn();
+      if(typeof updateRisks==='function') updateRisks(estCoord.lat, estCoord.lon, estCoord.insee);
           if(typeof resetDVF==='function') resetDVF();
           if(typeof refreshMarket==='function') refreshMarket();
           toast('Position trouvée : '+(p.label||''));
@@ -4703,6 +4730,7 @@
         state.tgls[key]={eur:t.dataset.eur,pct:t.dataset.pct,label:t.textContent.trim()}; }
     });
     if(typeof window.__renderCustomAdj==='function') window.__renderCustomAdj();
+    if(typeof updateMandatBtn==='function') updateMandatBtn();
     try{ document.querySelectorAll('#estGallery .sthumb').forEach(function(t){ t.remove(); }); }catch(e){}
     if(typeof renderLots==='function') renderLots();
     if(typeof renderAllGallery==='function') renderAllGallery();
@@ -4792,6 +4820,7 @@
     editingEstimId=r.id;
     compute();
     if(typeof updateBackContact==='function') updateBackContact();
+    if(typeof updateMandatBtn==='function') updateMandatBtn();
     go('estimation');
     toast('Estimation rechargée \u2014 '+(r.adresse||''));
     // ANALYSE AUTOMATIQUE : coordonnées mémorisées, ou géocodage BAN de l'adresse (anciennes estimations)
@@ -6152,6 +6181,7 @@
         renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
         if(typeof updateKpis==='function') updateKpis();
         if(typeof renderCrm==='function') try{ renderCrm(); }catch(e2){}   // les badges d'état du CRM suivent les biens
+        if(typeof updateMandatBtn==='function') try{ updateMandatBtn(); }catch(e3){}
       }
     }catch(e){ console.warn('[ESTIMAKE] Supabase indisponible → données de démonstration', e); }
   }
