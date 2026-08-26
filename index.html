@@ -2122,7 +2122,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-161626';
+  var B='20260826-161852';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2234,7 +2234,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-161626';
+  var __BUILD='20260826-161852';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -6292,19 +6292,22 @@
     var evo1=(mk&&mk.evo1!==null&&mk.evo1!==undefined)?mk.evo1:null;
     var volMoy=mk?Math.round(mk.annees.reduce(function(a,x){return a+x.ventes;},0)/mk.annees.length):null;
     var tiles='<div class="m-tiles">'+
-      '<div class="m-tile"><b>'+(med?med.toLocaleString('fr-FR'):'—')+' <em>€/m²</em></b><small>Prix médian — '+escH(type==='Appartement'?'appartements':'maisons')+'</small></div>'+
+      '<div class="m-tile"><b>'+(med?med.toLocaleString('fr-FR'):'—')+' <em>€/m²</em></b><small>Prix médian — '+escH({'Appartement':'appartements','Maison':'maisons','Immeuble':'immeubles','Terrain':'terrains','Local commercial':'locaux','Bureaux':'bureaux','Garage / Parking':'garages'}[type]||'biens comparables')+'</small></div>'+
       '<div class="m-tile"><b>'+(evo1!==null?((evo1>0?'+':'')+String(evo1).replace('.',','))+' <em>%</em>':'—')+'</b><small>Évolution sur 12 mois</small></div>'+
       '<div class="m-tile"><b>'+(volMoy!==null?volMoy:'—')+'</b><small>Ventes par an — commune</small></div>'+
     '</div>';
-    var selComps=[];
-    if(dvfComps && dvfComps.some(function(c){return c.sel;})) selComps=dvfComps.filter(function(c){return c.sel && compFilterPass(c);});
-    else selComps=(comps[state.rayon]||comps[1000]||[]).filter(function(r){return !r[4];}).map(function(r){ return {adresse:r[0],date:r[1],surface:r[2],prix:r[3],pm2:Math.round(r[3]/r[2])}; });
+    // JAMAIS de ventes de démonstration dans un document remis au client :
+    // seules les transactions DVF réelles et retenues peuvent figurer sous « données notariées »
+    var selComps=(dvfComps||[]).filter(function(c){ return c.sel && !c.demo && compFilterPass(c); });
     function compTr(c){ return '<tr><td>'+escH(c.adresse||'Adresse non communiquée')+'</td><td>'+c.surface+' m²</td><td><b>'+euro(c.prix)+'</b></td><td>'+c.pm2.toLocaleString('fr-FR')+' €/m²</td><td>'+escH(fmtDate(c.date))+'</td></tr>'; }
     var rowsP4=selComps.slice(0,9), rowsAnnex=selComps.slice(9,20), extraC=Math.max(0,selComps.length-20);
     var hlRow='<tr class="hl"><td>◆ Votre bien — '+escH(adresse)+'</td><td>'+(surfV||'—')+' m²</td><td><b>'+reco+'</b></td><td>'+(pm2N?pm2N.toLocaleString('fr-FR')+' €/m²':'—')+'</td><td>Estimation</td></tr>';
-    var compTable='<div class="m-lbl">Transactions comparables récentes (DVF — données notariées)</div>'+
-      '<table class="m-comp"><thead><tr><th>Bien</th><th>Surface</th><th>Prix de vente</th><th>Prix / m²</th><th>Date</th></tr></thead><tbody>'+
-      rowsP4.map(compTr).join('')+hlRow+'</tbody></table>';
+    var compTable = selComps.length
+      ? ('<div class="m-lbl">Transactions comparables récentes (DVF — données notariées)</div>'+
+         '<table class="m-comp"><thead><tr><th>Bien</th><th>Surface</th><th>Prix de vente</th><th>Prix / m²</th><th>Date</th></tr></thead><tbody>'+
+         rowsP4.map(compTr).join('')+hlRow+'</tbody></table>')
+      : ('<div class="m-lbl">Transactions comparables</div>'+
+         '<p class="m-p">Aucune vente comparable n\'a été retenue pour ce bien : le secteur ne présente pas, sur la période analysée, de transaction suffisamment proche en nature et en surface. La valeur retenue s\'appuie sur l\'analyse directe du bien et sur la connaissance du marché local.</p>');
     var scaleHtml='';
     var pmVals=selComps.map(function(c){return c.pm2;}).filter(function(v){return v>0;});
     if(pmVals.length&&pm2N){
@@ -6349,7 +6352,10 @@
       '<div class="m-adjcard m"><h5>Éléments de modération</h5>'+adjRows(negItems)+'</div></div>';
     var nbC=selComps.length;
     var methHtml='<div class="m-meth"><div><div class="m-lbl" style="margin-top:0">Méthode retenue</div>'+
-      '<p>Valeur issue de la méthode par comparaison : médiane au m² de '+(nbC||'—')+' vente'+(nbC>1?'s':'')+' réellement enregistrée'+(nbC>1?'s':'')+' autour du bien (données DVF de la DGFiP), corrigée de l\'emplacement, de l\'état intérieur, du DPE et des équipements'+((typeof loyersMensuels==='function'&&loyersMensuels())?', croisée avec l\'approche par le revenu locatif':'')+'.</p></div>'+
+      '<p>'+(nbC
+        ? ('Valeur issue de la méthode par comparaison : médiane au m² de '+nbC+' vente'+(nbC>1?'s':'')+' réellement enregistrée'+(nbC>1?'s':'')+' autour du bien (données DVF de la DGFiP), corrigée de l\'emplacement, de l\'état intérieur, du DPE et des équipements')
+        : 'Valeur établie par analyse directe du bien — surfaces, état intérieur, DPE, prestations et emplacement — et par la connaissance du marché local, en l\'absence de transaction comparable suffisamment proche sur la période analysée')+
+      ((typeof loyersMensuels==='function'&&loyersMensuels())?', croisée avec l\'approche par le revenu locatif':'')+'.</p></div>'+
       '<div><div class="m-lbl" style="margin-top:0">Validité de l\'avis</div>'+
       '<p>Cet avis de valeur est établi au '+dateStr+' et reste pertinent pour une durée indicative de trois mois, sous réserve d\'évolution notable du marché ou de la consistance du bien. Il ne constitue pas une expertise au sens réglementaire.</p></div></div>';
     var estimBody=
@@ -6793,6 +6799,9 @@
             } else if(np!==null){ toast('Mot de passe trop court (8 caractères minimum).'); }
           },300);
         }
+        // un simple rafraîchissement de jeton (toutes les ~50 min, ou au retour dans l'app)
+        // ne doit PAS relancer le chargement complet de toutes les tables
+        if(_e==='TOKEN_REFRESHED' || _e==='USER_UPDATED'){ if(session) authgate.classList.remove('show'); return; }
         if(session){ showApp(session); }
       });
     }catch(e){ console.warn('[ESTIMAKE] Auth indisponible', e); authgate.classList.remove('show'); syncBiens(); }
