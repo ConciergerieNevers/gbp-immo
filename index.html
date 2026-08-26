@@ -2122,7 +2122,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-161852';
+  var B='20260826-162042';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2234,7 +2234,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-161852';
+  var __BUILD='20260826-162042';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -2882,6 +2882,14 @@
           savedId=(res.data&&res.data.id)||null;
         }
         if(res.error) throw res.error;
+        // ADRESSE MODIFIÉE : les ventes rattachées suivent (elles sont liées par l'adresse)
+        if(bCur && bCur.ad && bCur.ad.trim().toLowerCase()!==row.adresse.toLowerCase()){
+          try{
+            var vsMaj=(ventesData||[]).filter(function(v){ return (v.bien||'').trim().toLowerCase()===bCur.ad.trim().toLowerCase(); });
+            for(var iv=0; iv<vsMaj.length; iv++){ await sb.from('ventes').update({bien:row.adresse}).eq('id',vsMaj[iv].id); }
+            if(vsMaj.length){ await syncVentes(); setTimeout(function(){ toast('↔ '+vsMaj.length+' vente'+(vsMaj.length>1?'s':'')+' rattachée'+(vsMaj.length>1?'s':'')+' à la nouvelle adresse'); },1800); }
+          }catch(eAd){ console.warn('[ESTIMAKE] adresse vente', eAd); }
+        }
         // photo choisie dans le formulaire → envoyée maintenant que le bien a un id
         if(bienPhotoPending && savedId){
           var pf=bienPhotoPending; bienPhotoPending=null;
@@ -4656,12 +4664,32 @@
           '<b class="'+(v.statut==='acte'?'pos':'')+'">'+eu(partVente(v))+'</b></div>';
       }).join('');
     }
+    // les fiches clients comptées par le cockpit SANS vente saisie doivent être visibles ici :
+    // sinon un compromis « fantôme » se voit dans le total mais reste introuvable
+    var nowD2=new Date(), nowIn2=(rg.from<=nowD2 && nowD2<=rg.to);
+    function fichesSansVente(st){
+      if(!nowIn2) return [];
+      return fichesStatut(st).filter(function(c){ return !venteForClient(c.nom); });
+    }
+    function lignesFiches(fs, quoi){
+      if(!fs.length) return '';
+      return '<div class="restyle-sub">Fiches clients en \u00ab '+quoi+' \u00bb sans vente saisie ('+fs.length+')</div>'+
+        fs.map(function(c){
+          var bs=biensForContact(c);
+          return '<div class="cadjrow" data-cid="'+c.id+'" style="cursor:pointer"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">\ud83d\udc64 '+escH(c.nom||'\u2014')+
+            (bs.length?' \u00b7 <span class="pill '+etatCls(etatBien(bs[0]))+'">'+escH(etatBien(bs[0])||'')+'</span>':' <span class="pill">aucun bien li\u00e9</span>')+
+            '</span><b class="tnum">'+eu(estimPrixClient(c.nom))+'</b></div>';
+        }).join('')+
+        '<div style="font-size:11.5px;color:var(--ink-3);padding:8px 4px">Ces fiches sont compt\u00e9es dans le total. Touche une ligne pour ouvrir la fiche et corriger son statut.</div>';
+    }
     if(statState.tab==='ca'){
       var a=inP.filter(function(v){return v.statut==='acte';});
-      body.innerHTML=tiles([['Ventes act\u00e9es',a.length],['CA ventes',eu(a.reduce(function(x,v){return x+(v.prix||0);},0))],['Honoraires agence',eu(a.reduce(function(x,v){return x+(v.honoraires||0);},0))],['Mes commissions',eu(a.reduce(function(x,v){return x+partVente(v);},0))]])+lignes(a);
+      var fV=fichesSansVente('Vendu');
+      body.innerHTML=tiles([['Ventes act\u00e9es',a.length+fV.length],['CA ventes',eu(a.reduce(function(x,v){return x+(v.prix||0);},0))],['Honoraires agence',eu(a.reduce(function(x,v){return x+(v.honoraires||0);},0))],['Mes commissions',eu(a.reduce(function(x,v){return x+partVente(v);},0))]])+lignes(a)+lignesFiches(fV,'Vendu');
     } else if(statState.tab==='prev'){
       var c=inP.filter(function(v){return v.statut!=='acte';});
-      body.innerHTML=tiles([['Compromis',c.length],['CA attendu',eu(c.reduce(function(x,v){return x+(v.prix||0);},0))],['Honoraires attendus',eu(c.reduce(function(x,v){return x+(v.honoraires||0);},0))],['Commissions \u00e0 venir',eu(c.reduce(function(x,v){return x+partVente(v);},0))]])+lignes(c);
+      var fC=fichesSansVente('Compromis');
+      body.innerHTML=tiles([['Compromis',c.length+fC.length],['CA attendu',eu(c.reduce(function(x,v){return x+(v.prix||0);},0)+fC.reduce(function(x,cc){return x+estimPrixClient(cc.nom);},0))],['Honoraires attendus',eu(c.reduce(function(x,v){return x+(v.honoraires||0);},0))],['Commissions \u00e0 venir',eu(c.reduce(function(x,v){return x+partVente(v);},0))]])+lignes(c)+lignesFiches(fC,'Compromis');
     } else if(statState.tab==='com'){
       var rent=inP.reduce(function(x,v){return x+((v.rentree)?(v.honoraires||0)*0.25:0);},0);
       var sor=inP.reduce(function(x,v){return x+((v.sortie)?(v.honoraires||0)*0.25:0);},0);
@@ -4711,6 +4739,13 @@
       if(row){
         var v=ventesData.find(function(x){return x.id===row.dataset.vid;});
         if(v){ document.getElementById('statsModal').hidden=true; openVenteForm(v); }
+        return;
+      }
+      // une fiche client comptée s'ouvre pour corriger son statut à la source
+      var cm=e.target.closest('[data-cid]');
+      if(cm){
+        var c2=(contactsData||[]).find(function(x){ return x.id===cm.dataset.cid; });
+        if(c2){ document.getElementById('statsModal').hidden=true; contactReturn=null; go('crm'); openContactForm(c2); }
         return;
       }
       // un mandat listé s'ouvre directement dans sa fiche bien (tout est cliquable de partout)
