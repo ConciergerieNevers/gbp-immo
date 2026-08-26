@@ -122,6 +122,33 @@ function inParis(iso){
   return { date:o.year+'-'+o.month+'-'+o.day, heure:(o.hour==='24'?'00':o.hour)+':'+o.minute };
 }
 
+/* Multi-utilisateur : cette fonction écrit avec la clé de service, donc auth.uid()
+   est nul et les RDV créés n'auraient aucun propriétaire — donc invisibles.
+   On résout une fois le compte propriétaire du calendrier : GCAL_USER_ID si
+   la variable est posée, sinon le premier compte créé (même règle que la migration). */
+var _proprio = null;
+async function proprietaire(){
+  if(_proprio !== null) return _proprio;
+  if(process.env.GCAL_USER_ID){ _proprio = process.env.GCAL_USER_ID; return _proprio; }
+  try{
+    var mail = process.env.GCAL_ID || '';
+    if(mail){
+      var r = await fetch(SB.replace(/\/$/,'') + '/auth/v1/admin/users?page=1&per_page=200',
+        { headers:{ apikey:SK, Authorization:'Bearer '+SK } });
+      if(r.ok){
+        var j = await r.json();
+        var us = (j && j.users) || [];
+        var m = us.find(function(u){ return (u.email||'').toLowerCase() === mail.toLowerCase(); });
+        if(m){ _proprio = m.id; return _proprio; }
+        us.sort(function(a,b){ return String(a.created_at||'').localeCompare(String(b.created_at||'')); });
+        if(us[0]){ _proprio = us[0].id; return _proprio; }
+      }
+    }
+  }catch(e){ console.warn('[gcal] propriétaire', e); }
+  _proprio = false;
+  return _proprio;
+}
+
 // Applique un événement Google dans la base (Google → app)
 async function applyEvent(ev){
   var q = await sbFetch('rdv?gcal_id=eq.'+encodeURIComponent(ev.id)+'&select=id,deleted'); var ex = (await q.json())[0];
@@ -149,7 +176,14 @@ async function applyEvent(ev){
   }
   else {
     var row = { titre:ev.summary||'(sans titre)', date:date, heure:heure, note:(ev.description||''), gcal_id:ev.id, deleted:false, type:'Autre' };
-    await sbFetch('rdv', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify(row) });
+    var owner = await proprietaire();
+    if(owner) row.user_id = owner;   // sans propriétaire, le RDV serait invisible dans l'app
+    var ins = await sbFetch('rdv', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify(row) });
+    // colonne user_id pas encore créée (migration non lancée) → on réessaie sans
+    if(!ins.ok && owner){
+      delete row.user_id;
+      await sbFetch('rdv', { method:'POST', headers:{Prefer:'return=minimal'}, body:JSON.stringify(row) });
+    }
   }
   return 1;
 }

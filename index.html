@@ -1213,6 +1213,7 @@
           <button class="menu-item" id="avatarBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg> Photo de profil</button>
           <input type="file" accept="image/*" id="avatarInput" hidden>
           <button class="menu-item" id="pwdBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Changer le mot de passe</button>
+          <button class="menu-item" id="adminBtn" role="menuitem" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 4.4-3 8.3-8 9.5C7 20.3 4 16.4 4 12V7Z"/><path d="M9 12l2 2 4-4"/></svg> Administration</button>
           <button class="menu-item" id="diagBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg> État des données</button>
           <button class="menu-item danger" id="logoutMenu" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg> Se déconnecter</button>
         </div>
@@ -2248,6 +2249,39 @@
   </div>
 </div>
 
+<!-- ======== ADMINISTRATION DES COMPTES ======== -->
+<div class="modal" id="adminModal" hidden>
+  <div class="modal-card" style="max-width:860px">
+    <div class="modal-hd"><b>Administration</b>
+      <button class="modal-x" id="adminX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body" style="max-height:74vh;overflow-y:auto">
+      <div class="subtabs" id="adminTabs">
+        <button type="button" class="subtab on" data-at="comptes">Comptes</button>
+        <button type="button" class="subtab" data-at="nouveau">Nouveau compte</button>
+      </div>
+      <div id="adminComptes">
+        <div id="adminListe"><div class="estimempty">Chargement…</div></div>
+      </div>
+      <div id="adminNouveau" hidden>
+        <form id="adminForm">
+          <div class="mfields">
+            <label class="mf"><span>Nom du collaborateur</span><input name="a_nom" placeholder="Jimmy Garcia"></label>
+            <label class="mf"><span>Agence</span><input name="a_agence" placeholder="GB Immobilier"></label>
+            <label class="mf"><span>Adresse e-mail</span><input name="a_email" type="email" required placeholder="prenom.nom@agence.fr"></label>
+            <label class="mf"><span>Mot de passe provisoire</span><input name="a_mdp" required minlength="8" placeholder="8 caractères minimum"></label>
+          </div>
+          <div class="acqhint">Le compte est actif immédiatement, avec son propre espace de données — il ne voit rien de celui des autres. Communique-lui le mot de passe, il pourra le changer depuis son menu profil.</div>
+          <div class="autherr" id="adminErr"></div>
+          <div class="modal-ft">
+            <button type="button" class="btn" id="adminGenMdp">🎲 Générer un mot de passe</button>
+            <button type="submit" class="btn pri">Créer le compte</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ======== SAISIE (remplace prompt(), peu fiable en application iOS) ======== -->
 <div class="modal" id="askModal" hidden>
   <div class="modal-card" style="max-width:420px">
@@ -2330,7 +2364,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-174357';
+  var B='20260826-174835';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2478,7 +2512,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-174357';
+  var __BUILD='20260826-174835';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -4108,7 +4142,7 @@
     var btn=document.getElementById('recoEdit'); if(!btn) return;
     btn.addEventListener('click',async function(){
       var cur=(document.getElementById('rReco').textContent||'').replace(/[^0-9]/g,'');
-      var v=await ask({titre:'Prix final', label:'Prix net vendeur conseille (\u20ac)', valeur:cur, type:'number', ok:'Appliquer'});
+      var v=await ask({titre:'Prix final', label:'Prix net vendeur conseill\u00e9 (\u20ac)', valeur:cur, type:'number', ok:'Appliquer'});
       if(v===null) return;
       v=parseInt(String(v).replace(/[^0-9]/g,''),10);
       if(!v){ toast('Prix invalide.'); return; }
@@ -5891,6 +5925,134 @@
       contactsData=contactsData.filter(function(x){ return x.id!==editingContactId; });
       renderCrm(); closeContactForm(); toast('Contact d\u00e9plac\u00e9 dans la corbeille \u2713');
     });
+  })();
+  /* =====================================================================
+     PROFIL & ADMINISTRATION
+     Chaque compte a son propre espace de données (colonne user_id + règles
+     Supabase). Un rôle « admin » peut voir et gérer tous les comptes.
+     Le front se dégrade proprement si la migration n'est pas encore lancée.
+     ===================================================================== */
+  var monProfil=null;
+  async function chargerProfil(session){
+    monProfil=null;
+    if(!sb || !session || !session.user) return null;
+    try{
+      var r=await sb.from('profils').select('id,email,nom,role,agence,actif').eq('id',session.user.id).single();
+      if(r.error){
+        // table absente = migration multi-utilisateur pas encore lancée : on n'affiche rien de plus
+        if(/relation|does not exist|schema cache/i.test(r.error.message||'')) return null;
+        throw r.error;
+      }
+      monProfil=r.data||null;
+    }catch(e){ console.warn('[ESTIMAKE] profil', e); }
+    var ab=document.getElementById('adminBtn');
+    if(ab) ab.hidden=!(monProfil && monProfil.role==='admin');
+    if(monProfil){
+      var n=document.getElementById('menuName'), rn=document.getElementById('runame');
+      if(monProfil.nom){ if(n) n.textContent=monProfil.nom; if(rn) rn.textContent=monProfil.nom; }
+      var rr=document.getElementById('rurole');
+      if(rr) rr.textContent=(monProfil.role==='admin'?'Administrateur':'Conseiller')+(monProfil.agence?(' · '+monProfil.agence):'');
+      if(monProfil.actif===false){
+        toast('⚠ Ton compte est désactivé — contacte l\'administrateur.');
+      }
+    }
+    return monProfil;
+  }
+  (function(){
+    var m=document.getElementById('adminModal'); if(!m) return;
+    var VOL=[['biens','biens'],['estimations','estim.'],['contacts','contacts'],['ventes','ventes'],['taches','tâches'],['rdv','RDV']];
+    async function appel(payload){
+      payload._auth=await aiToken();
+      var r=await fetch('/api/admin',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      var j=await r.json().catch(function(){ return {}; });
+      if(!r.ok) throw new Error(j.error||('Erreur '+r.status));
+      return j;
+    }
+    async function liste(){
+      var box=document.getElementById('adminListe');
+      box.innerHTML='<div class="estimempty">Chargement…</div>';
+      try{
+        var j=await appel({action:'liste'});
+        var ps=j.profils||[];
+        if(!ps.length){ box.innerHTML='<div class="estimempty">Aucun compte.</div>'; return; }
+        box.innerHTML=ps.map(function(p){
+          var vol=VOL.map(function(v){ var n=(p.volumes||{})[v[0]]||0; return n?(n+' '+v[1]):null; }).filter(Boolean).join(' · ');
+          var d=p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'';
+          return '<div class="card pad" style="margin-bottom:10px">'+
+            '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+              '<div style="min-width:0;flex:1">'+
+                '<b>'+escH(p.nom||p.email||'—')+'</b>'+
+                (p.role==='admin'?' <span class="pill info">Admin</span>':'')+
+                (p.actif===false?' <span class="pill crit">Désactivé</span>':'')+
+                '<div style="font-size:12.5px;color:var(--ink-3);margin-top:3px">'+escH(p.email||'')+(p.agence?(' · '+escH(p.agence)):'')+' · créé le '+d+'</div>'+
+                '<div style="font-size:12px;color:var(--ink-3);margin-top:3px">'+(vol||'aucune donnée')+'</div>'+
+              '</div>'+
+            '</div>'+
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+
+              '<button type="button" class="chip adm" data-act="role" data-id="'+escH(p.id)+'" data-val="'+(p.role==='admin'?'agent':'admin')+'">'+(p.role==='admin'?'Retirer admin':'Passer admin')+'</button>'+
+              '<button type="button" class="chip adm" data-act="actif" data-id="'+escH(p.id)+'" data-val="'+(p.actif===false?'1':'0')+'">'+(p.actif===false?'Réactiver':'Désactiver')+'</button>'+
+              '<button type="button" class="chip adm" data-act="mdp" data-id="'+escH(p.id)+'">Nouveau mot de passe</button>'+
+              '<button type="button" class="chip adm" data-act="suppr" data-id="'+escH(p.id)+'" data-nom="'+escH(p.nom||p.email||'')+'" style="border-color:#a33;color:#a33">Supprimer</button>'+
+            '</div></div>';
+        }).join('');
+      }catch(e){
+        box.innerHTML='<div class="estimempty">⚠ '+escH((e&&e.message)||e)+
+          '<br><small>Si le message parle de « profils », c\'est que la migration multi-utilisateur n\'a pas encore été lancée.</small></div>';
+      }
+    }
+    document.getElementById('adminListe').addEventListener('click',async function(e){
+      var b=e.target.closest('.adm'); if(!b) return;
+      var id=b.dataset.id, act=b.dataset.act;
+      b.disabled=true;
+      try{
+        if(act==='role'){ await appel({action:'majprofil', id:id, role:b.dataset.val}); toast('Rôle mis à jour ✓'); }
+        else if(act==='actif'){ await appel({action:'majprofil', id:id, actif:b.dataset.val==='1'}); toast('Compte mis à jour ✓'); }
+        else if(act==='mdp'){
+          var mdp=await ask({titre:'Nouveau mot de passe', label:'Au moins 8 caractères', valeur:mdpAleatoire(), ok:'Appliquer'});
+          if(!mdp){ b.disabled=false; return; }
+          await appel({action:'motdepasse', id:id, motdepasse:mdp});
+          toast('Mot de passe changé — communique-le : '+mdp);
+        }
+        else if(act==='suppr'){
+          if(!window.confirm('Supprimer DÉFINITIVEMENT le compte de '+(b.dataset.nom||'')+' et toutes ses données ? Cette action est irréversible.')){ b.disabled=false; return; }
+          await appel({action:'supprimer', id:id}); toast('Compte supprimé ✓');
+        }
+        liste();
+      }catch(err){ toast('⚠ '+((err&&err.message)||err)); b.disabled=false; }
+    });
+    function mdpAleatoire(){
+      var a='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', s='';
+      var t=new Uint32Array(12); (window.crypto||window.msCrypto).getRandomValues(t);
+      for(var i=0;i<12;i++) s+=a[t[i]%a.length];
+      return s;
+    }
+    document.getElementById('adminGenMdp').addEventListener('click',function(){
+      document.getElementById('adminForm').elements.a_mdp.value=mdpAleatoire();
+    });
+    document.getElementById('adminTabs').addEventListener('click',function(e){
+      var t=e.target.closest('.subtab'); if(!t) return;
+      this.querySelectorAll('.subtab').forEach(function(x){ x.classList.remove('on'); }); t.classList.add('on');
+      document.getElementById('adminComptes').hidden=(t.dataset.at!=='comptes');
+      document.getElementById('adminNouveau').hidden=(t.dataset.at!=='nouveau');
+    });
+    document.getElementById('adminForm').addEventListener('submit',async function(ev){
+      ev.preventDefault();
+      var e=this.elements, er=document.getElementById('adminErr');
+      er.classList.remove('show');
+      var btn=this.querySelector('[type=submit]'); btn.disabled=true; var old=btn.textContent; btn.textContent='Création…';
+      try{
+        await appel({action:'creer', email:e.a_email.value.trim(), motdepasse:e.a_mdp.value,
+          nom:e.a_nom.value.trim(), agence:e.a_agence.value.trim()});
+        toast('Compte créé ✓ — mot de passe : '+e.a_mdp.value);
+        e.a_email.value=''; e.a_mdp.value=''; e.a_nom.value='';
+        document.querySelector('#adminTabs .subtab[data-at="comptes"]').click();
+        liste();
+      }catch(err){ er.textContent=(err&&err.message)||String(err); er.classList.add('show'); }
+      finally{ btn.disabled=false; btn.textContent=old; }
+    });
+    document.getElementById('adminBtn').addEventListener('click',function(){ closeMenu(); m.hidden=false; liste(); });
+    document.getElementById('adminX').addEventListener('click',function(){ m.hidden=true; });
+    m.addEventListener('click',function(e){ if(e.target===m) m.hidden=true; });
   })();
   /* ---------- saisie : remplace prompt(), bloqué ou disgracieux en application iOS ---------- */
   var askResolve=null;
@@ -8053,6 +8215,7 @@
       var gl=(session.user.user_metadata&&session.user.user_metadata.goals)||null;
       if(gl){ userGoals=gl; try{ localStorage.setItem('estimake_goals',JSON.stringify(gl)); }catch(e){} renderGoals(); }
     }
+    if(typeof chargerProfil==='function') chargerProfil(session);
     // recharge TOUTES les données une fois connecté (les syncs du chargement ont pu partir avant la session)
     syncBiens(); syncContacts(); syncVentes();
     if(typeof syncAgenda==='function') syncAgenda();
