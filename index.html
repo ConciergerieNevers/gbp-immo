@@ -1213,6 +1213,7 @@
           <button class="menu-item" id="avatarBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A2 2 0 0 1 21 8.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5A2 2 0 0 1 5 6.5h3L9.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg> Photo de profil</button>
           <input type="file" accept="image/*" id="avatarInput" hidden>
           <button class="menu-item" id="pwdBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Changer le mot de passe</button>
+          <button class="menu-item" id="diagBtn" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg> État des données</button>
           <button class="menu-item danger" id="logoutMenu" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg> Se déconnecter</button>
         </div>
       </div>
@@ -2247,6 +2248,18 @@
   </div>
 </div>
 
+<!-- ======== DIAGNOSTIC DES DONNÉES ======== -->
+<div class="modal" id="diagModal" hidden>
+  <div class="modal-card">
+    <div class="modal-hd"><b>État des données</b>
+      <button class="modal-x" id="diagX" type="button" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+      <div id="diagBody"><div class="estimempty">Analyse…</div></div>
+      <div class="modal-ft"><button type="button" class="btn" id="diagRefresh">↻ Retester</button><button type="button" class="btn pri" id="diagClose">Fermer</button></div>
+    </div>
+  </div>
+</div>
+
 <!-- ======== CORBEILLE ======== -->
 <div class="modal" id="trashModal" hidden>
   <div class="modal-card">
@@ -2298,7 +2311,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260826-173301';
+  var B='20260826-173948';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2412,6 +2425,7 @@
   var sbRead = (SB_URL && SB_KEY && window.supabase) ? window.supabase.createClient(SB_URL, SB_KEY, {
     auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
   }) : null;
+  window.__canal={};   // par table : quel canal a réellement servi (session ou secours)
   async function readTable(table, build){
     var res;
     try{ res = await build(sb.from(table)); }
@@ -2423,12 +2437,16 @@
       try{
         var alt = await build(sbRead.from(table));
         if(!alt.error && Array.isArray(alt.data) && alt.data.length){
+          window.__canal[table]={canal:'secours', n:alt.data.length,
+            motif:res.error?('erreur : '+res.error.message):'la session ne renvoie aucune ligne'};
           if(res.error) console.warn('[ESTIMAKE] '+table+' : session KO ('+res.error.message+') → lecture de secours');
           else console.warn('[ESTIMAKE] '+table+' : 0 ligne avec la session → lecture de secours ('+alt.data.length+')');
           return alt;
         }
       }catch(e2){}
     }
+    window.__canal[table]={canal:res.error?'echec':'session', n:(res.data&&res.data.length)||0,
+      motif:res.error?('erreur : '+res.error.message):''};
     return res;
   }
   var houseSVG='<svg class="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>';
@@ -2441,7 +2459,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260826-173301';
+  var __BUILD='20260826-173948';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5853,6 +5871,49 @@
       contactsData=contactsData.filter(function(x){ return x.id!==editingContactId; });
       renderCrm(); closeContactForm(); toast('Contact d\u00e9plac\u00e9 dans la corbeille \u2713');
     });
+  })();
+  /* ---------- diagnostic : par quel canal les données arrivent-elles vraiment ? ---------- */
+  (function(){
+    var m=document.getElementById('diagModal'); if(!m) return;
+    var TABLES=[['biens','Portefeuille'],['contacts','Contacts'],['estimations','Estimations'],
+                ['rdv','Agenda'],['ventes','Ventes'],['taches','Tâches']];
+    async function rendre(){
+      var body=document.getElementById('diagBody');
+      body.innerHTML='<div class="estimempty">Analyse en cours…</div>';
+      var connecte=false, mail='';
+      try{ var s=await sb.auth.getSession();
+        connecte=!!(s&&s.data&&s.data.session);
+        mail=connecte?(s.data.session.user.email||''):''; }catch(e){}
+      // on relance une lecture de chaque table pour avoir un état frais
+      await Promise.all([syncBiens(),syncContacts(),syncVentes(),syncAgenda(),syncTaches(),loadEstimations()]);
+      var c=window.__canal||{};
+      var nbSecours=0, nbSession=0, nbEchec=0;
+      var lignes=TABLES.map(function(t){
+        var d=c[t[0]];
+        if(!d) return '<div class="rline2"><span>'+t[1]+'</span><b style="color:var(--ink-3)">non testé</b></div>';
+        if(d.canal==='secours') nbSecours++; else if(d.canal==='session') nbSession++; else nbEchec++;
+        var lbl=d.canal==='session'?'<b style="color:#2F7D5B">session ✓</b>'
+               :(d.canal==='secours'?'<b style="color:#B08A2E">canal de secours</b>':'<b style="color:#c0392b">échec</b>');
+        return '<div class="rline2"><span>'+t[1]+' <small style="color:var(--ink-3)">'+d.n+' ligne'+(d.n>1?'s':'')+(d.motif?' · '+escH(d.motif):'')+'</small></span>'+lbl+'</div>';
+      }).join('');
+      var verdict;
+      if(!connecte){
+        verdict='<div class="acq-warn"><b>Tu n\'es pas connecté.</b> Les données affichées viennent du canal de lecture publique. Reconnecte-toi pour tester le canal sécurisé.</div>';
+      } else if(nbEchec){
+        verdict='<div class="acq-warn"><b>Des lectures échouent.</b> Ne coupe pas la lecture publique : elle est ce qui maintient l\'app en état.</div>';
+      } else if(nbSecours){
+        verdict='<div class="acq-warn"><b>'+nbSecours+' table'+(nbSecours>1?'s passent':' passe')+' par le canal de secours.</b> Ta session ne suffit pas à lire ces données : couper la lecture publique viderait ton application. Les droits Supabase sont à revoir avant.</div>';
+      } else {
+        verdict='<div class="acq-warn acq-ok"><b>Tout passe par ta session.</b> Le canal de secours ne sert plus : la lecture publique peut être coupée sans risque.</div>';
+      }
+      body.innerHTML='<div class="acqhint">Connecté : <b>'+(connecte?escH(mail):'non')+'</b> · version '+__BUILD+'</div>'+
+        verdict+'<div class="restyle-sub">Par table</div>'+lignes;
+    }
+    document.getElementById('diagBtn').addEventListener('click',function(){ closeMenu(); m.hidden=false; rendre(); });
+    document.getElementById('diagX').addEventListener('click',function(){ m.hidden=true; });
+    document.getElementById('diagClose').addEventListener('click',function(){ m.hidden=true; });
+    document.getElementById('diagRefresh').addEventListener('click',rendre);
+    m.addEventListener('click',function(e){ if(e.target===m) m.hidden=true; });
   })();
   /* ---------- corbeille (restauration) ---------- */
   (function(){
