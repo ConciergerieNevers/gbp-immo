@@ -2390,7 +2390,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-110746';
+  var B='20260827-110931';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2547,7 +2547,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-110746';
+  var __BUILD='20260827-110931';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -7784,7 +7784,7 @@
         : 'Classe énergie '+dpeCl+' — incidence intégrée à l\'expertise de valeur.')+'</p>'):'';
     var bienBody=eyebrow('02','Votre bien')+
       '<h1 class="m-h1">'+escH(type==='Immeuble'?'Votre immeuble':(type==='Terrain'?'Votre terrain':'Votre '+type.toLowerCase()))+(vNom?' <i>à '+escH(vNom)+'</i>':'')+'</h1>'+
-      '<p class="m-p">'+introBien+'</p>'+photoBlock+specTbl+dpeHtml+chipsHtml;
+      '<p class="m-p">'+introBien+'</p>'+photoBlock+specTbl+dpeHtml+chipsHtml+'__ADJ__';
 
     /* ---- page 4 · marché ---- */
     var mk=window.__market||null;
@@ -7835,7 +7835,7 @@
     })();
     var marcheBody=eyebrow('03','Le marché')+
       '<h1 class="m-h1">Lecture du marché <i>'+escH(vNom?(vNom.toLowerCase()==='nevers'?'néversois':('de '+vNom)):'local')+'</i></h1>'+
-      tiles+tendanceHtml+compTable+scaleHtml+envHtml+risquesHtml;
+      tiles+tendanceHtml+compTable+scaleHtml+envHtml+risquesHtml+'__METH__';
 
     /* ---- page 5 · estimation ---- */
     var posG=(highN>lowN&&recoN)?Math.max(4,Math.min(96,Math.round((recoN-lowN)/(highN-lowN)*100))):50;
@@ -7904,7 +7904,7 @@
           '<div class="m-tile"><b style="color:#2F7D5B">'+rdtL.toFixed(1).replace('.',',')+' <em>%</em></b><small>Rendement brut</small></div>'+
         '</div>';
     }
-    var estimBody='<h1 class="m-h1">Notre conclusion <i>de valeur</i></h1>'+rappel+adjCards+locHtml+honoBloc+methHtml;
+    var estimBody='<h1 class="m-h1">Notre conclusion <i>de valeur</i></h1>'+rappel+locHtml+honoBloc;
     // la démarche, autrefois seule sur une page, tient en trois lignes ici
     var demarcheCourt='<div class="m-lbl">Notre démarche</div>'+
       '<p class="m-p" style="font-size:9px">Cet avis résulte de l\'étude de votre bien, des transactions réellement enregistrées dans votre secteur (données notariées DVF de la DGFiP) et des dynamiques du marché local, corrigées de l\'emplacement, de l\'état, du diagnostic énergétique et des équipements.</p>';
@@ -8039,8 +8039,7 @@
       '<div style="font-size:7.4px;letter-spacing:.2em;color:#9a917f;text-transform:uppercase">Rapport établi le '+dateStr+'</div></div>';
 
     /* ---- page finale · et maintenant ---- */
-    var finBody=demarcheCourt+
-      '<div class="m-lbl">Et maintenant ?</div>'+
+    var finBody='<div class="m-lbl">Et maintenant ?</div>'+
       '<div class="m-steps">'+
         '<div class="m-step"><div class="num"><i>1</i></div><b>Stratégie &amp; mandat</b><p>Définition ensemble du prix de présentation, du calendrier et de la stratégie de commercialisation adaptée à vos objectifs.</p></div>'+
         '<div class="m-step"><div class="num"><i>2</i></div><b>Mise en valeur</b><p>Reportage photographique, home staging virtuel et dossier de vente complet pour présenter votre bien sous son meilleur jour.</p></div>'+
@@ -8110,8 +8109,8 @@
     // 01 l'essentiel · 02 votre bien · 03 le marché · (annexes) · 04 l'estimation et la suite
     var pagesHtml=coverHtml+
       page(synBody,2,TOT)+
-      page(bienBody,3,TOT)+
-      page(marcheBody,4,TOT);
+      page(bienBody.replace('__ADJ__', adjCards),3,TOT)+
+      page(marcheBody.replace('__METH__', methHtml+demarcheCourt),4,TOT);
     sheetsArr.forEach(function(parts,i){
       var head=(i===0)?(eyebrow('04','Le détail')+'<h1 class="m-h1">Pour aller <i>plus loin</i></h1>'):'';
       pagesHtml+=page(head+parts.join(''),5+i,TOT);
