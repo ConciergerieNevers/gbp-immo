@@ -1118,13 +1118,13 @@
   .m-step .num i{transform:rotate(-45deg);font-style:normal;font-family:var(--serifP);font-size:13px;color:var(--gold)}
   .m-step b{font-size:12.4px!important;display:block;font-size:11px;letter-spacing:.24em;color:var(--ink2);font-weight:700;text-transform:uppercase;margin-bottom:2mm}
   .m-step p{font-size:11.6px!important;font-size:11.2px;line-height:1.62;color:#6c6250;margin:0}
-  .m-contact{background:linear-gradient(155deg,#1e1a13,#0d0b08);display:flex;align-items:center;gap:6mm;padding:6mm 8mm;margin-bottom:3mm}
+  .m-contact{background:linear-gradient(155deg,#1e1a13,#0d0b08);display:flex;align-items:center;gap:5mm;padding:5mm 7mm;margin-bottom:3mm}
   .m-contact .lg{text-align:center;flex:none;border-right:.25mm solid rgba(255,255,255,.2);padding-right:8mm}
-  .m-contact .lg img{width:15mm;height:15mm;border-radius:3.2mm}
+  .m-contact .lg img{width:12mm;height:12mm;border-radius:2.6mm}
   .m-contact .lg b{display:block;font-family:var(--serifP);font-size:13.8px;letter-spacing:.4em;color:#EDE6D4;margin-top:2.5mm;text-indent:.4em}
   .m-contact .lg span{display:block;font-size:11px;letter-spacing:.28em;color:#C9A96B;text-transform:uppercase;margin-top:1mm}
   .m-contact .inf{flex:1;min-width:0}
-  .m-contact .inf h3{font-family:var(--serifP);font-size:17px;font-weight:500;color:#EDE6D4;margin:0 0 3.5mm}
+  .m-contact .inf h3{font-family:var(--serifP);font-size:16px;font-weight:500;color:#EDE6D4;margin:0 0 2.5mm}
   .m-crow{display:flex;gap:5mm;align-items:baseline;margin-top:2mm}
   .m-crow small{flex:0 0 26mm;font-size:11.2px;letter-spacing:.26em;color:#9A917C;font-weight:600;text-transform:uppercase}
   .m-crow b{font-family:var(--serifP);font-size:14.2px;color:#EDE6D4;font-weight:500}
@@ -2393,7 +2393,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-112937';
+  var B='20260827-113445';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2550,7 +2550,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-112937';
+  var __BUILD='20260827-113445';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -7793,8 +7793,9 @@
 
     /* ---- page 3 · votre bien ---- */
     var descV=(g('fDesc')&&g('fDesc').value.trim())||'';
-    var descClamped=descV.length>620;
-    var descShort=descClamped?(descV.slice(0,600).replace(/\s+\S*$/,'')+'…'):descV;
+    // la description tient sur la page du bien : plus d'annexe presque vide
+    var descClamped=false;
+    var descShort=(descV.length>1100)?(descV.slice(0,1080).replace(/\s+\S*$/,'')+'…'):descV;
     var introBien=descShort?escH(descShort).replace(/\n/g,'<br>')
       :('Ce bien de type '+escH(type)+(surfV?' de '+surfV+' m² habitables':'')+', situé '+escH(adresse)+(vNom?' à '+escH(vNom):'')+', a fait l\'objet d\'une visite et d\'une analyse détaillée de ses caractéristiques, de ses prestations et de son environnement immédiat.');
     var photoBlock='';
@@ -7934,13 +7935,12 @@
       '<p>Cet avis de valeur est établi au '+dateStr+' et reste pertinent pour une durée indicative de trois mois, sous réserve d\'évolution notable du marché ou de la consistance du bien. Il ne constitue pas une expertise au sens réglementaire.</p></div></div>';
     var honoBloc='';
     if(avHonoD && recoN){
+      // version compacte : le tableau faisait déborder la page de conclusion
       honoBloc='<div class="m-lbl">Honoraires d\'agence</div>'+
-        '<table class="m-comp"><tbody>'+
-        '<tr><td>Prix net vendeur</td><td style="text-align:right"><b>'+reco+'</b></td></tr>'+
-        '<tr><td>Honoraires — '+bmA.fix.toLocaleString('fr-FR')+' € + '+String(bmA.pct).replace('.',',')+' % du net vendeur</td><td style="text-align:right">'+euro(hoN)+'</td></tr>'+
-        '<tr class="hl"><td><b>Prix de présentation, frais d\'agence inclus</b></td><td style="text-align:right"><b>'+euro(faiN)+'</b></td></tr>'+
-        '</tbody></table>'+
-        '<p class="m-p" style="font-size:11px;color:#6c6250">Honoraires dus en cas de réalisation de la vente, dans les conditions fixées au mandat.</p>';
+        '<p class="m-p">Prix net vendeur <b>'+reco+'</b> + honoraires <b>'+euro(hoN)+'</b> ('+
+        bmA.fix.toLocaleString('fr-FR')+' € + '+String(bmA.pct).replace('.',',')+' % du net vendeur) = '+
+        '<b>'+euro(faiN)+'</b> frais d\'agence inclus. Honoraires dus en cas de réalisation de la vente, '+
+        'dans les conditions fixées au mandat.</p>';
     }
     // le prix est déjà en très grand page 2 : ici un simple rappel, puis la justification
     var rappel='<div class="m-tiles" style="margin-bottom:6mm">'+
@@ -8110,7 +8110,7 @@
         '</div>'+
         '<div class="sg"><div class="av-sign" style="color:#EDE6D4">Jimmy Garcia<small style="color:#9A917C">Conseiller immobilier</small></div></div>'+
       '</div>'+
-      '<div class="m-svc"><span><i></i>Avis de valeur</span><span><i></i>Photographie</span><span><i></i>Home staging</span><span><i></i>Visites accompagnées</span><span><i></i>Négociation</span><span><i></i>Suivi jusqu\'à l\'acte</span></div>'+
+      
       '<p class="m-legal">Cet avis de valeur est établi à titre indicatif — il ne peut se substituer à une expertise et ne constitue ni un engagement d\'achat ou de vente. Estimation offerte, sans engagement. '+
       'Siren 6718 417 RCS Nevers · Cartes Transaction N°113 et Gestion N°112 · Caisse de Garantie de l\'Immobilier FNAIM, 89 rue de la Boétie — 75008 Paris.</p>';
 
