@@ -1075,20 +1075,20 @@
   .syn-hero .lb{font-size:11.6px;letter-spacing:.34em;color:#B9AE93;font-weight:700;text-transform:uppercase}
   .syn-hero .px{font-family:var(--serifP);font-size:60px;line-height:1;color:#E3C77E;margin:4mm 0 2mm;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
   .syn-hero .pm{font-family:var(--serifP);font-style:italic;font-size:15.4px;color:#CFC3A6}
-  .syn-fai{display:flex;justify-content:center;gap:14mm;margin-top:4.5mm;padding-top:4mm;border-top:.3mm solid rgba(227,199,126,.35)}
-  .syn-fai div{text-align:center}
-  .syn-fai small{display:block;font-size:11.2px;letter-spacing:.26em;color:#B9AE93;font-weight:700;text-transform:uppercase;margin-bottom:2mm}
-  .syn-fai b{font-family:var(--serifP);font-size:23px;color:#EDE6D4;font-weight:500;font-variant-numeric:tabular-nums}
-  .syn-keys{display:grid;grid-template-columns:repeat(4,1fr);border-top:.3mm solid var(--hair2);border-bottom:.3mm solid var(--hair2);margin-bottom:5mm}
+  .syn-fai{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;margin-top:4.5mm;padding-top:4mm;border-top:.3mm solid rgba(227,199,126,.35)}
+  .syn-fai div{text-align:center;padding:0 2mm}
+  .syn-fai small{display:block;font-size:9.6px;letter-spacing:.1em;color:#B9AE93;font-weight:700;text-transform:uppercase;margin-bottom:2.2mm;white-space:nowrap}
+  .syn-fai b{font-family:var(--serifP);font-size:23px;color:#EDE6D4;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .syn-keys{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border-top:.3mm solid var(--hair2);border-bottom:.3mm solid var(--hair2);margin-bottom:5mm}
   .syn-keys div{padding:4mm 2mm;text-align:center;border-left:.25mm solid var(--hair2)}
   .syn-keys div:first-child{border-left:0}
   .syn-keys b{display:block;font-family:var(--serifP);font-size:26px;font-weight:500;color:var(--ink2);font-variant-numeric:tabular-nums;line-height:1}
-  .syn-keys small{display:block;font-size:11.2px;letter-spacing:.2em;color:#6b6152;font-weight:700;text-transform:uppercase;margin-top:2.4mm}
-  .syn-mk{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--sable);margin-bottom:5mm}
+  .syn-keys small{display:block;font-size:10.4px;letter-spacing:.08em;color:#6b6152;font-weight:700;text-transform:uppercase;margin-top:2.4mm}
+  .syn-mk{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;background:var(--sable);margin-bottom:5mm}
   .syn-mk div{padding:4mm 3mm;text-align:center;border-left:.25mm solid #e0d7c2}
   .syn-mk div:first-child{border-left:0}
   .syn-mk b{display:block;font-family:var(--serifP);font-size:22px;font-weight:500;color:var(--ink2);font-variant-numeric:tabular-nums;line-height:1}
-  .syn-mk small{display:block;font-size:11px;letter-spacing:.2em;color:#6b6152;font-weight:700;text-transform:uppercase;margin-top:2.2mm}
+  .syn-mk small{display:block;font-size:10.2px;letter-spacing:.08em;color:#6b6152;font-weight:700;text-transform:uppercase;margin-top:2.2mm}
   .syn-arg{display:flex;justify-content:space-between;align-items:baseline;border-top:.25mm solid var(--hair2);padding:3.4mm 0}
   .syn-arg span{font-size:13.8px;color:#3a3529;font-weight:500;padding-right:6mm}
   .syn-arg b{font-family:var(--serifP);font-size:16.4px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -2390,7 +2390,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-111738';
+  var B='20260827-112017';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2547,7 +2547,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-111738';
+  var __BUILD='20260827-112017';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5131,7 +5131,7 @@
         '<div class="pm">sur '+sim.ans+' ans au taux de '+String(sim.taux).replace('.',',')+' %, après un apport de '+eu(S.apport)+'</div>'+
         '<div class="syn-fai">'+
           '<div><small>Prix payé</small><b>'+eu(S.prix)+'</b></div>'+
-          '<div><small>Frais d\'acquisition</small><b>'+eu(fn?fn.total:0)+'</b></div>'+
+          '<div><small>Frais de notaire</small><b>'+eu(fn?fn.total:0)+'</b></div>'+
           '<div><small>Budget total</small><b>'+eu(budgetTotal)+'</b></div>'+
         '</div>'+
       '</div>'+
@@ -8135,11 +8135,11 @@
         '<div class="px">'+(avMode==='fai'?euro(faiN):reco)+'</div>'+
         (pm2N?'<div class="pm">soit '+((avMode==='fai'&&surfV)?Math.round(faiN/parseFloat(surfV)).toLocaleString('fr-FR'):pm2N.toLocaleString('fr-FR'))+' € par m² habitable</div>':'')+
         '<div class="syn-fai">'+
-          '<div><small>Fourchette basse</small><b>'+(avMode==='fai'?euro(faiDepuisNet(lowN)):low)+'</b></div>'+
+          '<div><small>Valeur basse</small><b>'+(avMode==='fai'?euro(faiDepuisNet(lowN)):low)+'</b></div>'+
           (avMode==='both'
-            ? '<div><small>Prix de présentation FAI</small><b>'+euro(faiN)+'</b></div>'
+            ? '<div><small>Prix affiché · FAI</small><b>'+euro(faiN)+'</b></div>'
             : '')+
-          '<div><small>Fourchette haute</small><b>'+(avMode==='fai'?euro(faiDepuisNet(highN)):high)+'</b></div>'+
+          '<div><small>Valeur haute</small><b>'+(avMode==='fai'?euro(faiDepuisNet(highN)):high)+'</b></div>'+
         '</div>'+
       '</div>'+
       (kb.length?('<div class="syn-keys">'+kb.map(function(x){
