@@ -17,9 +17,26 @@ async function requireUser(req, body){
   if(!tok) return false;
   try{
     var r = await fetch(SB.replace(/\/$/,'')+'/auth/v1/user', { headers:{ apikey:SK, Authorization:'Bearer '+tok } });
-    return r.ok;
+    if(!r.ok) return false;
+    return await compteActif(SB, SK, tok);
   }catch(e){ return false; }
 }
+
+// Un compte désactivé garde un jeton valide jusqu'à son expiration (~1 h) : on vérifie
+// donc AUSSI son état dans profils, sinon il continuerait à consommer des crédits.
+async function compteActif(SB, SK, tok){
+  try{
+    var r = await fetch(SB.replace(/\/$/,'') + '/auth/v1/user', { headers:{ apikey:SK, Authorization:'Bearer '+tok } });
+    if(!r.ok) return false;
+    var u = await r.json(); if(!u || !u.id) return false;
+    var p = await fetch(SB.replace(/\/$/,'') + '/rest/v1/profils?id=eq.'+u.id+'&select=actif',
+      { headers:{ apikey:SK, Authorization:'Bearer '+SK } });
+    if(!p.ok) return true;                 // table absente → on ne bloque pas
+    var rows = await p.json();
+    return !rows.length || rows[0].actif !== false;
+  }catch(e){ return true; }
+}
+
 
 export default async function handler(req, res){
   if(req.method !== 'POST'){ res.status(405).json({ error: 'Méthode non autorisée' }); return; }
