@@ -2393,7 +2393,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-115246';
+  var B='20260827-115527';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2550,7 +2550,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-115246';
+  var __BUILD='20260827-115527';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -8105,7 +8105,7 @@
       '<div style="font-size:11px;letter-spacing:.2em;color:#9a917f;text-transform:uppercase">Rapport établi le '+dateStr+'</div></div>';
 
     /* ---- page finale · et maintenant ---- */
-    var finBody='<div class="m-lbl">Et maintenant ?</div>'+
+    var finBody=demarcheCourt+'<div class="m-lbl">Et maintenant ?</div>'+
       '<div class="m-steps">'+
         '<div class="m-step"><div class="num"><i>1</i></div><b>Stratégie &amp; mandat</b><p>Définition ensemble du prix de présentation, du calendrier et de la stratégie de commercialisation adaptée à vos objectifs.</p></div>'+
         '<div class="m-step"><div class="num"><i>2</i></div><b>Mise en valeur</b><p>Reportage photographique, home staging virtuel et dossier de vente complet pour présenter votre bien sous son meilleur jour.</p></div>'+
@@ -8180,7 +8180,7 @@
     var pagesHtml=coverHtml+
       page(synBody,2,TOT)+
       page(bienBody.replace('__ADJ__', adjCards),3,TOT)+
-      page(marcheBody.replace('__METH__', methHtml+demarcheCourt),4,TOT);
+      page(marcheBody.replace('__METH__', methHtml),4,TOT);
     sheetsArr.forEach(function(parts,i){
       var head=(i===0)?(eyebrow('04','Le détail')+'<h1 class="m-h1">Pour aller <i>plus loin</i></h1>'):'';
       pagesHtml+=page(head+parts.join(''),5+i,TOT);
