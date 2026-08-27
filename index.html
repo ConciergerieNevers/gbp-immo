@@ -2393,7 +2393,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-115032';
+  var B='20260827-115246';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2550,7 +2550,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-115032';
+  var __BUILD='20260827-115246';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5288,13 +5288,13 @@
         var dc=dpeContrainte();
         if(dc) p3+='<div class="m-lbl">Point de vigilance — performance énergétique</div>'+
           '<p class="m-p"><b>Le logement est classé '+dc.classe+'.</b> Il '+dc.txt+' au sens de la loi Climat et Résilience : une rénovation énergétique est à prévoir pour sécuriser l\'exploitation locative — et c\'est un levier de négociation.</p>';
-        p3+='<p class="m-p" style="color:#6c6250">Rendements calculés sur le prix augmenté des frais d\'acquisition. Les régimes fiscaux sont donnés à titre de comparaison et ne constituent pas un conseil fiscal : votre situation propre doit être validée par votre conseiller.</p>';
+        p3+='<p class="m-p" style="color:#6c6250">Rendements calculés sur le prix augmenté des frais d\'acquisition. Les régimes fiscaux sont donnés à titre de comparaison, non comme un conseil fiscal.</p>';
       }
     }
     if(p3) pages.push(p3);
     else if(prof==='inv'){
       // sans loyer de marché, on ne fabrique pas une page presque vide : une note suffit
-      pages[pages.length-1]+='<p class="m-p" style="color:#6c6250">Le loyer de marché n\'ayant pas encore été établi, le rendement et le cash-flow vous seront communiqués séparément.</p>';
+      pages[pages.length-1]+='<p class="m-p" style="color:#6c6250">Rendement et cash-flow communiqués dès que le loyer de marché sera établi.</p>';
     }
 
     /* ---- 04 · charges, copropriété & quartier ---- */
@@ -7866,12 +7866,13 @@
     // seules les transactions DVF réelles et retenues peuvent figurer sous « données notariées »
     var selComps=(dvfComps||[]).filter(function(c){ return c.sel && !c.demo && compFilterPass(c); });
     function compTr(c){ return '<tr><td>'+escH(c.adresse||'Adresse non communiquée')+'</td><td>'+c.surface+' m²</td><td><b>'+euro(c.prix)+'</b></td><td>'+c.pm2.toLocaleString('fr-FR')+' €/m²</td><td>'+escH(fmtDate(c.date))+'</td></tr>'; }
-    var rowsP4=selComps.slice(0,9), rowsAnnex=selComps.slice(9,20), extraC=Math.max(0,selComps.length-20);
+    var rowsP4=selComps.slice(0,7), rowsAnnex=[], extraC=0;
     var hlRow='<tr class="hl"><td>◆ Votre bien — '+escH(adresse)+'</td><td>'+(surfV||'—')+' m²</td><td><b>'+reco+'</b></td><td>'+(pm2N?pm2N.toLocaleString('fr-FR')+' €/m²':'—')+'</td><td>Net vendeur</td></tr>';
     var compTable = selComps.length
       ? ('<div class="m-lbl">Transactions comparables récentes (DVF — données notariées)</div>'+
          '<table class="m-comp"><thead><tr><th>Bien</th><th>Surface</th><th>Prix de vente</th><th>Prix / m²</th><th>Date</th></tr></thead><tbody>'+
-         rowsP4.map(compTr).join('')+hlRow+'</tbody></table>')
+         rowsP4.map(compTr).join('')+hlRow+'</tbody></table>'+
+         (selComps.length>7?('<p class="m-p" style="color:#6c6250">Les '+selComps.length+' ventes retenues entrent toutes dans le calcul de la médiane ; les sept plus représentatives sont détaillées ci-dessus.</p>'):''))
       : ('<div class="m-lbl">Transactions comparables</div>'+
          '<p class="m-p">Aucune vente comparable n\'a été retenue pour ce bien : le secteur ne présente pas, sur la période analysée, de transaction suffisamment proche en nature et en surface. La valeur retenue s\'appuie sur l\'analyse directe du bien et sur la connaissance du marché local.</p>');
     var scaleHtml='';
