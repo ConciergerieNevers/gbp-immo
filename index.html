@@ -1114,10 +1114,10 @@
   .m-meth p{font-size:11.2px;line-height:1.7;color:#6c6250;margin:0}
   /* --- page finale --- */
   .m-steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm;margin:2mm 0 5mm;text-align:center}
-  .m-step .num{width:7mm;height:7mm;border:.35mm solid var(--gold);transform:rotate(45deg);margin:0 auto 3.5mm;display:grid;place-items:center}
-  .m-step .num i{transform:rotate(-45deg);font-style:normal;font-family:var(--serifP);font-size:13px;color:var(--gold)}
-  .m-step b{font-size:12.4px!important;display:block;font-size:11px;letter-spacing:.24em;color:var(--ink2);font-weight:700;text-transform:uppercase;margin-bottom:2mm}
-  .m-step p{font-size:11.6px!important;font-size:11.2px;line-height:1.62;color:#6c6250;margin:0}
+  .m-step .num{width:5.6mm;height:5.6mm;border:.35mm solid var(--gold);transform:rotate(45deg);margin:0 auto 2.5mm;display:grid;place-items:center}
+  .m-step .num i{transform:rotate(-45deg);font-style:normal;font-family:var(--serifP);font-size:11.5px;color:var(--gold)}
+  .m-step b{display:block;font-size:12.4px;letter-spacing:.14em;color:var(--ink2);font-weight:700;text-transform:uppercase;margin-bottom:1.5mm}
+  .m-step p{font-size:11.6px;line-height:1.5;color:#6c6250;margin:0}
   .m-contact{background:linear-gradient(155deg,#1e1a13,#0d0b08);display:flex;align-items:center;gap:5mm;padding:5mm 7mm;margin-bottom:3mm}
   .m-contact .lg{text-align:center;flex:none;border-right:.25mm solid rgba(255,255,255,.2);padding-right:8mm}
   .m-contact .lg img{width:12mm;height:12mm;border-radius:2.6mm}
@@ -1136,7 +1136,7 @@
   .m-svc{display:flex;flex-wrap:wrap;gap:3mm 6mm;margin:4mm 0}
   .m-svc span{font-size:11.2px!important;font-size:10.4px;letter-spacing:.2em;color:#4c4331;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:1.8mm}
   .m-svc i{width:1.7mm;height:1.7mm;background:var(--gold);transform:rotate(45deg);flex:none}
-  .m-legal{font-size:11px;line-height:1.55;color:#9a917f;margin-top:1.5mm}
+  .m-legal{font-size:11px;line-height:1.45;color:#9a917f;margin-top:1mm}
   /* --- barre DPE (couleurs officielles) : grande pour le bien, mini par lot --- */
   .m-dpe{display:flex;gap:1.2mm;align-items:flex-end;margin:2mm 0 1mm;max-width:96mm}
   .m-dpe span{flex:1;height:5.6mm;display:grid;place-items:center;font-size:10.8px;font-weight:700;color:#fff;border-radius:1mm;opacity:.3}
@@ -2393,7 +2393,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-113445';
+  var B='20260827-113743';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2550,7 +2550,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-113445';
+  var __BUILD='20260827-113743';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -7795,7 +7795,7 @@
     var descV=(g('fDesc')&&g('fDesc').value.trim())||'';
     // la description tient sur la page du bien : plus d'annexe presque vide
     var descClamped=false;
-    var descShort=(descV.length>1100)?(descV.slice(0,1080).replace(/\s+\S*$/,'')+'…'):descV;
+    var descShort=(descV.length>950)?(descV.slice(0,930).replace(/\s+\S*$/,'')+'…'):descV;
     var introBien=descShort?escH(descShort).replace(/\n/g,'<br>')
       :('Ce bien de type '+escH(type)+(surfV?' de '+surfV+' m² habitables':'')+', situé '+escH(adresse)+(vNom?' à '+escH(vNom):'')+', a fait l\'objet d\'une visite et d\'une analyse détaillée de ses caractéristiques, de ses prestations et de son environnement immédiat.');
     var photoBlock='';
