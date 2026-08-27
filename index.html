@@ -2390,7 +2390,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-110931';
+  var B='20260827-111121';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2547,7 +2547,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-110931';
+  var __BUILD='20260827-111121';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5083,7 +5083,63 @@
         '<div><small>Votre conseiller</small><b>Jimmy Garcia</b></div>'+
       '</div></div>';
 
-    /* ---- 01 · le bien ---- */
+    /* ---- 01 · L'ESSENTIEL : ce que l'acquéreur doit retenir, en très grand ---- */
+    var budgetTotal=S.prix+(fn?fn.total:0)+S.trav;
+    var cles=[];
+    if(ctx.surface) cles.push([ctx.surface,'m² habitables']);
+    if(gv('fPieces')) cles.push([gv('fPieces'),'pièces']);
+    if(gv('fChambres')) cles.push([gv('fChambres'),'chambres']);
+    if(dpeCl && dpeCl!=='ND') cles.push([dpeCl,'classe DPE']);
+    if(cles.length<4 && gv('fAnnee')) cles.push([gv('fAnnee'),'année']);
+    cles=cles.slice(0,4);
+
+    var profBloc='';
+    if(prof==='rp'){
+      var cuS=coutUsage(S.prix, sim, d);
+      profBloc='<div class="m-lbl">Ce que le logement coûte chaque mois</div>'+
+        '<div class="syn-mk">'+
+          '<div><b>'+eu(cuS.mensualite)+'</b><small>Mensualité du prêt</small></div>'+
+          '<div><b>'+eu(cuS.taxeF+cuS.copro)+'</b><small>Taxe foncière et charges</small></div>'+
+          '<div><b>'+eu(cuS.energie)+'</b><small>Énergie</small></div>'+
+        '</div>'+
+        '<div class="syn-arg" style="border-top:.5mm solid #A8853B"><span><b>Coût mensuel tout compris</b></span><b>'+eu(cuS.total)+'</b></div>';
+    } else if(prof==='rs'){
+      var cdS=coutDetention(S.prix, d, sim);
+      profBloc='<div class="m-lbl">Le coût annuel de détention</div>'+
+        '<div class="syn-mk">'+
+          '<div><b>'+eu(cdS.taxeF+cdS.thrs)+'</b><small>Taxes</small></div>'+
+          '<div><b>'+eu(cdS.energie+cdS.copro)+'</b><small>Énergie et charges</small></div>'+
+          '<div><b>'+eu(cdS.entretien+cdS.assurance)+'</b><small>Entretien et assurance</small></div>'+
+        '</div>'+
+        '<div class="syn-arg" style="border-top:.5mm solid #A8853B"><span><b>Total annuel, hors crédit</b></span><b>'+eu(cdS.total)+'</b></div>';
+    } else {
+      var rtS=rentabilite(S.prix, S.loyer, d, sim, S.tmi, fn);
+      if(rtS) profBloc='<div class="m-lbl">La rentabilité</div>'+
+        '<div class="syn-mk">'+
+          '<div><b>'+String(rtS.brut).replace('.',',')+' %</b><small>Rendement brut</small></div>'+
+          '<div><b>'+String(rtS.net).replace('.',',')+' %</b><small>Net de charges</small></div>'+
+          '<div><b style="color:'+(rtS.cashflow>=0?'#2F7D5B':'#A33B2E')+'">'+(rtS.cashflow>=0?'+ ':'− ')+eu(Math.abs(rtS.cashflow))+'</b><small>Cash-flow mensuel</small></div>'+
+        '</div>';
+    }
+
+    var essentiel=eyebrow('01','L\'essentiel')+
+      '<h1 class="m-h1">Ce bien <i>en un coup d\'œil</i></h1>'+
+      '<div class="syn-hero">'+
+        '<div class="lb">Mensualité, assurance comprise</div>'+
+        '<div class="px">'+eu(sim.mensualite)+'</div>'+
+        '<div class="pm">sur '+sim.ans+' ans au taux de '+String(sim.taux).replace('.',',')+' %, après un apport de '+eu(S.apport)+'</div>'+
+        '<div class="syn-fai">'+
+          '<div><small>Prix payé</small><b>'+eu(S.prix)+'</b></div>'+
+          '<div><small>Frais d\'acquisition</small><b>'+eu(fn?fn.total:0)+'</b></div>'+
+          '<div><small>Budget total</small><b>'+eu(budgetTotal)+'</b></div>'+
+        '</div>'+
+      '</div>'+
+      (cles.length?('<div class="syn-keys">'+cles.map(function(x){
+        return '<div><b>'+escH(String(x[0]))+'</b><small>'+escH(x[1])+'</small></div>'; }).join('')+'</div>'):'')+
+      profBloc;
+    pages.push(essentiel);
+
+    /* ---- 02 · le bien ---- */
     var specs=[];
     specs.push(['Type de bien', escH(ctx.type||'—')]);
     if(ctx.surface) specs.push(['Surface habitable', ctx.surface+' m²']);
@@ -5105,7 +5161,7 @@
     var energie=(d.energieMin||d.energieMax)
       ? ('<p class="m-p" style="font-size:8.4px;color:#6c6250;margin-top:1.5mm">Dépenses annuelles d\'énergie estimées : entre <b>'+eu(d.energieMin)+'</b> et <b>'+eu(d.energieMax)+'</b>'+(d.conso?' · consommation '+d.conso+' kWh/m²/an':'')+(d.dpeDate?' · diagnostic du '+d.dpeDate.split('-').reverse().join('/'):'')+'.</p>')
       : (dpeCl?'<p class="m-p" style="font-size:8.4px;color:#6c6250;margin-top:1.5mm">Montant des dépenses d\'énergie à consulter sur le diagnostic remis lors de la visite.</p>':'');
-    var p1=eyebrow('01','Le bien')+
+    var p1=eyebrow('02','Le bien')+
       '<h1 class="m-h1">'+escH(ctx.adresse||'Le bien')+(ctx.ville?' <i>'+escH(ctx.ville)+'</i>':'')+'</h1>'+
       (desc?'<p class="m-p">'+escH(desc).replace(/\n/g,'<br>')+'</p>':'')+
       photoBlk+
@@ -5114,7 +5170,7 @@
     pages.push(p1);
 
     /* ---- 02 · le budget & le financement ---- */
-    var p2=eyebrow('02','Le budget')+
+    var p2=eyebrow('03','Le budget')+
       '<h1 class="m-h1">Ce que représente <i>votre acquisition</i></h1>'+
       '<div class="m-spectbl"><div>'+
         L('Prix net vendeur', eu(S.net))+
@@ -5156,7 +5212,7 @@
     var p3='';
     if(prof==='rp'){
       var cu=coutUsage(S.prix, sim, d);
-      p3=eyebrow('03','Votre budget mensuel')+
+      p3=eyebrow('04','Votre budget mensuel')+
         '<h1 class="m-h1">Ce que le logement <i>vous coûtera chaque mois</i></h1>'+
         '<p class="m-p">Au-delà de la mensualité du prêt, voici le coût réel d\'occupation du logement — celui qu\'il faut comparer à votre loyer actuel.</p>'+
         '<div class="m-spectbl"><div>'+
@@ -5177,7 +5233,7 @@
         '<div class="m-adjrow"><span>Si vous êtes primo-accédant, l\'éligibilité au prêt à taux zéro est à vérifier auprès de votre banque ou de votre courtier.</span><b></b></div>';
     } else if(prof==='rs'){
       var cd=coutDetention(S.prix, d, sim);
-      p3=eyebrow('03','Le coût de détention')+
+      p3=eyebrow('04','Le coût de détention')+
         '<h1 class="m-h1">Ce que représente <i>une résidence secondaire</i></h1>'+
         '<p class="m-p">Une résidence secondaire se raisonne en coût annuel de détention plutôt qu\'en rentabilité. Voici les postes à prévoir, hors mensualité de prêt.</p>'+
         '<div class="m-spectbl"><div>'+
@@ -5199,7 +5255,7 @@
         '<div class="m-adjrow"><span>La plus-value de revente n\'est pas exonérée, sauf après vingt-deux ans de détention.</span><b></b></div>';
     } else {
       var rt=rentabilite(S.prix, S.loyer, d, sim, S.tmi, fn);
-      p3=eyebrow('03','La rentabilité')+
+      p3=eyebrow('04','La rentabilité')+
         '<h1 class="m-h1">Ce que le bien <i>peut rapporter</i></h1>';
       if(!rt){
         p3+='<p class="m-p">Le loyer de marché n\'a pas été renseigné : la rentabilité sera calculée dès que ce montant sera connu.</p>';
@@ -5257,7 +5313,7 @@
     var risks=[].slice.call(document.querySelectorAll('#estimation .risks .risk')).map(function(r){
       var b=r.querySelector('b'), s=r.querySelector('small');
       return '<div class="m-envrow"><span>'+escH(b?b.textContent:'')+'</span><b>'+escH(s?s.textContent:'')+'</b></div>'; }).join('');
-    var p4=eyebrow('04','Charges & environnement')+
+    var p4=eyebrow('05','Charges & environnement')+
       '<h1 class="m-h1">Le fonctionnement <i>au quotidien</i></h1>'+
       '<div class="m-spectbl"><div>'+
         L('Taxe foncière', d.taxeF?eu(d.taxeF)+' / an':'à communiquer')+
@@ -5273,7 +5329,7 @@
     pages.push(p4);
 
     /* ---- 05 · et maintenant ---- */
-    var p5=eyebrow('05','La suite')+
+    var p5=eyebrow('06','La suite')+
       '<h1 class="m-h1">De la visite <i>à la remise des clés</i></h1>'+
       '<div class="m-steps">'+
         '<div class="m-step"><div class="num"><i>1</i></div><b>Votre offre</b><p>Nous formalisons votre proposition par écrit et je la défends auprès du vendeur. Vous restez informé à chaque étape de la négociation.</p></div>'+
@@ -5299,7 +5355,7 @@
     var reste=photos.slice(3);
     for(var i=0;i<reste.length;i+=4){
       var lot=reste.slice(i,i+4);
-      pages.push((i===0?eyebrow('06','Galerie')+'<h1 class="m-h1">Le bien <i>en images</i></h1>':'')+
+      pages.push((i===0?eyebrow('07','Galerie')+'<h1 class="m-h1">Le bien <i>en images</i></h1>':'')+
         '<div class="dpair" style="grid-template-columns:1fr 1fr;gap:4mm">'+
         lot.map(function(x){ return '<div class="dimg m-ph" style="background-image:url('+x+');height:62mm"></div>'; }).join('')+'</div>');
     }
@@ -8075,7 +8131,7 @@
     var poids=function(x){ return Math.abs(parseInt(String(x[1]).replace(/[^0-9]/g,''),10)||0); };
     var argAll=posItems.map(function(x){ return [x[0],x[1],'pos']; })
       .concat(negItems.map(function(x){ return [x[0],x[1],'neg']; }))
-      .sort(function(a,b){ return poids(b)-poids(a); }).slice(0,4);
+      .sort(function(a,b){ return poids(b)-poids(a); }).slice(0,3);
 
     var synBody=eyebrow('01','L\'essentiel')+
       '<h1 class="m-h1">Votre bien <i>en un coup d\'œil</i></h1>'+
@@ -8214,6 +8270,9 @@
       }
       var sheets=el.querySelectorAll('.dsheet');
       var pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4',compress:true});
+      // lecture PAGE PAR PAGE : sans cela, beaucoup de lecteurs ouvrent le document
+      // en double page, illisible sur un téléphone
+      try{ pdf.setDisplayMode('fullwidth','single'); }catch(e){}
       for(var i=0;i<sheets.length;i++){
         var cv=await html2canvas(sheets[i],{scale:3,useCORS:true,backgroundColor:'#ffffff',logging:false});
         if(i>0) pdf.addPage();
@@ -8221,7 +8280,10 @@
         pdf.addImage(cv.toDataURL('image/jpeg',0.95),'JPEG',0,0,210,h);
       }
       var adr=((document.querySelector('#estimation .addrbox .a')||{}).textContent||'bien').trim().replace(/[^\w\u00c0-\u017f -]/g,'').slice(0,40);
-      pdf.save(nomFichier || ('Avis de valeur - '+adr+'.pdf'));
+      var nom=nomFichier || ('Avis de valeur - '+adr+'.pdf');
+      try{ pdf.setProperties({ title:nom.replace(/\.pdf$/,''), author:'Jimmy Garcia — GB Immobilier',
+        creator:'ESTIMAKE', subject:adr }); }catch(e){}
+      pdf.save(nom);
     } finally{ el.classList.remove('rendering'); }
   }
 
