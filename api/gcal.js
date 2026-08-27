@@ -81,10 +81,37 @@ function gBody(r){
   return body;
 }
 
+/* Multi-utilisateur : cette fonction agit avec la clé de service, qui ignore les règles
+   d'accès. Sans contrôle, n'importe qui connaissant l'identifiant d'un RDV pourrait
+   l'écrire ou le supprimer, et le RDV d'un autre compte finirait dans l'agenda Google
+   de Jimmy. On vérifie donc DEUX choses avant d'agir :
+     1. le jeton de l'appelant est valide et il est bien propriétaire du RDV ;
+     2. ce propriétaire est bien celui du calendrier Google synchronisé. */
+async function appelant(body){
+  var tok = String((body && body._auth) || '');
+  if(!tok) return null;
+  try{
+    var r = await fetch(SB.replace(/\/$/,'') + '/auth/v1/user', { headers:{ apikey:SK, Authorization:'Bearer '+tok } });
+    if(!r.ok) return null;
+    var u = await r.json();
+    return (u && u.id) ? u.id : null;
+  }catch(e){ return null; }
+}
+async function autorise(body, r){
+  if(!r) return { ok:false, motif:'RDV introuvable' };
+  var moi = await appelant(body);
+  if(!moi) return { ok:false, motif:'connexion requise' };
+  if(r.user_id && r.user_id !== moi) return { ok:false, motif:'ce RDV ne t\'appartient pas' };
+  var owner = await proprietaire();
+  if(owner && r.user_id && r.user_id !== owner) return { ok:false, motif:'agenda Google non relié à ce compte' };
+  return { ok:true };
+}
+
 // app → Google (création / mise à jour)
-async function pushOne(id){
+async function pushOne(id, body){
   var rr = await sbFetch('rdv?id=eq.'+id+'&select=*'); var rows = await rr.json();
   var r = rows && rows[0]; if(!r) return { skip:'row introuvable' };
+  var a = await autorise(body, r); if(!a.ok) return { skip:a.motif };
   var tok = await getToken(); var base = calBase();
   if(r.deleted){
     if(r.gcal_id){ await fetch(base+'/'+r.gcal_id, { method:'DELETE', headers:{Authorization:'Bearer '+tok} }); }
@@ -104,8 +131,9 @@ async function pushOne(id){
 }
 
 // app → Google (suppression) : supprime l'événement Google, garde la ligne (deleted=true)
-async function deleteOne(id){
-  var rr = await sbFetch('rdv?id=eq.'+id+'&select=gcal_id'); var r = (await rr.json())[0];
+async function deleteOne(id, body){
+  var rr = await sbFetch('rdv?id=eq.'+id+'&select=gcal_id,user_id'); var r = (await rr.json())[0];
+  var a = await autorise(body, r); if(!a.ok) return { skip:a.motif };
   if(r && r.gcal_id){
     var tok = await getToken();
     await fetch(calBase()+'/'+r.gcal_id, { method:'DELETE', headers:{Authorization:'Bearer '+tok} });
@@ -235,11 +263,11 @@ export default async function handler(req, res){
     var action = body.action || (req.query && req.query.action) || 'pull';
     if(action === 'push'){
       if(!body.id){ res.status(400).json({ error:'id manquant' }); return; }
-      res.status(200).json(await pushOne(body.id)); return;
+      res.status(200).json(await pushOne(body.id, body)); return;
     }
     if(action === 'delete'){
       if(!body.id){ res.status(400).json({ error:'id manquant' }); return; }
-      res.status(200).json(await deleteOne(body.id)); return;
+      res.status(200).json(await deleteOne(body.id, body)); return;
     }
     res.status(200).json(await pull());
   }catch(e){
