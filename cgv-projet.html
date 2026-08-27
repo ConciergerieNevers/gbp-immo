@@ -1,0 +1,565 @@
+<title>CGV ESTIMAKE</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#FBFAF7;
+  --surface:#F4F1EA;
+  --ink:#1A1815;
+  --ink-2:#57524A;
+  --ink-3:#8B8479;
+  --rule:#E2DDD3;
+  --rule-2:#CFC8BB;
+  --accent:#8A6D2F;
+  --accent-soft:#F0E9D8;
+  --alert:#8C3A2B;
+  --alert-soft:#F6E9E5;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15140F;
+    --surface:#1D1B15;
+    --ink:#EDE9E0;
+    --ink-2:#B3AC9E;
+    --ink-3:#847D70;
+    --rule:#2E2B23;
+    --rule-2:#413D33;
+    --accent:#C6A667;
+    --accent-soft:#2A2418;
+    --alert:#D98A76;
+    --alert-soft:#2E1D18;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15140F;
+  --surface:#1D1B15;
+  --ink:#EDE9E0;
+  --ink-2:#B3AC9E;
+  --ink-3:#847D70;
+  --rule:#2E2B23;
+  --rule-2:#413D33;
+  --accent:#C6A667;
+  --accent-soft:#2A2418;
+  --alert:#D98A76;
+  --alert-soft:#2E1D18;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.62;
+  margin:0;
+  padding:0 20px 100px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px;margin:0 auto}
+
+/* ---------- en-tête ---------- */
+.masthead{padding:56px 0 30px;border-bottom:2px solid var(--ink)}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 16px;
+}
+h1{
+  font-family:var(--serif);font-weight:500;font-size:clamp(34px,6vw,52px);
+  line-height:1.08;letter-spacing:-.015em;margin:0 0 14px;text-wrap:balance;
+}
+h1 em{font-style:italic;color:var(--ink-2)}
+.lede{font-size:17px;color:var(--ink-2);max-width:60ch;margin:0}
+.meta{
+  display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:24px;
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-3);
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- sommaire ---------- */
+.toc{margin:44px 0 8px;padding:26px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.toc h2{
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 18px;font-weight:500;
+}
+.toc ol{list-style:none;margin:0;padding:0;column-count:2;column-gap:40px}
+@media(max-width:640px){.toc ol{column-count:1}}
+.toc li{margin-bottom:7px;break-inside:avoid}
+.toc a{
+  color:var(--ink-2);text-decoration:none;font-size:14.5px;
+  display:flex;gap:11px;align-items:baseline;
+}
+.toc a:hover{color:var(--accent)}
+.toc a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.toc .n{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);flex:none;min-width:20px}
+
+/* ---------- articles ---------- */
+article{margin-top:52px}
+.art{padding-top:34px;border-top:1px solid var(--rule)}
+.art:first-of-type{border-top:0;padding-top:0}
+h2.art-t{
+  font-family:var(--serif);font-weight:500;font-size:25px;line-height:1.22;
+  margin:0 0 4px;letter-spacing:-.01em;text-wrap:balance;
+  display:flex;gap:14px;align-items:baseline;
+}
+h2.art-t .num{
+  font-family:var(--mono);font-size:12px;font-weight:500;color:var(--accent);
+  letter-spacing:.06em;flex:none;padding-top:3px;
+}
+.art > p, .art > ul, .art > ol{max-width:66ch}
+.art p{margin:0 0 13px;color:var(--ink-2)}
+.art p.first{margin-top:14px}
+.art strong{color:var(--ink);font-weight:600}
+.art ul,.art ol{margin:0 0 14px;padding-left:22px;color:var(--ink-2)}
+.art li{margin-bottom:7px}
+h3{
+  font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);
+  margin:22px 0 9px;letter-spacing:.005em;
+}
+
+/* ---------- éléments de mise en avant ---------- */
+.fill{
+  font-family:var(--mono);font-size:.88em;background:var(--accent-soft);
+  color:var(--accent);padding:1px 6px;border-radius:2px;white-space:nowrap;
+}
+.key{
+  margin:18px 0;padding:18px 20px;background:var(--surface);
+  border-left:3px solid var(--accent);border-radius:2px;
+}
+.key p{margin:0 0 10px;color:var(--ink-2);font-size:15px}
+.key p:last-child{margin-bottom:0}
+.key .lbl{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px;
+}
+
+/* ---------- tableaux ---------- */
+.tw{overflow-x:auto;margin:20px 0}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+caption{
+  text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);padding-bottom:11px;
+}
+th{
+  text-align:left;font-weight:600;font-size:12px;letter-spacing:.03em;
+  color:var(--ink);padding:0 14px 9px 0;border-bottom:1.5px solid var(--rule-2);
+}
+td{padding:11px 14px 11px 0;border-bottom:1px solid var(--rule);color:var(--ink-2);vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+tr:last-child td{border-bottom:0}
+.num-c{font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr.hl td{color:var(--ink);font-weight:600}
+
+/* ---------- annexes ---------- */
+.annexe{margin-top:62px;padding-top:34px;border-top:2px solid var(--ink)}
+.annexe .eyebrow{margin-bottom:12px}
+
+/* ---------- pied ---------- */
+footer{
+  margin-top:62px;padding-top:24px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-3);line-height:1.7;
+}
+
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .toc{break-after:page}
+  .art{break-inside:avoid-page}
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Applicable aux abonnements ESTIMAKE</p>
+    <h1>Conditions générales<br><em>de vente et d'utilisation</em></h1>
+    <p class="lede">Service ESTIMAKE — logiciel d'estimation, de pilotage d'activité et d'édition de documents à destination des professionnels de l'immobilier.</p>
+    <div class="meta">
+      <span>Version <b>1.0</b></span>
+      <span>Entrée en vigueur <b>27 août 2026</b></span>
+      <span>Éditeur <b>MATHEMIA</b></span>
+      <span>SIREN <b>931 605 042</b></span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Sommaire">
+    <h2>Sommaire</h2>
+    <ol>
+      <li><a href="#a1"><span class="n">1</span> Objet</a></li>
+      <li><a href="#a2"><span class="n">2</span> Définitions</a></li>
+      <li><a href="#a3"><span class="n">3</span> Acceptation et documents contractuels</a></li>
+      <li><a href="#a4"><span class="n">4</span> Description du Service</a></li>
+      <li><a href="#a5"><span class="n">5</span> Comptes et accès</a></li>
+      <li><a href="#a6"><span class="n">6</span> Conditions financières</a></li>
+      <li><a href="#a7"><span class="n">7</span> Durée et résiliation</a></li>
+      <li><a href="#a8"><span class="n">8</span> Support et disponibilité</a></li>
+      <li><a href="#a9"><span class="n">9</span> Obligations du Client</a></li>
+      <li><a href="#a10"><span class="n">10</span> Nature des documents produits</a></li>
+      <li><a href="#a11"><span class="n">11</span> Données du Client et réversibilité</a></li>
+      <li><a href="#a12"><span class="n">12</span> Données à caractère personnel</a></li>
+      <li><a href="#a13"><span class="n">13</span> Propriété intellectuelle</a></li>
+      <li><a href="#a14"><span class="n">14</span> Confidentialité</a></li>
+      <li><a href="#a15"><span class="n">15</span> Responsabilité</a></li>
+      <li><a href="#a16"><span class="n">16</span> Évolutions</a></li>
+      <li><a href="#a17"><span class="n">17</span> Force majeure</a></li>
+      <li><a href="#a18"><span class="n">18</span> Dispositions diverses</a></li>
+      <li><a href="#a19"><span class="n">19</span> Droit applicable</a></li>
+      <li><a href="#an1"><span class="n">A</span> Offres et tarifs</a></li>
+      <li><a href="#an2"><span class="n">B</span> Sous-traitance des données</a></li>
+      <li><a href="#an3"><span class="n">C</span> Sous-traitants ultérieurs</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section class="art" id="a1">
+      <h2 class="art-t"><span class="num">ART. 1</span> Objet</h2>
+      <p class="first">Les présentes conditions générales régissent la fourniture du service logiciel en ligne ESTIMAKE (le « Service ») à toute personne physique ou morale exerçant à titre professionnel une activité de transaction, de conseil ou d'intermédiation immobilière (le « Client »).</p>
+      <div class="key">
+        <div class="lbl">L'éditeur</div>
+        <p><strong>MATHEMIA</strong>, entreprise unipersonnelle à responsabilité limitée au capital de <strong>375 000 euros</strong>, immatriculée au registre du commerce et des sociétés de Nevers sous le numéro <strong>931 605 042</strong>, dont le siège social est situé <strong>34 Côte de Conflans, 58180 Marzy</strong>, identifiée à la taxe sur la valeur ajoutée sous le numéro <strong>FR 19 931 605 042</strong>, représentée par <strong>Monsieur Mathieu Morel</strong> en qualité de gérant.</p>
+        <p>Contact : <strong>nevers@be-nomads.fr</strong></p>
+      </div>
+      <p>Le Service est exclusivement destiné à un usage professionnel. Il n'est pas proposé aux consommateurs.</p>
+    </section>
+
+    <section class="art" id="a2">
+      <h2 class="art-t"><span class="num">ART. 2</span> Définitions</h2>
+      <ul>
+        <li><strong>Accès</strong> — droit d'utilisation nominatif attribué à une personne physique, identifié par une adresse e-mail unique.</li>
+        <li><strong>Espace</strong> — ensemble des données saisies ou importées par le Client, isolé des espaces des autres clients.</li>
+        <li><strong>Données Client</strong> — toute donnée saisie, importée ou générée par le Client dans son Espace, y compris les documents produits par le Service.</li>
+        <li><strong>Jour ouvré</strong> — du lundi au vendredi, hors jours fériés en France métropolitaine.</li>
+        <li><strong>Anomalie bloquante</strong> — défaut rendant impossible l'accès au Service ou l'usage d'une fonction essentielle, sans contournement praticable.</li>
+      </ul>
+    </section>
+
+    <section class="art" id="a3">
+      <h2 class="art-t"><span class="num">ART. 3</span> Acceptation et documents contractuels</h2>
+      <p class="first">La souscription vaut acceptation sans réserve des présentes. Le contrat est formé par les présentes conditions et leurs annexes, ainsi que par le bon de commande ou le devis signé, qui prévaut en cas de contradiction sur le périmètre et le prix.</p>
+      <p>Les conditions générales d'achat du Client sont expressément écartées.</p>
+      <p>Le Client, professionnel de l'immobilier souscrivant un outil relevant de son activité principale, ne bénéficie pas du droit de rétractation prévu à l'article L. 221-3 du code de la consommation.</p>
+    </section>
+
+    <section class="art" id="a4">
+      <h2 class="art-t"><span class="num">ART. 4</span> Description du Service</h2>
+      <p class="first">Le Service met à disposition, selon l'offre souscrite : un outil d'estimation immobilière s'appuyant sur les transactions publiées par la DGFiP, l'édition d'un avis de valeur, la tenue d'un portefeuille de mandats et le suivi des honoraires, un fichier de contacts, un agenda et des tâches, un tableau de bord d'activité, une assistance à la rédaction par intelligence artificielle, ainsi que — dans l'offre Complet — l'édition d'un dossier acquéreur comprenant une simulation de financement et un calcul de rentabilité.</p>
+      <p>Le Service est fourni en mode hébergé. Aucune installation n'est requise. L'accès s'effectue par navigateur, depuis une connexion internet dont le Client fait son affaire.</p>
+      <h3>Ce que le Service ne comprend pas</h3>
+      <ul>
+        <li>la reprise ou la migration de données depuis un autre logiciel, sauf devis distinct ;</li>
+        <li>la diffusion d'annonces sur des portails immobiliers ;</li>
+        <li>la formation, au-delà de la prise en main documentée ;</li>
+        <li>les développements spécifiques demandés par le Client.</li>
+      </ul>
+    </section>
+
+    <section class="art" id="a5">
+      <h2 class="art-t"><span class="num">ART. 5</span> Comptes et accès</h2>
+      <p class="first">Chaque Accès est <strong>nominatif et personnel</strong>. Son partage entre plusieurs personnes est interdit. Le Client répond de l'usage des Accès attribués à ses collaborateurs comme du sien propre.</p>
+      <p>Le Client conserve la confidentialité des identifiants et informe l'Éditeur sans délai de toute utilisation non autorisée dont il aurait connaissance.</p>
+      <p>Chaque Accès dispose d'un Espace distinct. Un Accès ne peut consulter ni modifier les données d'un autre Accès. Lorsque le Client souscrit plusieurs Accès, un rôle d'administrateur peut lui être attribué à sa demande ; l'administrateur voit alors l'ensemble des Espaces relevant de sa souscription, ce dont le Client informe ses collaborateurs.</p>
+    </section>
+
+    <section class="art" id="a6">
+      <h2 class="art-t"><span class="num">ART. 6</span> Conditions financières</h2>
+      <p class="first">Les prix figurent en annexe A. Ils s'entendent hors taxes, par Accès et par mois. La TVA au taux en vigueur s'y ajoute.</p>
+      <p>La facturation est mensuelle et payable à réception, ou annuelle d'avance selon l'option retenue au bon de commande. Le nombre d'Accès facturé est celui constaté au premier jour de la période.</p>
+      <p>Tout Accès ajouté en cours de période est facturé au prorata. Un Accès supprimé cesse d'être facturé à compter de la période suivante, sans remboursement de la période entamée.</p>
+      <h3>Retard de paiement</h3>
+      <p>Conformément aux articles L. 441-10 et D. 441-5 du code de commerce, tout retard entraîne de plein droit des pénalités au taux de trois fois le taux d'intérêt légal, ainsi qu'une indemnité forfaitaire de recouvrement de 40 euros, sans mise en demeure préalable.</p>
+      <p>À défaut de régularisation dans les quinze jours suivant une mise en demeure restée infructueuse, l'Éditeur peut suspendre les Accès. La suspension ne suspend pas l'exigibilité des sommes dues.</p>
+      <h3>Révision</h3>
+      <p>Les prix peuvent être révisés une fois par an. Toute révision est notifiée au Client <strong>deux mois</strong> avant son entrée en vigueur ; le Client peut alors résilier sans frais avant cette date.</p>
+    </section>
+
+    <section class="art" id="a7">
+      <h2 class="art-t"><span class="num">ART. 7</span> Durée et résiliation</h2>
+      <p class="first">Le contrat est conclu pour la durée indiquée au bon de commande — mensuelle ou annuelle — et se renouvelle tacitement pour une durée identique.</p>
+      <p>Chaque partie peut y mettre fin par écrit, avec un préavis de <strong>trente jours</strong> avant l'échéance de la période en cours. La résiliation prend effet au terme de cette période ; les sommes correspondantes restent dues.</p>
+      <p>L'Éditeur peut résilier de plein droit, après mise en demeure restée sans effet pendant quinze jours, en cas de manquement grave du Client, notamment de défaut de paiement, de partage d'Accès ou d'usage contraire à l'article 9.</p>
+      <p>Le Client peut résilier de plein droit, dans les mêmes formes, en cas d'indisponibilité du Service excédant sept jours consécutifs pour une cause imputable à l'Éditeur.</p>
+    </section>
+
+    <section class="art" id="a8">
+      <h2 class="art-t"><span class="num">ART. 8</span> Support et disponibilité</h2>
+      <p class="first">L'Éditeur assure le maintien en condition opérationnelle du Service et une assistance à son utilisation, dans les limites définies ci-après. Ces engagements sont exhaustifs : aucune autre prestation d'assistance n'est due au titre de l'abonnement.</p>
+
+      <h3>Assistance</h3>
+      <p>L'assistance est fournie <strong>par courrier électronique</strong>, à l'adresse <strong>nevers@be-nomads.fr</strong>, du lundi au vendredi de 9 h à 18 h, hors jours fériés.</p>
+      <div class="tw">
+        <table>
+          <caption>Délais de première réponse, en jours ouvrés</caption>
+          <thead>
+            <tr><th>Nature de la demande</th><th>Première réponse</th><th>Traitement</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Anomalie bloquante</td><td class="num-c">1 jour ouvré</td><td>Correction ou contournement recherché en priorité</td></tr>
+            <tr><td>Anomalie non bloquante</td><td class="num-c">3 jours ouvrés</td><td>Correction dans une version ultérieure</td></tr>
+            <tr><td>Question d'utilisation</td><td class="num-c">3 jours ouvrés</td><td>Réponse écrite</td></tr>
+            <tr><td>Demande d'évolution</td><td class="num-c">Sans engagement</td><td>Étudiée, sans obligation de réalisation</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="key">
+        <div class="lbl">Portée de l'engagement</div>
+        <p>L'Éditeur s'engage sur un <strong>délai de première réponse</strong>, non sur un délai de résolution. Une anomalie dont l'origine se situe chez un prestataire d'hébergement ou un service tiers ne peut donner lieu qu'à une obligation de moyens et à l'information du Client.</p>
+      </div>
+
+      <h3>Disponibilité</h3>
+      <p>L'Éditeur poursuit un objectif de disponibilité de <strong>99 % par mois civil</strong>, mesuré hors interruptions programmées, hors indisponibilités imputables aux prestataires d'hébergement mentionnés en annexe C, et hors force majeure.</p>
+      <p>Cet objectif constitue une obligation de moyens. Il n'ouvre droit à aucune pénalité ni à aucun avoir, la faculté de résiliation prévue à l'article 7 constituant le seul remède en cas d'indisponibilité prolongée.</p>
+      <h3>Maintenance</h3>
+      <p>Les interruptions programmées sont annoncées <strong>quarante-huit heures à l'avance</strong> lorsque leur nature le permet, et conduites de préférence en dehors des heures ouvrées. Les correctifs de sécurité peuvent être déployés sans préavis.</p>
+      <h3>Sauvegardes</h3>
+      <p>Les données sont sauvegardées quotidiennement par le prestataire d'hébergement, avec une rétention de sept jours. La restauration s'effectue au niveau de l'ensemble du Service et non d'un Espace isolé ; l'Éditeur ne garantit pas la restauration sélective d'un élément supprimé par le Client. La corbeille du Service permet au Client de récupérer lui-même les éléments qu'il a supprimés.</p>
+    </section>
+
+    <section class="art" id="a9">
+      <h2 class="art-t"><span class="num">ART. 9</span> Obligations du Client</h2>
+      <p class="first">Le Client s'engage à :</p>
+      <ul>
+        <li>n'utiliser le Service que dans le cadre de son activité professionnelle, conformément à la loi et notamment à la loi Hoguet du 2 janvier 1970 ;</li>
+        <li>saisir des données exactes et disposer du droit de les traiter, en particulier lorsqu'elles concernent ses propres clients ;</li>
+        <li>ne pas tenter d'accéder à l'Espace d'un autre client, ni de contourner les mesures de cloisonnement ;</li>
+        <li>ne pas décompiler, reproduire ou dériver le Service, ni le mettre à disposition de tiers ;</li>
+        <li>ne pas en faire un usage automatisé de nature à en compromettre le fonctionnement.</li>
+      </ul>
+      <p>Le Client demeure seul responsable des conséquences de l'usage qu'il fait du Service et des documents qu'il remet à ses propres clients.</p>
+    </section>
+
+    <section class="art" id="a10">
+      <h2 class="art-t"><span class="num">ART. 10</span> Nature des documents produits</h2>
+      <p class="first">Cet article est essentiel à l'équilibre du contrat. Le Client en informe ses propres clients autant que de besoin.</p>
+      <div class="key">
+        <div class="lbl">Avis de valeur</div>
+        <p>Le document produit par le Service constitue un <strong>avis de valeur</strong> établi à titre indicatif. Il ne constitue pas une expertise immobilière et ne saurait s'y substituer. Sa valeur, sa pertinence et sa remise relèvent de la seule appréciation professionnelle du Client, qui en assume la responsabilité.</p>
+      </div>
+      <div class="key">
+        <div class="lbl">Simulation de financement</div>
+        <p>Les simulations sont fournies à titre <strong>indicatif et non contractuel</strong>. Elles ne constituent ni une offre de prêt, ni un conseil en financement, ni une opération d'intermédiation en opérations de banque au sens des articles L. 519-1 et suivants du code monétaire et financier. Les taux servent de référence de marché et ne préjugent pas des conditions qu'un établissement prêteur consentira.</p>
+      </div>
+      <div class="key">
+        <div class="lbl">Rentabilité et fiscalité</div>
+        <p>Les rendements et comparaisons de régimes fiscaux sont des ordres de grandeur destinés à éclairer une discussion. Ils ne constituent ni un conseil en investissement, ni un conseil fiscal, et ne tiennent pas compte de la situation personnelle de l'acquéreur.</p>
+      </div>
+      <h3>Données publiques</h3>
+      <p>Le Service exploite des données publiques : transactions immobilières de la DGFiP, base adresse nationale, diagnostics de performance énergétique, informations de Géorisques, taux de référence publiés par la Banque de France. Ces données sont restituées <strong>en l'état</strong>. L'Éditeur ne garantit ni leur exhaustivité, ni leur exactitude, ni leur actualité, et ne répond pas des conséquences d'une erreur qui leur serait imputable.</p>
+      <h3>Contenus générés par intelligence artificielle</h3>
+      <p>Les textes proposés par la fonction d'assistance à la rédaction sont des propositions. Le Client les relit et les valide avant tout usage. Il en demeure l'auteur au regard de ses propres clients.</p>
+    </section>
+
+    <section class="art" id="a11">
+      <h2 class="art-t"><span class="num">ART. 11</span> Données du Client et réversibilité</h2>
+      <p class="first">Les Données Client demeurent la <strong>propriété exclusive du Client</strong>. L'Éditeur ne dispose d'aucun droit d'usage à d'autres fins que l'exécution du Service, et ne les exploite en particulier à aucune fin commerciale, statistique nominative ou d'entraînement de modèle.</p>
+      <p>Pendant toute la durée du contrat, le Client peut exporter ses données depuis le Service. Sur demande écrite, l'Éditeur lui remet en outre, dans un délai de <strong>quinze jours</strong>, l'intégralité de ses données dans un format structuré et lisible par machine.</p>
+      <p>À l'expiration du contrat, les Données Client sont conservées <strong>trente jours</strong> afin de permettre leur récupération, puis supprimées définitivement, y compris des sauvegardes selon le cycle de rotation de celles-ci.</p>
+    </section>
+
+    <section class="art" id="a12">
+      <h2 class="art-t"><span class="num">ART. 12</span> Données à caractère personnel</h2>
+      <p class="first">Le Service conduit l'Éditeur à traiter, pour le compte du Client, des données personnelles concernant les clients et prospects de ce dernier.</p>
+      <p>Le <strong>Client est responsable de traitement</strong> ; l'<strong>Éditeur agit en qualité de sous-traitant</strong> au sens de l'article 28 du règlement (UE) 2016/679. Les conditions de cette sous-traitance figurent en annexe B, qui fait partie intégrante du contrat.</p>
+      <p>L'Éditeur traite par ailleurs, en qualité de responsable de traitement, les données strictement nécessaires à la gestion des comptes, à la facturation et à l'assistance. Ces données sont conservées pendant la durée du contrat, puis pendant la durée de prescription applicable.</p>
+    </section>
+
+    <section class="art" id="a13">
+      <h2 class="art-t"><span class="num">ART. 13</span> Propriété intellectuelle</h2>
+      <p class="first">Le Service, son code, sa documentation, ses modèles de documents et ses éléments graphiques demeurent la propriété exclusive de l'Éditeur.</p>
+      <p>Le Client bénéficie, pour la durée du contrat et pour le nombre d'Accès souscrits, d'un <strong>droit d'usage personnel, non exclusif et non cessible</strong>, limité à ses besoins professionnels propres.</p>
+      <p>Les documents édités à l'aide du Service, une fois personnalisés par le Client, peuvent être librement utilisés par lui dans le cadre de son activité. Cette faculté ne lui transfère aucun droit sur les modèles eux-mêmes.</p>
+    </section>
+
+    <section class="art" id="a14">
+      <h2 class="art-t"><span class="num">ART. 14</span> Confidentialité</h2>
+      <p class="first">Chaque partie tient confidentielles les informations de l'autre dont elle a connaissance à l'occasion du contrat, et ne les divulgue qu'à ceux de ses collaborateurs ou prestataires qui en ont besoin, tenus d'une obligation équivalente.</p>
+      <p>Cet engagement demeure pendant la durée du contrat et <strong>trois ans</strong> après son terme. Il ne s'applique pas aux informations publiques, déjà connues, ou dont la divulgation est légalement requise.</p>
+    </section>
+
+    <section class="art" id="a15">
+      <h2 class="art-t"><span class="num">ART. 15</span> Responsabilité</h2>
+      <p class="first">L'Éditeur est tenu d'une <strong>obligation de moyens</strong> dans la fourniture du Service.</p>
+      <p>Sa responsabilité ne peut être engagée qu'en cas de faute prouvée et pour les seuls dommages directs. Sont exclus les dommages indirects, et notamment la perte de chiffre d'affaires, la perte de commission, la perte de mandat, l'atteinte à l'image, la perte de clientèle et la perte de données dont le Client n'aurait pas conservé de copie exportable.</p>
+      <div class="key">
+        <div class="lbl">Plafond</div>
+        <p>Toutes causes confondues, la responsabilité de l'Éditeur est plafonnée au <strong>montant hors taxes effectivement payé par le Client au cours des douze mois précédant le fait générateur</strong>.</p>
+      </div>
+      <p>Ce plafond ne s'applique ni en cas de dol ou de faute lourde, ni en cas de dommage corporel, ni dans les cas où la loi l'interdit.</p>
+      <p>L'Éditeur ne répond pas des conséquences d'une décision commerciale prise par le Client sur le fondement d'une estimation, d'une simulation ou d'un document produit par le Service, dont l'article 10 rappelle la portée.</p>
+      <p>Le Client déclare être assuré au titre de sa responsabilité civile professionnelle, conformément aux obligations attachées à son activité.</p>
+    </section>
+
+    <section class="art" id="a16">
+      <h2 class="art-t"><span class="num">ART. 16</span> Évolutions</h2>
+      <p class="first">L'Éditeur fait évoluer le Service. Les évolutions et correctifs sont compris dans l'abonnement et déployés sans action du Client.</p>
+      <p>La suppression d'une fonction essentielle est notifiée <strong>deux mois</strong> à l'avance et ouvre au Client une faculté de résiliation sans frais.</p>
+      <p>Les présentes conditions peuvent être modifiées ; la version applicable est celle en vigueur au jour du renouvellement. Toute modification substantielle est notifiée deux mois avant son entrée en vigueur et ouvre la même faculté de résiliation.</p>
+    </section>
+
+    <section class="art" id="a17">
+      <h2 class="art-t"><span class="num">ART. 17</span> Force majeure</h2>
+      <p class="first">Aucune partie ne répond d'un manquement causé par un événement de force majeure au sens de l'article 1218 du code civil, en ce compris une interruption durable des réseaux de communication électronique ou la défaillance majeure d'un prestataire d'hébergement.</p>
+      <p>Si l'empêchement se prolonge au-delà de <strong>trente jours</strong>, chaque partie peut résilier de plein droit, sans indemnité.</p>
+    </section>
+
+    <section class="art" id="a18">
+      <h2 class="art-t"><span class="num">ART. 18</span> Dispositions diverses</h2>
+      <p class="first">Le contrat ne peut être cédé par le Client sans accord écrit préalable. L'Éditeur peut le céder dans le cadre d'une opération de restructuration, à charge d'en informer le Client.</p>
+      <p>La nullité d'une clause n'entraîne pas celle du contrat ; elle est remplacée par une stipulation d'effet économique équivalent.</p>
+      <p>Le fait de ne pas se prévaloir d'un manquement ne vaut pas renonciation.</p>
+      <p>Sauf opposition écrite, l'Éditeur peut citer le nom et le logo du Client à titre de référence commerciale.</p>
+    </section>
+
+    <section class="art" id="a19">
+      <h2 class="art-t"><span class="num">ART. 19</span> Droit applicable et juridiction</h2>
+      <p class="first">Le contrat est soumis au <strong>droit français</strong>.</p>
+      <p>Les parties rechercheront une solution amiable préalablement à toute action. À défaut d'accord dans les trente jours, <strong>tout litige relève de la compétence exclusive du tribunal de commerce de Nevers</strong>, y compris en cas de pluralité de défendeurs ou d'appel en garantie.</p>
+    </section>
+
+  </article>
+
+  <!-- ============ ANNEXE A ============ -->
+  <section class="annexe" id="an1">
+    <p class="eyebrow">Annexe A</p>
+    <h2 class="art-t" style="margin-bottom:16px">Offres et tarifs</h2>
+    <div class="tw">
+      <table>
+        <caption>Prix hors taxes, par accès et par mois</caption>
+        <thead>
+          <tr><th>Offre</th><th>Périmètre</th><th class="num-c">Prix</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Essentiel</strong></td>
+            <td>Estimation, transactions DGFiP, analyse de marché, avis de valeur, portefeuille de mandats et honoraires, contacts, agenda et tâches, assistance à la rédaction</td>
+            <td class="num-c">59 €</td>
+          </tr>
+          <tr>
+            <td><strong>Complet</strong></td>
+            <td>L'offre Essentiel, augmentée du dossier acquéreur, de la simulation de financement, du calcul de rentabilité et du rapport d'activité</td>
+            <td class="num-c">89 €</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tw">
+      <table>
+        <caption>Dégressivité applicable à l'offre Complet</caption>
+        <thead>
+          <tr><th>Nombre d'accès souscrits</th><th class="num-c">Prix par accès et par mois</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1 à 3</td><td class="num-c">89 €</td></tr>
+          <tr><td>4 à 9</td><td class="num-c">69 €</td></tr>
+          <tr class="hl"><td>10 et plus</td><td class="num-c">59 €</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Le paiement annuel d'avance ouvre droit à <strong>deux mois offerts</strong>.</p>
+    <p>Certaines fonctions faisant appel à des services facturés à l'usage peuvent être proposées en option ou soumises à un plafond d'utilisation raisonnable, précisé au bon de commande.</p>
+  </section>
+
+  <!-- ============ ANNEXE B ============ -->
+  <section class="annexe" id="an2">
+    <p class="eyebrow">Annexe B</p>
+    <h2 class="art-t" style="margin-bottom:16px">Sous-traitance des données personnelles</h2>
+    <p>Annexe conclue en application de l'article 28 du règlement (UE) 2016/679. Le Client est responsable de traitement, l'Éditeur sous-traitant.</p>
+
+    <h3>Objet, nature et finalité</h3>
+    <p>Hébergement et traitement des données saisies par le Client dans le Service, aux seules fins de lui fournir les fonctions décrites à l'article 4, pour la durée du contrat.</p>
+
+    <h3>Catégories de données et de personnes concernées</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Personnes concernées</th><th>Catégories de données</th></tr></thead>
+        <tbody>
+          <tr><td>Vendeurs, acquéreurs et prospects du Client</td><td>Identité, coordonnées téléphoniques et électroniques, adresse du bien, caractéristiques du projet immobilier, historique des échanges et rendez-vous</td></tr>
+          <tr><td>Acquéreurs, pour le dossier de financement</td><td>Capacité d'emprunt déclarée : revenus du foyer, charges de crédit en cours, apport, tranche d'imposition</td></tr>
+          <tr><td>Collaborateurs du Client</td><td>Identité, adresse électronique professionnelle, données de connexion</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Aucune donnée relevant de l'article 9 du règlement n'est traitée. Le Client s'abstient d'en saisir dans les champs libres.</p>
+
+    <h3>Obligations de l'Éditeur</h3>
+    <ul>
+      <li>ne traiter les données que sur instruction documentée du Client, les présentes valant instructions initiales ;</li>
+      <li>garantir la confidentialité des personnes autorisées à les traiter ;</li>
+      <li>mettre en œuvre les mesures de sécurité décrites ci-après ;</li>
+      <li>ne recourir à un sous-traitant ultérieur que parmi ceux listés en annexe C, et informer le Client de tout changement envisagé, lequel dispose d'un délai de trente jours pour s'y opposer et, le cas échéant, résilier ;</li>
+      <li>aider le Client à répondre aux demandes d'exercice de droits, ainsi qu'à ses obligations de sécurité, de notification de violation et d'analyse d'impact ;</li>
+      <li>notifier au Client toute violation de données <strong>dans les quarante-huit heures</strong> de sa connaissance, avec les éléments permettant au Client de remplir son obligation de notification ;</li>
+      <li>au terme du contrat, restituer puis supprimer les données selon l'article 11 ;</li>
+      <li>tenir à disposition du Client les éléments nécessaires à la démonstration du respect de l'article 28.</li>
+    </ul>
+
+    <h3>Mesures de sécurité</h3>
+    <ul>
+      <li>chiffrement des échanges par TLS et chiffrement des données au repos par l'hébergeur ;</li>
+      <li>authentification individuelle par mot de passe, avec cloisonnement des espaces appliqué au niveau de la base de données et non de l'interface ;</li>
+      <li>habilitations nominatives et révocation immédiate d'un accès désactivé ;</li>
+      <li>journalisation des accès à l'infrastructure et sauvegarde quotidienne avec rétention de sept jours ;</li>
+      <li>clés d'accès aux services tiers détenues exclusivement côté serveur, jamais exposées au navigateur.</li>
+    </ul>
+
+    <h3>Localisation</h3>
+    <p>Les données sont hébergées par Supabase au <strong>Royaume-Uni (Londres)</strong>, pays bénéficiant d'une décision d'adéquation de la Commission européenne. Les traitements applicatifs sont exécutés par Vercel en <strong>France (Paris)</strong>.</p>
+    <p>Un transfert hors Espace économique européen intervient uniquement lorsque le Client recourt aux fonctions d'intelligence artificielle, dans les conditions précisées en annexe C.</p>
+  </section>
+
+  <!-- ============ ANNEXE C ============ -->
+  <section class="annexe" id="an3">
+    <p class="eyebrow">Annexe C</p>
+    <h2 class="art-t" style="margin-bottom:16px">Sous-traitants ultérieurs</h2>
+    <p>Liste arrêtée à la date d'entrée en vigueur, établie d'après la configuration réelle du Service.</p>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>Prestataire</th><th>Rôle</th><th>Localisation</th><th>Encadrement</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Supabase</td>
+            <td>Base de données, authentification, stockage des photographies</td>
+            <td>Royaume-Uni — Londres</td>
+            <td>Décision d'adéquation</td>
+          </tr>
+          <tr>
+            <td>Vercel</td>
+            <td>Hébergement de l'application et exécution des fonctions serveur</td>
+            <td>France — Paris</td>
+            <td>Union européenne</td>
+          </tr>
+          <tr>
+            <td>Anthropic</td>
+            <td>Assistance à la rédaction : le texte soumis par le Client est transmis au modèle</td>
+            <td>États-Unis</td>
+            <td>Clauses contractuelles types</td>
+          </tr>
+          <tr>
+            <td>Google</td>
+            <td>Synchronisation d'agenda, uniquement si le Client l'active</td>
+            <td>Union européenne et États-Unis</td>
+            <td>Data Privacy Framework</td>
+          </tr>
+          <tr>
+            <td>Black Forest Labs</td>
+            <td>Mise en valeur visuelle des photographies, option désactivée par défaut</td>
+            <td>Allemagne</td>
+            <td>Union européenne</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Sources de données publiques</h3>
+    <p>Le Service interroge en outre des sources publiques auxquelles <strong>aucune donnée personnelle n'est transmise</strong> : transactions immobilières de la DGFiP, base adresse nationale, diagnostics de performance énergétique de l'ADEME, Géorisques, OpenStreetMap, et statistiques de taux de la Banque de France. Seules des coordonnées géographiques ou une adresse de bien leur sont adressées.</p>
+  </section>
+
+  <footer>
+    ESTIMAKE — Conditions générales de vente et d'utilisation · Version 1.0 du 27 août 2026<br>
+    MATHEMIA, EURL au capital de 375 000 € · RCS Nevers 931 605 042 · TVA FR 19 931 605 042<br>
+    Siège : 34 Côte de Conflans, 58180 Marzy · Gérant : Mathieu Morel
+  </footer>
+
+</div>
