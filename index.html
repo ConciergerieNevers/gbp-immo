@@ -2367,7 +2367,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-101112';
+  var B='20260827-101211';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2524,7 +2524,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-101112';
+  var __BUILD='20260827-101211';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -6082,7 +6082,10 @@
   /* ---------- premiers pas : un compte neuf ne doit pas tomber sur un écran vide ---------- */
   function renderBienvenue(){
     var box=document.getElementById('bienvenue'); if(!box) return;
-    var nEst=(window.__estimsAll||[]).length;
+    // tant que les estimations ne sont pas chargées, on ne tranche pas : sinon le bloc
+    // clignoterait chez un utilisateur qui a déjà des données
+    if(window.__estimsAll===undefined) return;
+    var nEst=window.__estimsAll.length;
     var nB=(biens||[]).length, nC=(contactsData||[]).length;
     if(nEst || nB || nC){ box.hidden=true; return; }   // dès qu'il y a de la matière, le bloc disparaît
     var prenom=(monProfil&&monProfil.nom)?String(monProfil.nom).split(' ')[0]:'';
