@@ -1063,7 +1063,7 @@
   .m-env{display:grid;grid-template-columns:1fr 1.15fr;gap:7mm;align-items:start}
   .m-envrow{display:flex;justify-content:space-between;border-top:.25mm solid var(--hair2);padding:2.6mm 0 2.2mm;font-size:11.8px;color:#37301f}
   .m-envrow b{font-family:var(--serifP);font-size:13px;color:var(--gold);font-weight:600}
-  .m-env .dmapimg{height:52mm!important;margin-top:0!important;border:.35mm solid var(--goldL)!important;border-radius:0!important}
+  .m-env .dmapimg{height:40mm!important;margin-top:0!important;border:.35mm solid var(--goldL)!important;border-radius:0!important}
   /* --- page 5 : estimation --- */
   .m-dark{background:linear-gradient(155deg,#1e1a13,#0d0b08);padding:9mm 11mm 8mm;text-align:center;color:#EDE6D4;margin-bottom:6mm}
   .m-dark .lb1{font-size:11.6px;letter-spacing:.28em;color:#B9AE93;font-weight:700;text-transform:uppercase}
@@ -1119,20 +1119,20 @@
   .m-step b{display:block;font-size:12.4px;letter-spacing:.14em;color:var(--ink2);font-weight:700;text-transform:uppercase;margin-bottom:1.5mm}
   .m-step p{font-size:11.6px;line-height:1.5;color:#6c6250;margin:0}
   .m-contact{background:linear-gradient(155deg,#1e1a13,#0d0b08);display:flex;align-items:center;gap:5mm;padding:5mm 7mm;margin-bottom:3mm}
-  .m-contact .lg{text-align:center;flex:none;border-right:.25mm solid rgba(255,255,255,.2);padding-right:8mm}
+  .m-contact .lg{text-align:center;flex:0 0 32mm;border-right:.25mm solid rgba(255,255,255,.2);padding-right:5mm}
   .m-contact .lg img{width:12mm;height:12mm;border-radius:2.6mm}
-  .m-contact .lg b{display:block;font-family:var(--serifP);font-size:13.8px;letter-spacing:.4em;color:#EDE6D4;margin-top:2.5mm;text-indent:.4em}
-  .m-contact .lg span{display:block;font-size:11px;letter-spacing:.28em;color:#C9A96B;text-transform:uppercase;margin-top:1mm}
+  .m-contact .lg b{display:block;font-family:var(--serifP);font-size:12.4px;letter-spacing:.16em;color:#EDE6D4;margin-top:2.5mm}
+  .m-contact .lg span{display:block;font-size:10.4px;letter-spacing:.14em;color:#C9A96B;text-transform:uppercase;margin-top:1mm}
   .m-contact .inf{flex:1;min-width:0}
   .m-contact .inf h3{font-family:var(--serifP);font-size:16px;font-weight:500;color:#EDE6D4;margin:0 0 2.5mm}
-  .m-crow{display:flex;gap:5mm;align-items:baseline;margin-top:2mm}
-  .m-crow small{flex:0 0 26mm;font-size:11.2px;letter-spacing:.26em;color:#9A917C;font-weight:600;text-transform:uppercase}
-  .m-crow b{font-family:var(--serifP);font-size:14.2px;color:#EDE6D4;font-weight:500}
+  .m-crow{display:flex;gap:4mm;align-items:baseline;margin-top:1.8mm}
+  .m-crow small{flex:0 0 24mm;font-size:10.2px;letter-spacing:.1em;color:#9A917C;font-weight:700;text-transform:uppercase;line-height:1.3}
+  .m-crow b{font-family:var(--serifP);font-size:13px;color:#EDE6D4;font-weight:500;line-height:1.35}
   .m-crow b.gold{color:#D9B96A}
-  .m-contact .sg{flex:0 0 34mm;text-align:center;padding-left:4mm;border-left:.25mm solid rgba(255,255,255,.2)}
+  .m-contact .sg{flex:0 0 30mm;text-align:center;padding-left:4mm;border-left:.25mm solid rgba(255,255,255,.2)}
   /* le texte alentour a grossi : la signature doit lui laisser la place */
-  .m-contact .sg .av-sign{font-size:21px;padding:0;transform:rotate(-3deg) translateY(-1mm)}
-  .m-contact .sg .av-sign small{font-size:9px;letter-spacing:.16em;margin-top:2.4mm;white-space:nowrap}
+  .m-contact .sg .av-sign{font-size:16px;padding:0;transform:none;line-height:1.1}
+  .m-contact .sg .av-sign small{font-size:8.4px;letter-spacing:.08em;margin-top:1.8mm;line-height:1.3}
   .m-svc{display:flex;flex-wrap:wrap;gap:3mm 6mm;margin:4mm 0}
   .m-svc span{font-size:11.2px!important;font-size:10.4px;letter-spacing:.2em;color:#4c4331;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:1.8mm}
   .m-svc i{width:1.7mm;height:1.7mm;background:var(--gold);transform:rotate(45deg);flex:none}
@@ -2393,7 +2393,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-114635';
+  var B='20260827-114911';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2550,7 +2550,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-114635';
+  var __BUILD='20260827-114911';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5349,7 +5349,7 @@
           '<div class="m-crow"><small>Votre conseiller</small><b>Jimmy Garcia</b></div>'+
           '<div class="m-crow"><small>Téléphone</small><b class="gold">06 78 86 56 12</b></div>'+
           '<div class="m-crow"><small>E-mail</small><b>garciaj@gbimmobilier.net</b></div>'+
-          '<div class="m-crow"><small>Agence</small><b>26 Avenue Pierre Bérégovoy · 58000 Nevers · 03 86 61 14 15</b></div>'+
+          '<div class="m-crow"><small>Agence</small><b>26 avenue Pierre Bérégovoy, 58000 Nevers<br>03 86 61 14 15</b></div>'+
         '</div>'+
         '<div class="sg"><div class="av-sign" style="color:#EDE6D4">Jimmy Garcia<small style="color:#9A917C">Conseiller immobilier</small></div></div>'+
       '</div>'+
@@ -7884,7 +7884,7 @@
       scaleHtml='<div class="m-lbl">Positionnement — prix au m²</div><div class="m-scale"><span class="you" style="left:'+posB+'%">Votre bien — '+pm2N.toLocaleString('fr-FR')+' €/m²</span><span class="ln"></span>'+dots+
         '<span class="dia" style="left:'+posB+'%"></span><span class="lo">'+Math.round(mn).toLocaleString('fr-FR')+' €</span><span class="hi">'+Math.round(mx).toLocaleString('fr-FR')+' €</span></div>';
     }
-    var envRows=(poiList||[]).slice(0,7).map(function(p){
+    var envRows=(poiList||[]).slice(0,5).map(function(p){
       var d=(p.m>=1000)?((p.m/1000).toFixed(1).replace('.',',')+' km'):(p.m+' m');
       return '<div class="m-envrow"><span>'+escH(p.label)+'</span><b>'+d+'</b></div>'; }).join('');
     var envHtml='<div class="m-env" style="margin-top:4mm"><div id="dMapSlot"></div><div><div class="m-lbl" style="margin-top:0">Environnement &amp; accès</div>'+
@@ -8117,7 +8117,7 @@
           '<div class="m-crow"><small>Votre conseiller</small><b>Jimmy Garcia</b></div>'+
           '<div class="m-crow"><small>Téléphone</small><b class="gold">06 78 86 56 12</b></div>'+
           '<div class="m-crow"><small>E-mail</small><b>garciaj@gbimmobilier.net</b></div>'+
-          '<div class="m-crow"><small>Agence</small><b>26 Avenue Pierre Bérégovoy · 58000 Nevers · 03 86 61 14 15</b></div>'+
+          '<div class="m-crow"><small>Agence</small><b>26 avenue Pierre Bérégovoy, 58000 Nevers<br>03 86 61 14 15</b></div>'+
         '</div>'+
         '<div class="sg"><div class="av-sign" style="color:#EDE6D4">Jimmy Garcia<small style="color:#9A917C">Conseiller immobilier</small></div></div>'+
       '</div>'+
