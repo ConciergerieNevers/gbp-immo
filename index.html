@@ -2393,7 +2393,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-113743';
+  var B='20260827-114039';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2550,7 +2550,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-113743';
+  var __BUILD='20260827-114039';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5257,7 +5257,7 @@
       p3=eyebrow('04','La rentabilité')+
         '<h1 class="m-h1">Ce que le bien <i>peut rapporter</i></h1>';
       if(!rt){
-        p3+='<p class="m-p">Le loyer de marché n\'a pas été renseigné : la rentabilité sera calculée dès que ce montant sera connu.</p>';
+        p3='';   // page inutile : la note est reportée sur la page du budget
       } else {
         p3+='<div class="m-tiles">'+
           '<div class="m-tile"><b>'+String(rt.brut).replace('.',',')+' <em>%</em></b><small>Rendement brut</small></div>'+
@@ -5277,8 +5277,9 @@
         '<div class="m-lbl">Selon le régime fiscal retenu'+(S.tmi?' (tranche d\'imposition '+S.tmi+' %)':'')+'</div>'+
         '<table class="m-comp"><thead><tr><th>Régime</th><th>Base imposable</th><th>Impôt + prélèvements</th><th>Net-net</th></tr></thead><tbody>'+
         rt.regimes.map(function(r){
-          return '<tr><td>'+escH(r.nom)+'<br><span style="color:#8A8272;font-size:11px">'+escH(r.note)+'</span></td><td>'+eu(r.base)+'</td><td>'+eu(r.impot)+'</td><td><b>'+String(r.netnet).replace('.',',')+' %</b></td></tr>';
+          return '<tr><td>'+escH(r.nom)+'</td><td>'+eu(r.base)+'</td><td>'+eu(r.impot)+'</td><td><b>'+String(r.netnet).replace('.',',')+' %</b></td></tr>';
         }).join('')+'</tbody></table>'+
+        '<p class="m-p" style="color:#6c6250">Micro-foncier : abattement de 30 %. Meublé micro-BIC : abattement de 50 %. Au réel, charges et intérêts sont déduits ; en meublé au réel, l\'amortissement du bien réduit fortement la base imposable les premières années.</p>'+
         (rt.effort?'<p class="m-p" style="margin-top:3mm"><b>Effort d\'épargne mensuel : '+eu(rt.effort)+'.</b> Le loyer ne couvre pas la totalité de la mensualité ; la différence reste à votre charge.</p>':'')+
         (rt.seuilVacance?'<p class="m-p" style="font-size:11px;color:#6c6250">L\'opération reste à l\'équilibre jusqu\'à environ '+rt.seuilVacance+' % de vacance locative annuelle.</p>':'');
       }
@@ -5287,7 +5288,12 @@
         '<p class="m-p"><b>Le logement est classé '+dc.classe+'.</b> À ce titre, il '+dc.txt+' au sens de la loi Climat et Résilience. Une rénovation énergétique est donc à prévoir pour sécuriser l\'exploitation locative dans la durée — ce point est également un levier de négociation.</p>';
       p3+='<p class="m-p" style="font-size:11px;color:#6c6250;margin-top:3mm">Rendements calculés sur le prix augmenté des frais d\'acquisition. Les régimes fiscaux sont présentés à titre de comparaison générale et ne constituent pas un conseil fiscal personnalisé : votre situation propre doit être validée par votre conseiller fiscal ou votre expert-comptable.</p>';
     }
-    pages.push(p3);
+    if(p3) pages.push(p3);
+    else if(prof==='inv'){
+      // sans loyer de marché, on ne fabrique pas une page presque vide : une note suffit
+      pages[pages.length-1]+='<div class="m-lbl">Rentabilité</div>'+
+        '<p class="m-p">Le loyer de marché n\'a pas encore été renseigné. Le rendement, le cash-flow et la comparaison des régimes fiscaux seront calculés dès que ce montant sera connu — n\'hésitez pas à nous le demander.</p>';
+    }
 
     /* ---- 04 · charges, copropriété & quartier ---- */
     var copro='';
