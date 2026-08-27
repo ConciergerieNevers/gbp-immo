@@ -269,6 +269,17 @@ export default async function handler(req, res){
       if(!body.id){ res.status(400).json({ error:'id manquant' }); return; }
       res.status(200).json(await deleteOne(body.id, body)); return;
     }
+    // Un seul calendrier Google est relié au service. Si un AUTRE compte demande une
+    // synchronisation, on ne fait rien : sinon il déclencherait l'import de l'agenda
+    // de quelqu'un d'autre. Le cron Vercel appelle sans jeton et reste autorisé.
+    if(body && body._auth){
+      var moi = await appelant(body);
+      var owner = await proprietaire();
+      if(owner && moi && moi !== owner){
+        res.status(200).json({ skip:'non-relie', message:'Aucun agenda Google n\'est relié à ce compte.' });
+        return;
+      }
+    }
     res.status(200).json(await pull());
   }catch(e){
     res.status(500).json({ error:String((e && e.message) || e) });

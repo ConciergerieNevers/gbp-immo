@@ -1224,6 +1224,9 @@
 
       <!-- ============ COCKPIT ============ -->
       <section class="screen" id="cockpit">
+        <!-- premiers pas : affiché uniquement tant que le compte est vide -->
+        <div class="card pad" id="bienvenue" hidden style="margin-bottom:22px"></div>
+
         <!-- affichée UNIQUEMENT s'il y a des tâches en retard -->
         <div id="lateSection" hidden style="margin-bottom:22px">
           <div class="sectitle"><h2>⚠️ Tâches en retard <span class="eyebrow" id="lateCount" style="margin-left:8px"></span></h2><div class="grow"></div>
@@ -2364,7 +2367,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-100351';
+  var B='20260827-101112';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2428,6 +2431,12 @@
 .faibox .fl.tot{border-top:1px solid rgba(227,199,126,.4);margin-top:5px;padding-top:9px;font-weight:700}
 .faibox .fl.tot b{color:#E3C77E;font-size:17px}
 .faibox small{display:block;margin-top:7px;font-size:11px;color:#9A917C;line-height:1.5}
+.etapes-demarrage{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:11px}
+.etapes-demarrage .dstep{text-align:left;border:1px solid var(--line);background:transparent;color:inherit;
+  border-radius:12px;padding:14px 15px;cursor:pointer;display:block;font:inherit;transition:border-color .15s}
+.etapes-demarrage .dstep:hover{border-color:var(--accent)}
+.etapes-demarrage .dstep b{display:block;font-size:14px;margin-bottom:5px}
+.etapes-demarrage .dstep small{display:block;font-size:12.5px;color:var(--ink-3);line-height:1.55}
 .tgline{flex-direction:row!important;align-items:center;gap:9px}
 .tgline input{width:18px;height:18px;accent-color:var(--accent);flex:none}
 .tgline span{font-size:13px}
@@ -2515,7 +2524,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-100351';
+  var __BUILD='20260827-101112';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -3921,7 +3930,15 @@
   async function gPull(opts){
     if(!sb) return;
     try{
-      var res=await fetch('/api/gcal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ action:'pull' })});
+      var res=await fetch('/api/gcal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ action:'pull', _auth:await aiToken() })});
+      var jj=res.ok?await res.clone().json().catch(function(){return {};}):{};
+      if(jj && jj.skip==='non-relie'){
+        // un seul agenda Google est relié au service : on le dit clairement aux autres comptes
+        var gb=document.getElementById('gBtn');
+        if(gb){ gb.disabled=true; gb.title=jj.message||''; gb.style.opacity='.5'; }
+        if(opts&&opts.toast) toast(jj.message||'Aucun agenda Google relié à ce compte.');
+        return;
+      }
       if(res.ok){ await syncAgenda(); if(opts&&opts.toast) toast('Google Agenda synchronisé ✓'); }
       else if(res.status===503){ if(opts&&opts.toast) toast('Synchro Google pas encore configurée.'); }
       else if(opts&&opts.toast){ toast('Google : '+(await res.text()).slice(0,120)); }
@@ -6062,6 +6079,35 @@
     document.getElementById('adminX').addEventListener('click',function(){ m.hidden=true; });
     m.addEventListener('click',function(e){ if(e.target===m) m.hidden=true; });
   })();
+  /* ---------- premiers pas : un compte neuf ne doit pas tomber sur un écran vide ---------- */
+  function renderBienvenue(){
+    var box=document.getElementById('bienvenue'); if(!box) return;
+    var nEst=(window.__estimsAll||[]).length;
+    var nB=(biens||[]).length, nC=(contactsData||[]).length;
+    if(nEst || nB || nC){ box.hidden=true; return; }   // dès qu'il y a de la matière, le bloc disparaît
+    var prenom=(monProfil&&monProfil.nom)?String(monProfil.nom).split(' ')[0]:'';
+    box.hidden=false;
+    box.innerHTML='<div class="eyebrow">Premiers pas</div>'+
+      '<h2 style="margin:8px 0 6px;font-size:21px">Bienvenue'+(prenom?' '+escH(prenom):'')+' 👋</h2>'+
+      '<p style="color:var(--ink-3);font-size:14px;line-height:1.6;margin:0 0 16px;max-width:640px">'+
+        'Ton espace est vide, et il n\'appartient qu\'à toi — personne d\'autre n\'y a accès. '+
+        'Le plus simple pour démarrer : fais une estimation. Tout le reste en découle — le portefeuille, '+
+        'les contacts, les commissions et le dossier acquéreur.</p>'+
+      '<div class="etapes-demarrage">'+
+        '<button type="button" class="dstep" data-go2="estim"><b>1 · Une estimation</b><small>Choisis une adresse : l\'application charge les ventes réelles du secteur et calcule le prix net vendeur.</small></button>'+
+        '<button type="button" class="dstep" data-go2="param"><b>2 · Ton barème</b><small>Vérifie tes honoraires et tes objectifs dans Paramètres — tout le calcul de commission en dépend.</small></button>'+
+        '<button type="button" class="dstep" data-go2="contact"><b>3 · Un contact</b><small>Ajoute un vendeur ou un acquéreur : biens, RDV et dossiers s\'y rattachent automatiquement.</small></button>'+
+      '</div>';
+  }
+  (function(){
+    var box=document.getElementById('bienvenue'); if(!box) return;
+    box.addEventListener('click',function(e){
+      var b=e.target.closest('[data-go2]'); if(!b) return;
+      if(b.dataset.go2==='estim'){ if(typeof resetEstimation==='function') resetEstimation(); }
+      else if(b.dataset.go2==='param'){ var g=document.getElementById('goalsBtn'); if(g) g.click(); }
+      else if(b.dataset.go2==='contact'){ go('crm'); openContactForm(null); }
+    });
+  })();
   /* ---------- saisie : remplace prompt(), bloqué ou disgracieux en application iOS ---------- */
   var askResolve=null;
   function ask(opts){
@@ -6245,6 +6291,7 @@
       window.__estimErr=null;
       window.__estimsAll=rows;
       renderEstimList();
+      if(typeof renderBienvenue==='function') try{ renderBienvenue(); }catch(eV){}
       if(typeof updateKpis==='function') updateKpis();
     }catch(e){
       console.warn('[ESTIMAKE] estimations', e);
@@ -8105,6 +8152,7 @@
       if(res.data){                     // la base a répondu → vraies données, même vides
         biens=res.data.map(mapBien);
         scheduleReconcile('biens');
+        if(typeof renderBienvenue==='function') try{ renderBienvenue(); }catch(eB){}
         updateBienChips();
         var f=document.querySelector('#bienChips .chip.on');
         renderBiens(f?f.dataset.f:'all', document.getElementById('bienSearch').value);
