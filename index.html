@@ -2393,7 +2393,7 @@
 /* Auto-mise à jour AUTONOME — volontairement hors de l'application :
    si le script principal plante, celui-ci continue de tourner et récupère la version corrigée. */
 (function(){
-  var B='20260827-114039';
+  var B='20260827-114214';
   function busy(){
     // ne jamais recharger pendant une saisie, un modal ouvert, ou sur l'écran de connexion
     var a=document.activeElement;
@@ -2550,7 +2550,7 @@
   /* =================== AUTO-MISE À JOUR (PWA iOS ne recharge jamais seule) ===================
      __BUILD est réécrit automatiquement à chaque commit (hook git). Au retour au premier plan,
      on compare avec la version en ligne : si différente → reload auto (ou bouton si saisie en cours). */
-  var __BUILD='20260827-114039';
+  var __BUILD='20260827-114214';
   (function(){
     var checking=false;
     function modalOpen(){
@@ -5257,7 +5257,7 @@
       p3=eyebrow('04','La rentabilité')+
         '<h1 class="m-h1">Ce que le bien <i>peut rapporter</i></h1>';
       if(!rt){
-        p3='';   // page inutile : la note est reportée sur la page du budget
+        p3='';   // page inutile : la note est reportée sur la page du budget (voir plus bas)
       } else {
         p3+='<div class="m-tiles">'+
           '<div class="m-tile"><b>'+String(rt.brut).replace('.',',')+' <em>%</em></b><small>Rendement brut</small></div>'+
@@ -5279,14 +5279,17 @@
         rt.regimes.map(function(r){
           return '<tr><td>'+escH(r.nom)+'</td><td>'+eu(r.base)+'</td><td>'+eu(r.impot)+'</td><td><b>'+String(r.netnet).replace('.',',')+' %</b></td></tr>';
         }).join('')+'</tbody></table>'+
-        '<p class="m-p" style="color:#6c6250">Micro-foncier : abattement de 30 %. Meublé micro-BIC : abattement de 50 %. Au réel, charges et intérêts sont déduits ; en meublé au réel, l\'amortissement du bien réduit fortement la base imposable les premières années.</p>'+
+        '<p class="m-p" style="color:#6c6250">Micro-foncier : abattement de 30 %. Meublé micro-BIC : 50 %. Au réel, charges et intérêts sont déduits ; en meublé au réel, l\'amortissement réduit fortement la base imposable.</p>'+
         (rt.effort?'<p class="m-p" style="margin-top:3mm"><b>Effort d\'épargne mensuel : '+eu(rt.effort)+'.</b> Le loyer ne couvre pas la totalité de la mensualité ; la différence reste à votre charge.</p>':'')+
         (rt.seuilVacance?'<p class="m-p" style="font-size:11px;color:#6c6250">L\'opération reste à l\'équilibre jusqu\'à environ '+rt.seuilVacance+' % de vacance locative annuelle.</p>':'');
       }
-      var dc=dpeContrainte();
-      if(dc) p3+='<div class="m-lbl">Point de vigilance — performance énergétique</div>'+
-        '<p class="m-p"><b>Le logement est classé '+dc.classe+'.</b> À ce titre, il '+dc.txt+' au sens de la loi Climat et Résilience. Une rénovation énergétique est donc à prévoir pour sécuriser l\'exploitation locative dans la durée — ce point est également un levier de négociation.</p>';
-      p3+='<p class="m-p" style="font-size:11px;color:#6c6250;margin-top:3mm">Rendements calculés sur le prix augmenté des frais d\'acquisition. Les régimes fiscaux sont présentés à titre de comparaison générale et ne constituent pas un conseil fiscal personnalisé : votre situation propre doit être validée par votre conseiller fiscal ou votre expert-comptable.</p>';
+      // ces compléments n'ont de sens que si la page existe : sans loyer, p3 est vide
+      if(p3){
+        var dc=dpeContrainte();
+        if(dc) p3+='<div class="m-lbl">Point de vigilance — performance énergétique</div>'+
+          '<p class="m-p"><b>Le logement est classé '+dc.classe+'.</b> Il '+dc.txt+' au sens de la loi Climat et Résilience : une rénovation énergétique est à prévoir pour sécuriser l\'exploitation locative — et c\'est un levier de négociation.</p>';
+        p3+='<p class="m-p" style="color:#6c6250">Rendements calculés sur le prix augmenté des frais d\'acquisition. Les régimes fiscaux sont donnés à titre de comparaison et ne constituent pas un conseil fiscal : votre situation propre doit être validée par votre conseiller.</p>';
+      }
     }
     if(p3) pages.push(p3);
     else if(prof==='inv'){
